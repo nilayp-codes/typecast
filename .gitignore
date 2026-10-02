@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Attempt logs (keep the folder)
+logs/*
+!logs/.gitkeep
+
+# Python / tooling
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/

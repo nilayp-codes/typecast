@@ -27,7 +27,9 @@ Don't assume anything. If it isn't in the docs or the code, ask.
 5. Commit as `type: summary` (e.g. `feat: add schema validator`).
 6. Move to the next item.
 
-Stop and ask if a task is ambiguous or conflicts with a doc.
+- Any architecture change → update `docs/ARCHITECTURE.md` in the same commit.
+- At session end, update `docs/MEMORY.md` (status, decisions, observations, session log).
+- Stop and ask if a task is ambiguous or conflicts with a doc.
 
 ## Commands
 ```

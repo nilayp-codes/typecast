@@ -1,0 +1,40 @@
+[project]
+name = "soa"
+version = "0.1.0"
+description = "LLM agent that turns messy job descriptions into guaranteed-valid, typed JSON"
+readme = "README.md"
+authors = [
+    { name = "Nilay Pandey", email = "nilaykishore3@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "litellm>=1.103.2",
+    "pydantic>=2.13.5",
+    "python-dotenv>=1.2.4",
+    "typer>=0.27.2",
+]
+
+[project.scripts]
+soa = "soa.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.12.22,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["litellm", "litellm.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

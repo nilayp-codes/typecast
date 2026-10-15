@@ -54,6 +54,17 @@ Validators:
 model         n   first-try  final   avg calls  cost
 gpt-4o-mini   50  82.0%      100%    1.20       $0.04
 ```
+`soa eval --model <m> [--json-mode] [--no-retry]`: the two flags select the setup. A = `--no-retry`, B = (default),
+C = `--no-retry --json-mode`, D = `--json-mode`. The runs are combined into the 4-setup comparison table:
+```
+EXAMPLE ONLY - placeholder values, not results
+model    setup  retry  native  first-try  final  avg calls  field acc  cost
+<model>  A      off    off     xx.x%      xx.x%  1.00       xx.x%      $x.xx
+<model>  B      on     off     xx.x%      xx.x%  x.xx       xx.x%      $x.xx
+<model>  C      off    on      xx.x%      xx.x%  1.00       xx.x%      $x.xx
+<model>  D      on     on      xx.x%      xx.x%  x.xx       xx.x%      $x.xx
+<model2> C      off    on      not supported (no numbers)
+```
 
 ## 3. Log format (`logs/attempts.jsonl`, one line per attempt)
 ```json
@@ -64,10 +75,16 @@ gpt-4o-mini   50  82.0%      100%    1.20       $0.04
 ```
 
 ## 4. README layout
-1. One-line pitch
+1. CI badge at the top, then the one-line pitch
 2. **Eval table** (above the fold)
-3. 15-sec GIF of `soa extract`
-4. How it works (the flow diagram from ARCHITECTURE)
-5. Most common failure types (from logs) + what fixed them
-6. Run it yourself
-7. What I'd do next
+3. **Why not just native JSON mode?** The 4-setup comparison table (A-D) plus our 3-point answer:
+   (a) native modes guarantee shape, not meaning (they miss duplicate skills, the intern/experience rule, wrong
+   seniority); (b) valid JSON != correct data (field accuracy measures this); (c) open-weight OpenRouter models
+   often lack strict schema mode.
+4. 15-sec GIF of `soa extract`
+5. How it works (the flow diagram from ARCHITECTURE)
+6. Most common failure types (from logs) + what fixed them
+7. **Design decisions**: strict mode, required-but-nullable fields, error-feedback format (one line per error),
+   why feeding errors back beats blind retry
+8. Run it yourself
+9. What I'd do next (includes the validator-only MCP server and the PyPI package)

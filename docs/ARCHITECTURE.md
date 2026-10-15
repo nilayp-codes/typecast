@@ -21,10 +21,12 @@ structured-output-agent/
 │   └── cli.py          # `soa extract`, `soa eval`
 ├── data/
 │   ├── jds/            # raw .txt job descriptions
-│   └── labels/         # hand-labelled gold JSON (10 files)
+│   └── labels/         # hand-labelled gold JSON (25-30 files)
 ├── logs/               # attempts.jsonl (gitignored)
 ├── results/            # eval outputs (committed)
 ├── tests/
+├── scripts/            # standalone scripts, e.g. baseline.py (Phase 2 real-API baseline run)
+├── .github/workflows/ci.yml   # pytest + mypy --strict src/ on push and PR (Phase 7)
 └── docs/  (these .md files)
 ```
 
@@ -63,12 +65,40 @@ model requests tool ──► validate args (ToolArgs model)
 | Retry strategy | Feed exact Pydantic error back | Model self-corrects on specific errors far better than blind retry |
 | Max attempts | 3 | Diminishing returns past 2; caps cost |
 | Validation | `model_validate_json` (not `json.loads` + validate) | Single step, better error locations |
-| JSON mode | Off by default, togglable | Measure raw model behaviour first, then compare |
+| JSON mode | Off by default, togglable. The eval runs it both on and off, as a required comparison (setups A-D) | Measure raw model behaviour first; answer "why not just native structured outputs?" with numbers |
 | Logging | Pydantic `AttemptLog` → JSONL | Logs are themselves validated; trivially parseable for eval |
 | Client | LiteLLM | Model swap for evals; aligns with LiteLLM ecosystem |
 
 ## Interfaces
 ```python
-def extract(text: str, model: str, max_attempts: int = 3) -> ExtractionResult
+def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = False) -> ExtractionResult
 # ExtractionResult: posting: JobPosting, attempts: int, total_tokens: int, cost_usd: float
 ```
+
+## Eval setups: how retry and native mode are toggled
+Both toggles are plain arguments, so the eval runs the same code path four ways:
+
+| Setup | Retry loop | Native mode | Call |
+|---|---|---|---|
+| A | off | off | `extract(text, model, max_attempts=1, json_mode=False)` |
+| B | on | off | `extract(text, model, max_attempts=3, json_mode=False)` |
+| C | off | on | `extract(text, model, max_attempts=1, json_mode=True)` |
+| D | on | on | `extract(text, model, max_attempts=3, json_mode=True)` |
+
+- **Retry:** `max_attempts=1` is the no-retry path: one call, one validation, and failure raises `ExtractionFailed`
+  after logging. `max_attempts` defaults from `SOA_MAX_ATTEMPTS`.
+- **Native mode:** native mode means the provider's schema mode, built from `JobPosting.model_json_schema()`
+  (`response_format` of type `json_schema`, or the provider's equivalent via LiteLLM). It is not `json_object`:
+  that only guarantees valid JSON, so it cannot test the "shape, not meaning" claim, and it is not one of the four
+  setups. `agent.py` generates the schema (rule 9) and passes `json_mode` plus that schema to `llm.call()`. Only
+  `llm.py` turns them into a provider setting, so rule 5 holds: no provider SDK or `response_format` outside
+  `llm.py`. (As of Phase 2, `llm.call()` still maps `json_mode` to `json_object`; changing that is a Phase 5 task.)
+- **Provider schema subsets:** provider strict-schema modes support only a subset of JSON Schema. If a constraint
+  must be dropped for the provider, record which ones in `results/` and still validate the output with our full
+  Pydantic model. Dropped constraints are reported as a finding in the README.
+- **Models** come from config/env (`SOA_MODEL_PRIMARY`, `SOA_MODEL_SECONDARY`) and are passed in as the `model`
+  argument; nothing in the logic names a model (rule 6).
+- **Unsupported setups:** if a model does not support native schema mode, `eval.py` records C and D for that model
+  as "not supported" and never a number. How support is detected is decided in Phase 6.
+- **Which documents:** the 4-setup comparison (A-D) runs on the gold set (25-30 JDs) for both models. Setup B
+  (retry on, native off) also runs on all 50 JDs for the headline validity numbers.

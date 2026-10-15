@@ -2,6 +2,8 @@
 
 import json
 import logging
+import os
+import time
 import uuid
 from pathlib import Path
 
@@ -9,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_core import ErrorDetails
 
 from soa import llm
-from soa.llm import LLMResponse, Message
+from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, append_log, default_log_path
 from soa.schemas import JobPosting
 
@@ -51,6 +53,9 @@ Fix every error above and reply again with the complete JSON object only. The sa
 # Some providers reject an empty assistant message, so an empty reply is replayed as this text.
 EMPTY_REPLY_PLACEHOLDER = "(empty reply)"
 
+API_MAX_RETRIES = 3  # per model call; waits are API_BACKOFF_SECONDS * 2**n: 2, 4, 8 s
+API_BACKOFF_SECONDS = 2.0
+
 MAX_INPUT_CHARS = 60
 
 
@@ -73,6 +78,7 @@ class ExtractionResult(BaseModel):
 
     posting: JobPosting
     attempts: int = Field(ge=1)
+    api_retries: int = Field(ge=0)
     total_tokens: int
     cost_usd: float
     cost_known: bool
@@ -142,6 +148,70 @@ def attempt_once(
     return result
 
 
+def attempt_with_backoff(
+    messages: list[Message],
+    model: str,
+    doc_id: str,
+    run_id: str,
+    *,
+    json_mode: bool,
+    attempt: int,
+    log_path: Path | None,
+) -> tuple[AttemptResult, int]:
+    """attempt_once, re-sending after a retryable LLMAPIError with exponential backoff (max API_MAX_RETRIES).
+
+    Every API error is logged as an `APIError` line and is not a validation attempt. A non-retryable error, or
+    the last retry failing, is re-raised after logging. Returns (result, API retries used).
+    """
+    retries = 0
+    while True:
+        started = time.perf_counter()
+        try:
+            result = attempt_once(
+                messages, model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path
+            )
+            return result, retries
+        except LLMAPIError as exc:
+            latency_ms = round((time.perf_counter() - started) * 1000)
+            _log_api_error(exc, doc_id=doc_id, run_id=run_id, attempt=attempt, latency_ms=latency_ms, log_path=log_path)
+            if not exc.retryable or retries >= API_MAX_RETRIES:
+                raise
+            wait = API_BACKOFF_SECONDS * 2**retries
+            logger.warning("%s: API error, retry %d/%d in %.0fs", doc_id, retries + 1, API_MAX_RETRIES, wait)
+            time.sleep(wait)
+            retries += 1
+
+
+def _log_api_error(
+    exc: LLMAPIError, *, doc_id: str, run_id: str, attempt: int, latency_ms: int, log_path: Path | None
+) -> None:
+    """One `APIError` line. No model output, no tokens, cost 0.0 with cost_known=False (nothing was measured)."""
+    entry = AttemptLog(
+        run_id=run_id,
+        doc_id=doc_id,
+        attempt=attempt,
+        model=exc.model,
+        ok=False,
+        error_type="APIError",
+        error=_redact_keys(" ".join(str(exc).split())),
+        raw_output="",
+        latency_ms=latency_ms,
+        prompt_tokens=0,
+        completion_tokens=0,
+        cost_usd=0.0,
+        cost_known=False,
+    )
+    append_log(entry, log_path or default_log_path())
+
+
+def _redact_keys(text: str) -> str:
+    """Keep API key values out of logs (MEMORY.md decision): mask any *_API_KEY env value found in `text`."""
+    for name, value in os.environ.items():
+        if name.endswith("_API_KEY") and len(value) >= 8:
+            text = text.replace(value, "***")
+    return text
+
+
 def retry_messages(result: AttemptResult) -> list[Message]:
     """The rejected reply as an assistant turn, then a user turn with the validation errors (rule 11)."""
     reply = result.response.text or EMPTY_REPLY_PLACEHOLDER
@@ -165,23 +235,26 @@ def extract(
     run_id = run_id or f"extract-{uuid.uuid4().hex[:8]}"
     messages = build_messages(text)
     results: list[AttemptResult] = []
+    api_retries = 0
     for attempt in range(1, max_attempts + 1):
-        result = attempt_once(
+        result, retries = attempt_with_backoff(
             messages, model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path
         )
         results.append(result)
+        api_retries += retries
         if result.posting is not None:
-            return summarize(result.posting, results)
+            return summarize(result.posting, results, api_retries)
         messages = messages + retry_messages(result)
     raise ExtractionFailed(f"{doc_id}: no valid output after {max_attempts} attempts: {results[-1].error}")
 
 
-def summarize(posting: JobPosting, results: list[AttemptResult]) -> ExtractionResult:
+def summarize(posting: JobPosting, results: list[AttemptResult], api_retries: int) -> ExtractionResult:
     """Sum tokens, cost and latency over every model call that was made."""
     responses = [r.response for r in results]
     return ExtractionResult(
         posting=posting,
         attempts=len(results),
+        api_retries=api_retries,
         total_tokens=sum(r.prompt_tokens + r.completion_tokens for r in responses),
         cost_usd=sum(r.cost_usd for r in responses),
         cost_known=all(r.cost_known for r in responses),

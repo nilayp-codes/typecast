@@ -64,6 +64,7 @@ model requests tool ──► validate args (ToolArgs model)
 |---|---|---|
 | Retry strategy | Feed exact Pydantic error back | Model self-corrects on specific errors far better than blind retry |
 | Max attempts | 3 | Diminishing returns past 2; caps cost |
+| API errors | Separate from validation: retryable (429/5xx/timeout) waits 2, 4, 8 s and re-sends the same call, max 3 times per call; non-retryable raises at once. Each is logged as `error_type="APIError"` and never consumes a validation attempt | A provider outage says nothing about the model's output, and must not burn the 3-attempt budget |
 | Validation | `model_validate_json` (not `json.loads` + validate) | Single step, better error locations |
 | JSON mode | Off by default, togglable. The eval runs it both on and off, as a required comparison (setups A-D) | Measure raw model behaviour first; answer "why not just native structured outputs?" with numbers |
 | Logging | Pydantic `AttemptLog` → JSONL | Logs are themselves validated; trivially parseable for eval |
@@ -73,8 +74,8 @@ model requests tool ──► validate args (ToolArgs model)
 ```python
 def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = False, *,
             doc_id: str = "adhoc", run_id: str | None = None, log_path: Path | None = None) -> ExtractionResult
-# ExtractionResult: posting: JobPosting, attempts: int, total_tokens: int, cost_usd: float, cost_known: bool,
-#                   latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
+# ExtractionResult: posting: JobPosting, attempts: int, api_retries: int, total_tokens: int, cost_usd: float,
+#                   cost_known: bool, latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
 # doc_id / run_id / log_path only label and place the log lines; they do not change extraction.
 # extract_once(...) is the single-attempt building block (used by the Phase 2 baseline): it keeps its signature and
 # delegates to attempt_once(messages, ...), which extract() calls with the growing conversation.

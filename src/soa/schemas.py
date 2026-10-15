@@ -1,8 +1,9 @@
 """Pydantic schemas: JobPosting, Skill, Location and their enums."""
 
 from enum import StrEnum
+from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Seniority(StrEnum):
@@ -88,3 +89,29 @@ class JobPosting(StrictModel):
     salary_mentioned: bool = Field(
         description="True if the posting states any salary, pay range or compensation figure.",
     )
+
+    @field_validator("skills")
+    @classmethod
+    def skills_unique(cls, skills: list[Skill]) -> list[Skill]:
+        """Reject skills whose names match after stripping and casefolding."""
+        groups: dict[str, list[str]] = {}
+        for skill in skills:
+            groups.setdefault(skill.name.strip().casefold(), []).append(skill.name)
+        dupes = [names for names in groups.values() if len(names) > 1]
+        if dupes:
+            rendered = "; ".join(", ".join(repr(n) for n in names) for names in dupes)
+            raise ValueError(
+                f"duplicate skill names: {rendered}. Merge each group into one entry"
+            )
+        return skills
+
+    @model_validator(mode="after")
+    def intern_experience(self) -> Self:
+        """Interns cannot require prior years of experience."""
+        years = self.min_years_experience
+        if self.seniority is Seniority.intern and years not in (None, 0):
+            raise ValueError(
+                f"seniority is 'intern' but min_years_experience is {years}; "
+                "set min_years_experience to null or 0, or choose a different seniority"
+            )
+        return self

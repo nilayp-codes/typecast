@@ -14,6 +14,7 @@ from soa.errors import format_validation_errors
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, append_log, default_log_path
 from soa.schemas import JobPosting
+from soa.tools import postprocess
 
 logger = logging.getLogger(__name__)
 
@@ -72,11 +73,16 @@ class AttemptResult(BaseModel):
 
 
 class ExtractionResult(BaseModel):
-    """A validated posting plus what it took: attempts used and totals across every model call."""
+    """A validated posting plus what it took: attempts used and totals across every model call.
+
+    `raw_posting` is what the model produced (validity metrics are measured on it); `posting` is the
+    post-processed version (equal to `raw_posting` when `normalize=False`).
+    """
 
     model_config = ConfigDict(extra="forbid", strict=True)
 
     posting: JobPosting
+    raw_posting: JobPosting
     attempts: int = Field(ge=1)
     api_retries: int = Field(ge=0)
     total_tokens: int
@@ -221,8 +227,13 @@ def extract(
     doc_id: str = "adhoc",
     run_id: str | None = None,
     log_path: Path | None = None,
+    normalize: bool = True,
 ) -> ExtractionResult:
-    """Extract a JobPosting, feeding validation errors back to the model for up to `max_attempts` attempts."""
+    """Extract a JobPosting, feeding validation errors back to the model for up to `max_attempts` attempts.
+
+    With `normalize` (default), the validated posting is then post-processed by the deterministic tools
+    (tools.postprocess); the model's own output stays available as `raw_posting`.
+    """
     if max_attempts < 1:
         raise ValueError(f"max_attempts must be >= 1, got {max_attempts}")
     run_id = run_id or f"extract-{uuid.uuid4().hex[:8]}"
@@ -236,18 +247,22 @@ def extract(
         results.append(result)
         api_retries += retries
         if result.posting is not None:
-            return summarize(result.posting, results, api_retries)
+            final = postprocess(result.posting, text, doc_id=doc_id) if normalize else result.posting
+            return summarize(final, result.posting, results, api_retries)
         messages = messages + retry_messages(result)
     failure = ExtractionFailed(doc_id, results)
     logger.error("%s", failure)  # each attempt already has its own JSONL line
     raise failure
 
 
-def summarize(posting: JobPosting, results: list[AttemptResult], api_retries: int) -> ExtractionResult:
+def summarize(
+    posting: JobPosting, raw_posting: JobPosting, results: list[AttemptResult], api_retries: int
+) -> ExtractionResult:
     """Sum tokens, cost and latency over every model call that was made."""
     responses = [r.response for r in results]
     return ExtractionResult(
         posting=posting,
+        raw_posting=raw_posting,
         attempts=len(results),
         api_retries=api_retries,
         total_tokens=sum(r.prompt_tokens + r.completion_tokens for r in responses),

@@ -13,7 +13,7 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from soa.errors import format_validation_errors
-from soa.schemas import Location, Skill, StrictModel, WorkMode
+from soa.schemas import JobPosting, Location, Skill, StrictModel, WorkMode
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +173,15 @@ class ToolError(BaseModel):
     message: str
 
 
+class ToolResponseError(Exception):
+    """A tool's response, or the post-processed posting, failed validation. A bug in our code, not the LLM."""
+
+    def __init__(self, tool: str, message: str) -> None:
+        super().__init__(f"{tool}: {message}")
+        self.tool = tool
+        self.message = message
+
+
 @dataclass(frozen=True)
 class ToolSpec(Generic[A, R]):
     """A tool with its argument model, response model and implementation."""
@@ -180,7 +189,7 @@ class ToolSpec(Generic[A, R]):
     name: str
     args_model: type[A]
     response_model: type[R]
-    fn: Callable[[A], R]
+    fn: Callable[[A], BaseModel]
 
 
 NORMALIZE_SKILL = ToolSpec("normalize_skill", NormalizeSkillArgs, Skill, normalize_skill)
@@ -188,9 +197,10 @@ CLASSIFY_LOCATION = ToolSpec("classify_location", ClassifyLocationArgs, Location
 
 
 def run_tool(spec: ToolSpec[A, R], raw_args: Mapping[str, object]) -> R | ToolError:
-    """Validate `raw_args` against the tool's argument model, then run the tool.
+    """Validate `raw_args` against the tool's argument model, run the tool, validate its response.
 
-    Invalid arguments return a `ToolError` (logged), not an exception.
+    Invalid arguments return a `ToolError` (logged). An invalid response is our bug: it is logged and raises
+    `ToolResponseError`.
     """
     try:
         args = spec.args_model.model_validate(raw_args)
@@ -198,4 +208,80 @@ def run_tool(spec: ToolSpec[A, R], raw_args: Mapping[str, object]) -> R | ToolEr
         error = ToolError(tool=spec.name, message=format_validation_errors(exc))
         logger.warning("tool %s: invalid arguments: %s", spec.name, error.message)
         return error
-    return spec.fn(args)
+    output = spec.fn(args)
+    try:
+        return spec.response_model.model_validate_json(output.model_dump_json())
+    except ValidationError as exc:
+        message = format_validation_errors(exc)
+        logger.error("tool %s: invalid response: %s", spec.name, message)
+        raise ToolResponseError(spec.name, message) from exc
+
+
+def postprocess(posting: JobPosting, source_text: str, *, doc_id: str = "adhoc") -> JobPosting:
+    """Normalize skills (merging duplicates), fill location gaps from the JD header, re-validate the result.
+
+    Raises `ToolResponseError` if the post-processed posting is invalid (our bug, logged first).
+    """
+    skills = merge_skills([_normalized(skill, doc_id) for skill in posting.skills])
+    location = _filled_location(posting.location, source_text, doc_id)
+    candidate = posting.model_copy(update={"skills": skills, "location": location})
+    try:
+        return JobPosting.model_validate_json(candidate.model_dump_json())
+    except ValidationError as exc:
+        message = format_validation_errors(exc)
+        logger.error("%s: post-processed posting failed validation: %s", doc_id, message)
+        raise ToolResponseError("postprocess", message) from exc
+
+
+def merge_skills(skills: list[Skill]) -> list[Skill]:
+    """Merge entries whose names match case-insensitively; `required` is True if any merged entry was."""
+    merged: dict[str, Skill] = {}
+    for skill in skills:
+        key = skill.name.casefold()
+        prior = merged.get(key)
+        merged[key] = skill if prior is None else Skill(name=prior.name, required=prior.required or skill.required)
+    return list(merged.values())
+
+
+def fill_location(model: Location, tool: Location, doc_id: str = "adhoc") -> Location:
+    """Fill-only: city/country when the model gave null, mode when it gave 'unspecified'. Disagreements are logged."""
+    _log_disagreements(model, tool, doc_id)
+    return Location(
+        city=model.city if model.city is not None else tool.city,
+        country=model.country if model.country is not None else tool.country,
+        mode=model.mode if model.mode is not WorkMode.unspecified else tool.mode,
+    )
+
+
+def _normalized(skill: Skill, doc_id: str) -> Skill:
+    result = run_tool(NORMALIZE_SKILL, {"raw": skill.name, "required": skill.required})
+    if isinstance(result, ToolError):
+        logger.warning("%s: skill %r left unnormalized", doc_id, skill.name)
+        return skill
+    return result
+
+
+def _filled_location(model: Location, source_text: str, doc_id: str) -> Location:
+    result = run_tool(CLASSIFY_LOCATION, {"raw": jd_header(source_text)})
+    if isinstance(result, ToolError):
+        logger.warning("%s: location left as the model gave it", doc_id)
+        return model
+    return fill_location(model, result, doc_id)
+
+
+def _log_disagreements(model: Location, tool: Location, doc_id: str) -> None:
+    pairs = (
+        ("city", model.city, tool.city),
+        ("country", model.country, tool.country),
+        ("mode", _mode_value(model.mode), _mode_value(tool.mode)),
+    )
+    for field, model_value, tool_value in pairs:
+        if model_value is not None and tool_value is not None and model_value.casefold() != tool_value.casefold():
+            logger.warning(
+                "%s: location.%s disagreement: model %r, header tool %r (model value kept)",
+                doc_id, field, model_value, tool_value,
+            )
+
+
+def _mode_value(mode: WorkMode) -> str | None:
+    return None if mode is WorkMode.unspecified else mode.value

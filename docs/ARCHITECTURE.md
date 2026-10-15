@@ -87,10 +87,14 @@ reported raw and normalized (Phase 6). Post-processing can be turned off (`extra
 ## Interfaces
 ```python
 def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = False, *,
-            doc_id: str = "adhoc", run_id: str | None = None, log_path: Path | None = None) -> ExtractionResult
-# ExtractionResult: posting: JobPosting, attempts: int, api_retries: int, total_tokens: int, cost_usd: float,
-#                   cost_known: bool, latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
+            doc_id: str = "adhoc", run_id: str | None = None, log_path: Path | None = None,
+            normalize: bool = True) -> ExtractionResult
+# ExtractionResult: posting: JobPosting (post-processed), raw_posting: JobPosting (what the model produced),
+#                   attempts: int, api_retries: int, total_tokens: int, cost_usd: float, cost_known: bool,
+#                   latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
 # doc_id / run_id / log_path only label and place the log lines; they do not change extraction.
+# normalize=False skips tools.postprocess: posting == raw_posting. Validity metrics use raw_posting.
+# Post-processing failing re-validation raises tools.ToolResponseError (our bug), not ExtractionFailed.
 # extract_once(...) is the single-attempt building block (used by the Phase 2 baseline): it keeps its signature and
 # delegates to attempt_once(messages, ...), which extract() calls with the growing conversation.
 ```

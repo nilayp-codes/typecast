@@ -90,9 +90,12 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
 - **Native mode:** native mode means the provider's schema mode, built from `JobPosting.model_json_schema()`
   (`response_format` of type `json_schema`, or the provider's equivalent via LiteLLM). It is not `json_object`:
   that only guarantees valid JSON, so it cannot test the "shape, not meaning" claim, and it is not one of the four
-  setups. `agent.py` generates the schema (rule 9) and passes `json_mode` plus that schema to `llm.call()`. Only
-  `llm.py` turns them into a provider setting, so rule 5 holds: no provider SDK or `response_format` outside
-  `llm.py`. (As of Phase 2, `llm.call()` still maps `json_mode` to `json_object`; changing that is a Phase 5 task.)
+  setups. With `json_mode=True`, `agent.py` passes the model class to `llm.call()` as
+  `response_model: type[BaseModel] | None` (`None` when native mode is off), not a schema dict, so rule 2 holds.
+  `llm.py` calls `model_json_schema()` on it and builds the provider setting. Rule 9 still holds (the schema is
+  generated from the model, never hand-written), and so does rule 5: no provider SDK or `response_format` outside
+  `llm.py`. (As of Phase 2, `llm.call()` takes `json_mode: bool` and maps it to `json_object`; replacing that with
+  `response_model` is a Phase 5 task.)
 - **Provider schema subsets:** provider strict-schema modes support only a subset of JSON Schema. If a constraint
   must be dropped for the provider, record which ones in `results/` and still validate the output with our full
   Pydantic model. Dropped constraints are reported as a finding in the README.

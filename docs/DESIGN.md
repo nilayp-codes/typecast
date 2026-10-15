@@ -49,12 +49,12 @@ Validators:
   attempt 1 ✗ skills.3.name: String should have at most 40 characters
 { ...pretty JSON... }
 ```
-`soa eval --model gpt-4o-mini`
+`soa eval --model <model>`
 ```
 model         n   first-try  final   avg calls  cost
-gpt-4o-mini   50  82.0%      100%    1.20       $0.04
+<model>       50  82.0%      100%    1.20       $0.04
 ```
-`soa eval --model <m> [--json-mode] [--no-retry]`: the two flags select the setup. A = `--no-retry`, B = (default),
+`soa eval --model <m> [--json-mode] [--no-retry] [--limit N]`: the two flags select the setup. A = `--no-retry`, B = (default),
 C = `--no-retry --json-mode`, D = `--json-mode`. The runs are combined into the 4-setup comparison table:
 ```
 EXAMPLE ONLY - placeholder values, not results
@@ -69,10 +69,13 @@ model    setup  retry  native  first-try  final  avg calls  field acc  cost
 ## 3. Log format (`logs/attempts.jsonl`, one line per attempt)
 ```json
 {"run_id":"…","doc_id":"jd_014","attempt":1,"model":"gpt-4o-mini",
+ "setup":"B","json_mode":false,
  "ok":false,"error_type":"ValidationError","error":"skills.3.name: …",
  "raw_output":"…","latency_ms":1840,"prompt_tokens":910,
  "completion_tokens":330,"cost_usd":0.0006,"ts":"…"}
 ```
+`setup` is `"A"`, `"B"`, `"C"` or `"D"` (see ARCHITECTURE.md "Eval setups"), or `null` for non-eval runs.
+`json_mode` is a bool. `AttemptLog` gets both fields when `eval.py` is built (Phase 6).
 
 ## 4. README layout
 1. CI badge at the top, then the one-line pitch

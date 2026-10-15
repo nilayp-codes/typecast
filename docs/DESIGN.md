@@ -4,24 +4,27 @@ No UI in v1. "Design" here = schema design, CLI output, log format, README prese
 
 ## 1. Schema design
 ```python
-class Seniority(str, Enum):
+class Seniority(StrEnum):
     intern = "intern"; junior = "junior"; mid = "mid"; senior = "senior"; lead = "lead"
 
-class WorkMode(str, Enum):
+class WorkMode(StrEnum):
     remote = "remote"; hybrid = "hybrid"; onsite = "onsite"; unspecified = "unspecified"
+
+# Every model: model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+# Every field: Field(description=...) so model_json_schema() explains it to the LLM.
 
 class Skill(BaseModel):
     name: str = Field(min_length=1, max_length=40)   # normalized, e.g. "PostgreSQL"
     required: bool
 
 class Location(BaseModel):
-    city: str | None
-    country: str | None
+    city: str | None       # required but nullable: the model must emit null explicitly
+    country: str | None    # required but nullable
     mode: WorkMode
 
 class JobPosting(BaseModel):
     title: str = Field(min_length=2, max_length=100)
-    company: str | None
+    company: str | None    # required but nullable
     seniority: Seniority
     min_years_experience: int | None = Field(default=None, ge=0, le=30)
     skills: list[Skill] = Field(min_length=1, max_length=30)
@@ -29,7 +32,7 @@ class JobPosting(BaseModel):
     salary_mentioned: bool
 ```
 Validators:
-- skills: no duplicate names (case-insensitive)
+- skills: no duplicate names. Compare with whitespace stripped, then casefolded.
 - if seniority == intern → min_years_experience must be None or 0
 
 **Principle:** constraints should be strict enough that a sloppy output *fails*, so the retry loop has real work to do.

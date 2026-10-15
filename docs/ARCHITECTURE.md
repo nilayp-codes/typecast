@@ -13,7 +13,8 @@
 structured-output-agent/
 ├── src/soa/
 │   ├── schemas.py      # JobPosting, Skill, Location, enums
-│   ├── tools.py        # tool functions + their arg/response models
+│   ├── tools.py        # normalize_skill, classify_location (deterministic post-processing) + arg/response models
+│   ├── errors.py       # format_validation_errors: one line per error (rule 11), shared by agent.py and tools.py
 │   ├── llm.py          # thin LiteLLM wrapper: call(), token/cost capture
 │   ├── agent.py        # extract(): prompt → call → validate → retry
 │   ├── logger.py       # AttemptLog model + JSONL writer

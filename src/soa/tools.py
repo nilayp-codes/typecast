@@ -4,11 +4,21 @@ They are post-processing, not model-called (docs/ARCHITECTURE.md "Tool flow"). A
 and the responses are the `Skill` and `Location` schemas.
 """
 
+import logging
 import re
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from typing import Generic, TypeVar
 
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from soa.errors import format_validation_errors
 from soa.schemas import Location, Skill, StrictModel, WorkMode
+
+logger = logging.getLogger(__name__)
+
+A = TypeVar("A", bound=BaseModel)
+R = TypeVar("R", bound=BaseModel)
 
 HEADER_LINES = 10
 HEADER_MAX_CHARS = 2000
@@ -152,3 +162,40 @@ def _header_place(lines: list[str]) -> tuple[str | None, str | None]:
         if parts[-1].casefold() in COUNTRIES:
             return (parts[0] if len(parts) > 1 else None), parts[-1]
     return None, None
+
+
+class ToolError(BaseModel):
+    """A tool call whose arguments were invalid. Returned (never raised); the caller keeps its original value."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    tool: str
+    message: str
+
+
+@dataclass(frozen=True)
+class ToolSpec(Generic[A, R]):
+    """A tool with its argument model, response model and implementation."""
+
+    name: str
+    args_model: type[A]
+    response_model: type[R]
+    fn: Callable[[A], R]
+
+
+NORMALIZE_SKILL = ToolSpec("normalize_skill", NormalizeSkillArgs, Skill, normalize_skill)
+CLASSIFY_LOCATION = ToolSpec("classify_location", ClassifyLocationArgs, Location, classify_location)
+
+
+def run_tool(spec: ToolSpec[A, R], raw_args: Mapping[str, object]) -> R | ToolError:
+    """Validate `raw_args` against the tool's argument model, then run the tool.
+
+    Invalid arguments return a `ToolError` (logged), not an exception.
+    """
+    try:
+        args = spec.args_model.model_validate(raw_args)
+    except ValidationError as exc:
+        error = ToolError(tool=spec.name, message=format_validation_errors(exc))
+        logger.warning("tool %s: invalid arguments: %s", spec.name, error.message)
+        return error
+    return spec.fn(args)

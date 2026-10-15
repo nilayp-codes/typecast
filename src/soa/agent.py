@@ -8,9 +8,9 @@ import uuid
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
-from pydantic_core import ErrorDetails
 
 from soa import llm
+from soa.errors import format_validation_errors
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, append_log, default_log_path
 from soa.schemas import JobPosting
@@ -57,8 +57,6 @@ EMPTY_REPLY_PLACEHOLDER = "(empty reply)"
 
 API_MAX_RETRIES = 3  # per model call; waits are API_BACKOFF_SECONDS * 2**n: 2, 4, 8 s
 API_BACKOFF_SECONDS = 2.0
-
-MAX_INPUT_CHARS = 60
 
 
 class AttemptResult(BaseModel):
@@ -107,19 +105,6 @@ def build_messages(text: str) -> list[Message]:
     schema = json.dumps(JobPosting.model_json_schema())
     user = USER_PROMPT_TEMPLATE.format(schema=schema, job_description=text)
     return [Message(role="system", content=SYSTEM_PROMPT), Message(role="user", content=user)]
-
-
-def format_validation_errors(exc: ValidationError) -> str:
-    """One line per error: `loc: msg (got: <input, max 60 chars>)` (RULES.md rule 11)."""
-    return "\n".join(_error_line(err) for err in exc.errors())
-
-
-def _error_line(err: ErrorDetails) -> str:
-    loc = ".".join(str(part) for part in err["loc"]) or "(root)"
-    got = repr(err["input"])
-    if len(got) > MAX_INPUT_CHARS:
-        got = got[: MAX_INPUT_CHARS - 3] + "..."
-    return f"{loc}: {err['msg']} (got: {got})"
 
 
 def extract_once(

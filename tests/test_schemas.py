@@ -121,17 +121,35 @@ def test_years_bounds_pass(years: int | None) -> None:
     assert validate(posting(min_years_experience=years)).min_years_experience == years
 
 
-def test_years_may_be_omitted() -> None:
+def test_years_must_be_present() -> None:
     data = posting()
     del data["min_years_experience"]
-    assert validate(data).min_years_experience is None
+    assert [(loc, t) for loc, t, _ in errors(data)] == [("min_years_experience", "missing")]
+
+
+# --- strict mode: no JSON-lax coercion -------------------------------------
+
+
+def test_string_for_bool_fails() -> None:
+    errs = errors(posting(skills=[{"name": "Go", "required": "yes"}]))
+    assert [(loc, t) for loc, t, _ in errs] == [("skills.0.required", "bool_type")]
+
+
+def test_string_for_bool_fails_on_top_level_field() -> None:
+    errs = errors(posting(salary_mentioned="true"))
+    assert [(loc, t) for loc, t, _ in errs] == [("salary_mentioned", "bool_type")]
+
+
+def test_enum_strings_still_validate_from_json() -> None:
+    jp = validate(posting(seniority="lead", location={"city": None, "country": None, "mode": "onsite"}))
+    assert jp.seniority is Seniority.lead
 
 
 @pytest.mark.parametrize(
     ("years", "typ"),
-    [(-1, "greater_than_equal"), (31, "less_than_equal"), (3.5, "int_from_float")],
+    [(-1, "greater_than_equal"), (31, "less_than_equal"), (3.5, "int_type"), ("3", "int_type")],
 )
-def test_years_bounds_fail(years: float, typ: str) -> None:
+def test_years_bounds_fail(years: float | str, typ: str) -> None:
     errs = errors(posting(min_years_experience=years))
     assert [(loc, t) for loc, t, _ in errs] == [("min_years_experience", typ)]
 

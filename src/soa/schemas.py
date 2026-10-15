@@ -26,9 +26,9 @@ class WorkMode(StrEnum):
 
 
 class StrictModel(BaseModel):
-    """Base for every schema: unknown fields fail, strings are stripped."""
+    """Base for every schema: unknown fields fail, strings are stripped, no type coercion."""
 
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
 
 
 class Skill(StrictModel):
@@ -70,10 +70,13 @@ class JobPosting(StrictModel):
         description="Hiring company name, or null if not stated.",
     )
     seniority: Seniority = Field(
-        description="Seniority level of the role.",
+        description=(
+            "Seniority level. Decide from the job title first. If the title gives no level, "
+            "use the years of experience required: 0 -> junior, 2-5 -> mid, 5+ -> senior. "
+            "Lead, Staff or Principal -> lead."
+        ),
     )
     min_years_experience: int | None = Field(
-        default=None,
         ge=0,
         le=30,
         description="Minimum years of experience required, or null if not stated.",
@@ -84,7 +87,7 @@ class JobPosting(StrictModel):
         description="Distinct skills mentioned. No duplicate names.",
     )
     location: Location = Field(
-        description="Where the job is based.",
+        description="Primary location of the job. If several locations are listed, use the first listed.",
     )
     salary_mentioned: bool = Field(
         description="True if the posting states any salary, pay range or compensation figure.",

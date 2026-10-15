@@ -10,7 +10,7 @@ class Seniority(StrEnum):
 class WorkMode(StrEnum):
     remote = "remote"; hybrid = "hybrid"; onsite = "onsite"; unspecified = "unspecified"
 
-# Every model: model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+# Every model: model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
 # Every field: Field(description=...) so model_json_schema() explains it to the LLM.
 
 class Skill(BaseModel):
@@ -26,7 +26,7 @@ class JobPosting(BaseModel):
     title: str = Field(min_length=2, max_length=100)
     company: str | None    # required but nullable
     seniority: Seniority
-    min_years_experience: int | None = Field(default=None, ge=0, le=30)
+    min_years_experience: int | None = Field(ge=0, le=30)   # required but nullable
     skills: list[Skill] = Field(min_length=1, max_length=30)
     location: Location
     salary_mentioned: bool

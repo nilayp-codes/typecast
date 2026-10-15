@@ -159,6 +159,54 @@ def test_max_attempts_below_one_is_rejected(monkeypatch: pytest.MonkeyPatch, tmp
     assert calls == []
 
 
+# --- post-processing ------------------------------------------------------
+
+JD_HEADER = "Backend Engineer\nAcme\nBengaluru, Karnataka, India\nOn-site\nFull-time\nAbout the job\nPython and k8s.\n"
+RAW = json.dumps({
+    **VALID,
+    "skills": [{"name": "postgres", "required": False}, {"name": "PostgreSQL", "required": True}],
+    "location": {"city": None, "country": None, "mode": "unspecified"},
+})
+
+
+def run_text(log: Path, text: str, **kwargs: Any) -> agent.ExtractionResult:
+    return extract(text, "m", doc_id="jd_007", run_id="run1", log_path=log, **kwargs)
+
+
+def test_extract_returns_raw_and_normalized_postings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(RAW)])
+    result = run_text(tmp_path / "a.jsonl", JD_HEADER)
+    assert [(s.name, s.required) for s in result.raw_posting.skills] == [("postgres", False), ("PostgreSQL", True)]
+    assert [(s.name, s.required) for s in result.posting.skills] == [("PostgreSQL", True)]
+    assert result.raw_posting.location.city is None
+    assert (result.posting.location.city, result.posting.location.country) == ("Bengaluru", "India")
+    assert result.posting.location.mode.value == "onsite"
+    assert len(calls) == 1  # post-processing makes no LLM call
+    assert result.attempts == 1
+
+
+def test_extract_normalize_false_returns_the_model_output_unchanged(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    script(monkeypatch, [resp(RAW)])
+    result = run_text(tmp_path / "a.jsonl", JD_HEADER, normalize=False)
+    assert result.posting == result.raw_posting
+    assert [s.name for s in result.posting.skills] == ["postgres", "PostgreSQL"]
+
+
+def test_extract_raises_tool_response_error_when_postprocessing_breaks(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    from soa import tools
+
+    script(monkeypatch, [resp(RAW)])
+    monkeypatch.setattr(tools, "merge_skills", lambda skills: [])
+    with pytest.raises(tools.ToolResponseError):
+        run_text(tmp_path / "a.jsonl", JD_HEADER)
+
+
 # --- API errors -----------------------------------------------------------
 
 

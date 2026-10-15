@@ -49,15 +49,28 @@ text ──► build prompt (schema + instructions)
 ```
 
 ## Tool flow
+The two tools (`normalize_skill`, `classify_location`) are **deterministic post-processing after validation. They
+are not model-called.** The model never sees them and they cost no LLM calls, so the retry loop, attempt counting,
+cost and the A-D setups are unchanged. Agentic tool calling (the model requests the tools mid-extraction) is a v2
+experiment, to be measured against this.
 ```
-model requests tool ──► validate args (ToolArgs model)
-                          │ invalid → return error to model as tool result
-                          ▼
-                     run tool ──► validate response (ToolResponse model)
-                          │ invalid → log + raise (bug in our code, not the LLM)
-                          ▼
-                     return result to model
+validated JobPosting (raw, what the model produced)
+        │
+        ▼
+ postprocess(raw, source text)
+   skills:   normalize_skill(NormalizeSkillArgs) per skill ──► merge duplicates (required = any merged required)
+   location: classify_location(JD header = first 10 non-empty lines) ──► FILL ONLY:
+             city/country when null, mode when "unspecified"; model values are never overridden,
+             disagreements (model value vs tool value) are logged
+        │ invalid tool args → structured ToolError, logged; the original value is kept
+        ▼
+ re-validate the final JobPosting
+        │ invalid → log + raise ToolResponseError (a bug in our code, not the LLM)
+        ▼
+ ExtractionResult(posting = normalized, raw_posting = raw)
 ```
+Both are kept because setups A-D and the validity metrics are measured on `raw_posting`, and field accuracy is
+reported raw and normalized (Phase 6). Post-processing can be turned off (`extract(..., normalize=False)`).
 
 ## Key decisions
 | Decision | Choice | Why |

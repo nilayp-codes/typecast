@@ -48,6 +48,7 @@ RETRY_PROMPT_TEMPLATE = """\
 Your previous reply did not pass validation. Errors, one per line as `field: problem (got: value)`:
 {errors}
 
+Keep every field that had no error unchanged.
 Fix every error above and reply again with the complete JSON object only. The same rules apply: no code fences, no commentary, no extra fields.
 """
 

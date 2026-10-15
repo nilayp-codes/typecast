@@ -100,6 +100,7 @@ def test_invalid_then_valid_feeds_first_error_back(
     assert calls[1][2].content == BAD_ENUM  # the rejected reply, verbatim
     assert first.error in calls[1][3].content  # the first error text, verbatim
     assert calls[1][3].content == RETRY_PROMPT_TEMPLATE.format(errors=first.error)
+    assert "Keep every field that had no error unchanged." in calls[1][3].content
     assert [x.attempt for x in read_log(log)] == [1, 2]
 
 

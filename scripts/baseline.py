@@ -1,14 +1,21 @@
-"""Phase 2 baseline: single-shot extraction (no retries, json_mode off) over data/jds/*.
+"""Phase 2 baseline: single-shot extraction (setup A) over data/jds/*.
 
 Makes REAL API calls: a deliberate exception to RULES.md rule 14. Never prints or records API keys.
 
-    uv run python scripts/baseline.py --check   # load .env, show what is set, no API call
-    uv run python scripts/baseline.py --probe   # ONE call on jd_007; stops with the error if it fails
-    uv run python scripts/baseline.py           # all JDs, one shared run_id, then write the report
+    uv run python scripts/baseline.py --check                 # load .env, show what is set, no API call
+    uv run python scripts/baseline.py --probe [--model M]     # ONE call on jd_007; stops if it fails
+    uv run python scripts/baseline.py [--model M] [--start jd_005] [--limit 3]
+                                                              # JDs in order, one run_id, then the report
+
+Setup A (ARCHITECTURE.md "Eval setups"): plain prompt, json_mode off, no validation retry. The setup is tagged in the
+run_id (`baseline-A-<date>-<hash>`); `AttemptLog` gets a real `setup` field in Phase 6.
+API errors are handled by this script only: 503 / per-minute 429 wait and retry the same doc (max 3 times);
+402 (no credit) or a daily-quota 429 stop the run cleanly. Validation failures are never retried.
 """
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 import time
@@ -18,10 +25,10 @@ from datetime import date
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from soa.agent import extract_once, read_jd
-from soa.llm import LLMAPIError
+from soa.llm import LLMAPIError, LLMResponse
 from soa.logger import AttemptLog, default_log_path
 from soa.schemas import JobPosting
 
@@ -29,7 +36,12 @@ JD_DIR = Path("data/jds")
 RESULTS_DIR = Path("results")
 PROBE_DOC = "jd_007"
 PAUSE_SECONDS = 5
-KEY_NAMES = ("GEMINI_API_KEY", "OPENROUTER_API_KEY")
+RETRY_WAITS = (20, 40, 60)  # seconds before API-error retry 1, 2, 3
+SETUP = "A"
+SETUP_TEXT = "setup A: plain prompt, no retry"
+KEY_NAMES = ("OPENROUTER_API_KEY",)
+DAILY_MARKERS = ("per-day", "per_day", "per day", "daily")
+CREDIT_MARKERS = ("insufficient credit", "more credits", "payment required", "out of credit")
 WRONG_TYPE_SUFFIXES = ("_type", "_parsing", "_from_float", "_from_str")
 CONSTRAINT_TYPES = {
     "too_long", "too_short", "string_too_long", "string_too_short",
@@ -46,6 +58,27 @@ class Row(BaseModel):
     latency_ms: int | None
     kinds: list[str]
     example: str
+    cost_usd: float = 0.0
+    cost_known: bool = True
+    api_retries: int = 0
+
+
+class Outcome(BaseModel):
+    """What one doc's call(s) came to: a model response (valid or not), or an API error."""
+
+    doc_id: str
+    ok: bool
+    detail: str  # "" when ok; "<kind> | APIError: ..." for API errors; else "<error_type>: <error>"
+    api_error: bool
+    api_retries: int
+    response: LLMResponse | None
+
+
+class RunState(BaseModel):
+    api_errors: dict[str, str] = Field(default_factory=dict)
+    retries: dict[str, int] = Field(default_factory=dict)
+    attempted: list[str] = Field(default_factory=list)
+    stopped: str | None = None
 
 
 def redact(text: str) -> str:
@@ -57,50 +90,115 @@ def redact(text: str) -> str:
     return text
 
 
-def check_env() -> str:
+def check_env(cli_model: str | None) -> str:
     loaded = load_dotenv()
-    model = os.environ.get("SOA_MODEL_PRIMARY", "")
+    primary = os.environ.get("SOA_MODEL_PRIMARY", "")
+    model = cli_model or primary
     print(f".env loaded: {loaded}")
-    print(f"SOA_MODEL_PRIMARY: {model or '(not set)'}")
+    print(f"SOA_MODEL_PRIMARY: {primary or '(not set)'}")
+    print(f"SOA_MODEL_SECONDARY: {os.environ.get('SOA_MODEL_SECONDARY') or '(not set)'}")
+    print(f"model for this run: {model or '(not set)'}")
     for name in KEY_NAMES:
         print(f"{name} set: {bool(os.environ.get(name))}")
     print(f"log path: {default_log_path()}")
     if not model:
-        sys.exit("SOA_MODEL_PRIMARY is not set. Fill it in .env and retry.")
+        sys.exit("No model: pass --model or set SOA_MODEL_PRIMARY in .env.")
     return model
 
 
-def call_one(doc_id: str, model: str, run_id: str) -> tuple[bool, str]:
-    """One extraction. Returns (ok, error text) where error text covers API and validation failures."""
+def classify_api_error(exc: LLMAPIError) -> str:
+    """'no-credit' and 'daily-quota' stop the run; 'transient' waits and retries; else 'other'."""
+    msg = str(exc).lower()
+    if exc.status_code == 402 or any(m in msg for m in CREDIT_MARKERS):
+        return "no-credit"
+    if exc.status_code == 429 or "ratelimiterror" in msg:
+        return "daily-quota" if any(m in msg for m in DAILY_MARKERS) else "transient"
+    if exc.status_code == 503 or "serviceunavailable" in msg:
+        return "transient"
+    return "other"
+
+
+def call_once(doc_id: str, model: str, run_id: str) -> Outcome:
+    """One extraction attempt. API errors are returned (api_error=True), never raised."""
     text = read_jd(JD_DIR / f"{doc_id}.txt")
     try:
         result = extract_once(text, model, doc_id, run_id)
     except LLMAPIError as exc:
-        return False, "APIError: " + redact(" ".join(str(exc).split()))
-    return result.ok, "" if result.ok else f"{result.error_type}: {result.error}"
+        detail = f"{classify_api_error(exc)} | APIError: " + redact(" ".join(str(exc).split()))
+        return Outcome(doc_id=doc_id, ok=False, detail=detail, api_error=True, api_retries=0, response=None)
+    detail = "" if result.ok else f"{result.error_type}: {result.error}"
+    return Outcome(doc_id=doc_id, ok=result.ok, detail=detail, api_error=False, api_retries=0,
+                   response=result.response)
+
+
+def api_kind(outcome: Outcome) -> str:
+    return outcome.detail.split(" | ", 1)[0]
+
+
+def call_with_waits(doc_id: str, model: str, run_id: str) -> Outcome:
+    """Re-send the same doc after 503 / per-minute 429 (waits in RETRY_WAITS). Anything else returns at once."""
+    outcome = call_once(doc_id, model, run_id)
+    for n, wait in enumerate(RETRY_WAITS, start=1):
+        if not outcome.api_error or api_kind(outcome) != "transient":
+            break
+        print(f"    {doc_id}: transient API error, waiting {wait}s (retry {n}/{len(RETRY_WAITS)})", flush=True)
+        time.sleep(wait)
+        outcome = call_once(doc_id, model, run_id)
+        outcome.api_retries = n
+    return outcome
 
 
 def probe(model: str) -> None:
-    ok, detail = call_one(PROBE_DOC, model, run_id=f"probe-{uuid.uuid4().hex[:8]}")
-    if detail.startswith("APIError"):
-        sys.exit(f"PROBE FAILED on {PROBE_DOC}, nothing else was run:\n{detail}")
-    print(f"probe call on {PROBE_DOC} reached the model. validation ok: {ok}")
-    if detail:
-        print(detail)
+    outcome = call_once(PROBE_DOC, model, run_id=f"probe-{SETUP}-{uuid.uuid4().hex[:8]}")
+    if outcome.response is None:
+        sys.exit(f"PROBE FAILED on {PROBE_DOC} with {model}, nothing else was run:\n{outcome.detail}")
+    r = outcome.response
+    print(f"probe {PROBE_DOC} model={model}")
+    print(f"  ok={outcome.ok} tokens={r.prompt_tokens}+{r.completion_tokens}={r.prompt_tokens + r.completion_tokens} "
+          f"latency_ms={r.latency_ms} cost_usd={r.cost_usd:.6f} cost_known={r.cost_known}")
+    if outcome.detail:
+        print("  validation: " + outcome.detail.splitlines()[0][:200])
 
 
-def run_all(model: str, run_id: str) -> dict[str, str]:
-    """Run every JD. Returns {doc_id: APIError text} for docs that hit an API error."""
-    api_errors: dict[str, str] = {}
+def select_docs(start: str | None, limit: int | None) -> list[str]:
     docs = sorted(p.stem for p in JD_DIR.glob("jd_*.txt"))
+    if start:
+        if start not in docs:
+            sys.exit(f"--start {start}: no such JD. Have {docs[0]}..{docs[-1]}")
+        docs = docs[docs.index(start):]
+    return docs[:limit] if limit else docs
+
+
+def stop_reason(doc_id: str, outcome: Outcome) -> str | None:
+    kind = api_kind(outcome)
+    if kind == "no-credit":
+        return f"stopped at {doc_id}: out of OpenRouter credit (HTTP 402). Add credit, then re-run with --start {doc_id}"
+    if kind == "daily-quota":
+        return f"stopped at {doc_id}: daily quota exhausted (429). Re-run with --start {doc_id} after it resets"
+    if kind == "transient":
+        return f"stopped at {doc_id}: still failing after {len(RETRY_WAITS)} waits. Re-run with --start {doc_id}"
+    return None
+
+
+def run_all(model: str, run_id: str, docs: list[str]) -> RunState:
+    """Run docs in order. Stops cleanly on no-credit, daily-quota or exhausted waits (state.stopped says why)."""
+    state = RunState()
     for i, doc_id in enumerate(docs):
         if i:
             time.sleep(PAUSE_SECONDS)
-        ok, detail = call_one(doc_id, model, run_id)
-        print(f"[{i + 1}/{len(docs)}] {doc_id}: {'ok' if ok else detail.splitlines()[0][:160]}")
-        if detail.startswith("APIError"):
-            api_errors[doc_id] = detail
-    return api_errors
+        outcome = call_with_waits(doc_id, model, run_id)
+        state.attempted.append(doc_id)
+        shown = "ok" if outcome.ok else outcome.detail.replace("\n", " ")[:160]
+        print(f"[{i + 1}/{len(docs)}] {doc_id}: {shown}", flush=True)
+        if outcome.api_retries:
+            state.retries[doc_id] = outcome.api_retries
+        if outcome.api_error:
+            state.api_errors[doc_id] = outcome.detail.split(" | ", 1)[1]
+            reason = stop_reason(doc_id, outcome)
+            if reason:
+                state.stopped = reason
+                break
+    return state
 
 
 def generic_loc(loc: tuple[int | str, ...]) -> str:
@@ -150,31 +248,38 @@ def row_from_log(log: AttemptLog) -> Row:
     total = log.prompt_tokens + log.completion_tokens
     if log.ok:
         return Row(doc_id=log.doc_id, ok=True, error_type="-", first_loc="-", total_tokens=total,
-                   latency_ms=log.latency_ms, kinds=[], example="")
+                   latency_ms=log.latency_ms, kinds=[], example="",
+                   cost_usd=log.cost_usd, cost_known=log.cost_known)
     if log.error_type == "JSONDecodeError":
         kinds = [classify_json_error(log.raw_output)]
     else:
         kinds = classify_validation(log.raw_output)
     return Row(doc_id=log.doc_id, ok=False, error_type=log.error_type or "?", first_loc=first.split(":", 1)[0],
-               total_tokens=total, latency_ms=log.latency_ms, kinds=kinds, example=first)
+               total_tokens=total, latency_ms=log.latency_ms, kinds=kinds, example=first,
+               cost_usd=log.cost_usd, cost_known=log.cost_known)
 
 
-def build_rows(run_id: str, api_errors: dict[str, str]) -> list[Row]:
+def build_rows(run_id: str, state: RunState) -> list[Row]:
     lines = default_log_path().read_text(encoding="utf-8").splitlines()
     logs = [AttemptLog.model_validate_json(x) for x in lines]
     rows = {x.doc_id: row_from_log(x) for x in logs if x.run_id == run_id}
-    for doc_id, detail in api_errors.items():
+    for doc_id, detail in state.api_errors.items():
         rows[doc_id] = Row(doc_id=doc_id, ok=False, error_type="APIError", first_loc="-", total_tokens=None,
-                           latency_ms=None, kinds=["API error"], example=detail[:300])
+                           latency_ms=None, kinds=["API error"], example=detail)  # full text, not truncated
+    for doc_id, n in state.retries.items():
+        rows[doc_id].api_retries = n
     return [rows[k] for k in sorted(rows)]
 
 
 def render_table(rows: list[Row]) -> str:
-    out = ["| doc_id | ok | error_type | first error loc | total tokens | latency (ms) |", "|---|---|---|---|---|---|"]
+    out = ["| doc_id | ok | error_type | first error loc | total tokens | latency (ms) | cost (USD) | cost_known "
+           "| api retries |", "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
-        tokens = "-" if r.total_tokens is None else f"{r.total_tokens:,}"
-        latency = "-" if r.latency_ms is None else f"{r.latency_ms:,}"
-        out.append(f"| {r.doc_id} | {'yes' if r.ok else 'no'} | {r.error_type} | {r.first_loc} | {tokens} | {latency} |")
+        got = r.total_tokens is not None
+        tokens = f"{r.total_tokens:,}" if got and r.total_tokens is not None else "-"
+        latency = f"{r.latency_ms:,}" if r.latency_ms is not None else "-"
+        out.append(f"| {r.doc_id} | {'yes' if r.ok else 'no'} | {r.error_type} | {r.first_loc} | {tokens} | {latency} "
+                   f"| {f'{r.cost_usd:.6f}' if got else '-'} | {r.cost_known if got else '-'} | {r.api_retries} |")
     return "\n".join(out)
 
 
@@ -196,19 +301,31 @@ def git_head() -> str:
     return done.stdout.strip() or "unknown"
 
 
-def render_report(rows: list[Row], model: str, run_id: str) -> str:
-    passed = sum(r.ok for r in rows)
+def render_report(rows: list[Row], state: RunState, model: str, run_id: str, planned: int) -> str:
+    reached = [r for r in rows if r.error_type != "APIError"]
+    passed = sum(r.ok for r in reached)
+    pct = f"{100 * passed / len(reached):.1f}%" if reached else "n/a"
     tokens = sum(r.total_tokens or 0 for r in rows)
+    cost = sum(r.cost_usd for r in reached)
+    unknown = [r.doc_id for r in reached if not r.cost_known]
+    cost_note = f" (cost_known=False on {', '.join(unknown)}; counted as 0)" if unknown else " (cost_known=True on every call)"
     failures = "\n".join(f"- {r.doc_id}: {r.example}" for r in rows if not r.ok)
-    return f"""# Baseline: {model}, single shot, no retries
+    status = f"**INCOMPLETE, {state.stopped}**" if state.stopped else "complete"
+    waits = "/".join(str(w) for w in RETRY_WAITS)
+    return f"""# Baseline: {model}, {SETUP_TEXT}
 
 - date: {date.today().isoformat()}
+- {SETUP_TEXT} (json_mode off; the model gets the prompt once, a validation failure is not retried)
 - model: `{model}` (results are tied to this exact string)
 - run_id: `{run_id}`
-- json_mode: off; retries: none; pause between calls: {PAUSE_SECONDS}s
-- code at run time: commit `{git_head()}` (prompt frozen, `619be12`)
-- first-try valid: {passed}/{len(rows)}
+- API errors: the script waits {waits} s and re-sends the same doc (503, per-minute 429); pause between docs {PAUSE_SECONDS}s
+- code at run time: commit `{git_head()}` (prompt frozen at `619be12`)
+- run status: {status}
+- docs attempted: {len(state.attempted)} of {planned} planned
+- reached validation (got a model response): {len(reached)}; API errors with no response: {len(rows) - len(reached)}
+- first-try valid: {passed}/{len(reached)} ({pct}) of docs that reached validation
 - total tokens (prompt + completion): {tokens:,}
+- total cost: ${cost:.6f}{cost_note}
 
 ## Per document
 
@@ -220,10 +337,16 @@ A document can appear in more than one group (one group per distinct error kind)
 
 {render_groups(rows)}
 
-## First error line per failed document
+## First error line per failed document (API errors in full)
 
 {failures or 'none'}
 """
+
+
+def report_path(model: str, run_id: str) -> Path:
+    base = f"{date.today().isoformat()}_baseline_{re.sub(r'[^A-Za-z0-9._-]+', '_', model)}"
+    path = RESULTS_DIR / f"{base}.md"
+    return path if not path.exists() else RESULTS_DIR / f"{base}_{run_id.rsplit('-', 1)[-1]}.md"
 
 
 def main() -> None:
@@ -233,21 +356,27 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="load .env and report, no API call")
     parser.add_argument("--probe", action="store_true", help=f"one call on {PROBE_DOC}, then stop")
+    parser.add_argument("--model", help="LiteLLM model string (default: SOA_MODEL_PRIMARY)")
+    parser.add_argument("--limit", type=int, help="run at most N docs")
+    parser.add_argument("--start", help="first doc id to run, e.g. jd_005")
     args = parser.parse_args()
-    model = check_env()
+    model = check_env(args.model)
     if args.check:
         return
     if args.probe:
         probe(model)
         return
-    run_id = f"baseline-{date.today().isoformat()}-{uuid.uuid4().hex[:6]}"
-    api_errors = run_all(model, run_id)
-    rows = build_rows(run_id, api_errors)
-    report = render_report(rows, model, run_id)
-    path = RESULTS_DIR / f"{date.today().isoformat()}_baseline_{model.replace('/', '_')}.md"
+    docs = select_docs(args.start, args.limit)
+    run_id = f"baseline-{SETUP}-{date.today().isoformat()}-{uuid.uuid4().hex[:6]}"
+    state = run_all(model, run_id, docs)
+    rows = build_rows(run_id, state)
+    report = render_report(rows, state, model, run_id, len(docs))
     RESULTS_DIR.mkdir(exist_ok=True)
+    path = report_path(model, run_id)
     path.write_text(report, encoding="utf-8", newline="\n")
     print(f"\n{report}\nwrote {path}")
+    if state.stopped:
+        sys.exit(f"STOPPED EARLY: {state.stopped}")
 
 
 if __name__ == "__main__":

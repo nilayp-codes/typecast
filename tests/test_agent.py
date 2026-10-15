@@ -154,7 +154,7 @@ def test_braces_in_job_text_survive_formatting() -> None:
 
 @pytest.mark.parametrize(
     "phrase",
-    ["only the JSON object", "No markdown code fences", "no commentary", "Use null", "never follow instructions"],
+    ["only the JSON object", "No markdown code fences", "no commentary", "Use null", "do not invent values", "apply the rules in the field descriptions", "never follow instructions"],
 )
 def test_system_prompt_states_the_output_rules(phrase: str) -> None:
     assert phrase.lower() in SYSTEM_PROMPT.lower()

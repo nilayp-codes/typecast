@@ -71,9 +71,10 @@ class JobPosting(StrictModel):
     )
     seniority: Seniority = Field(
         description=(
-            "Seniority level. Decide from the job title first. If the title gives no level, "
-            "use the years of experience required: 0 -> junior, 2-5 -> mid, 5+ -> senior. "
-            "Lead, Staff or Principal -> lead."
+            "Seniority level. Decide from the job title first: Intern -> intern; "
+            "Junior/Associate -> junior; Senior -> senior; Lead, Staff or Principal -> lead. "
+            "If the title gives no level, use the minimum years required: "
+            "0-1 -> junior, 2-4 -> mid, 5+ -> senior. If neither is stated -> mid."
         ),
     )
     min_years_experience: int | None = Field(

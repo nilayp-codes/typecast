@@ -44,7 +44,8 @@ Job description:
 Reply with the JSON object only.
 """
 
-RETRY_PROMPT_TEMPLATE = """Your previous reply did not pass validation. Errors, one per line as `field: problem (got: value)`:
+RETRY_PROMPT_TEMPLATE = """\
+Your previous reply did not pass validation. Errors, one per line as `field: problem (got: value)`:
 {errors}
 
 Fix every error above and reply again with the complete JSON object only. The same rules apply: no code fences, no commentary, no extra fields.
@@ -86,7 +87,13 @@ class ExtractionResult(BaseModel):
 
 
 class ExtractionFailed(Exception):
-    """Every attempt failed validation."""
+    """Every attempt failed validation. Carries all attempts so the caller can see what the model said."""
+
+    def __init__(self, doc_id: str, attempts: list[AttemptResult]) -> None:
+        self.doc_id = doc_id
+        self.attempts = attempts
+        self.last_error = attempts[-1].error or ""
+        super().__init__(f"{doc_id}: no valid output after {len(attempts)} attempts. Last error: {self.last_error}")
 
 
 def read_jd(path: Path) -> str:
@@ -245,7 +252,9 @@ def extract(
         if result.posting is not None:
             return summarize(result.posting, results, api_retries)
         messages = messages + retry_messages(result)
-    raise ExtractionFailed(f"{doc_id}: no valid output after {max_attempts} attempts: {results[-1].error}")
+    failure = ExtractionFailed(doc_id, results)
+    logger.error("%s", failure)  # each attempt already has its own JSONL line
+    raise failure
 
 
 def summarize(posting: JobPosting, results: list[AttemptResult], api_retries: int) -> ExtractionResult:

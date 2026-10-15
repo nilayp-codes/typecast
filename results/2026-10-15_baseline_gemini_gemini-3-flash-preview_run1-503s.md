@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-10-15.** Gemini was dropped (503/429 on the free tier, baseline incomplete). Kept as history; not a usable "before". See the Qwen pair baselines in `results/`.
+
 # Baseline: gemini/gemini-3-flash-preview, single shot, no retries
 
 - date: 2026-10-15

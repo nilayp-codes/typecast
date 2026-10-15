@@ -101,6 +101,9 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   Pydantic model. Dropped constraints are reported as a finding in the README.
 - **Models** come from config/env (`SOA_MODEL_PRIMARY`, `SOA_MODEL_SECONDARY`) and are passed in as the `model`
   argument; nothing in the logic names a model (rule 6).
+- **Model pair (2026-10-15):** both models are Qwen models served through OpenRouter. `SOA_MODEL_PRIMARY` is the weak
+  one (`qwen-2.5-7b-instruct`), `SOA_MODEL_SECONDARY` the strong one (`qwen3-235b-a22b-2507`). One provider key
+  (`OPENROUTER_API_KEY`) covers both. Which one is actually weaker is measured by the Phase 2 baseline, not assumed.
 - **Unsupported setups:** if a model does not support native schema mode, `eval.py` records C and D for that model
   as "not supported" and never a number. How support is detected is decided in Phase 6.
 - **Which documents:** the 4-setup comparison (A-D) runs on the gold set (25-30 JDs) for both models. Setup B

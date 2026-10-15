@@ -23,6 +23,7 @@ Don't assume anything. If it isn't in the docs or the code, ask.
 1. Pick one `docs/TASKS.md` item. Only one at a time.
 2. Implement it.
 3. Run `uv run pytest` and `uv run mypy --strict src/`. Both must pass.
+   Never pipe test, lint or check commands through tail/head/grep; run them directly so a failing exit code stops the chain.
 4. Tick its box in `docs/TASKS.md`.
 5. Commit as `type: summary` (e.g. `feat: add schema validator`).
 6. Move to the next item.

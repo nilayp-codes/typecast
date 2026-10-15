@@ -1,6 +1,7 @@
 """`soa extract` and `soa eval` through typer's CliRunner, with llm.call mocked (rule 13)."""
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -144,6 +145,20 @@ def test_extraction_failed_exits_1_and_shows_every_attempt(monkeypatch: pytest.M
     assert [line.split()[1] for line in attempts] == ["1", "2", "3"]
     assert len(lines) == 1 + 3  # header + one line per attempt: no posting JSON is printed
     assert all(not line.startswith("{") for line in lines)
+
+
+def test_library_log_warnings_do_not_leak_to_stderr(
+    monkeypatch: pytest.MonkeyPatch, jd_file: Path
+) -> None:
+    # pytest's log capture normally hides this: with no handler on the root logger, Python's fallback handler
+    # would print every WARNING (validation failures, tool disagreements) to stderr
+    monkeypatch.setattr(logging.getLogger(), "handlers", [])
+    pune = json.dumps({**VALID, "location": {"city": "Pune", "country": "India", "mode": "hybrid"}})
+    script(monkeypatch, [resp(BAD), resp(pune)])
+    result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
+    assert result.exit_code == 0
+    assert result.stderr == ""
+    assert "attempt 1 ✗" in utf8(result)  # the same information is still on stdout
 
 
 def test_missing_file_exits_2(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:

@@ -4,6 +4,7 @@ Exit codes: 0 success; 1 ExtractionFailed (or post-processing broke); 2 bad inpu
 Errors go to stderr; the result (header, attempt lines, JSON) goes to stdout. API key values are never printed.
 """
 
+import logging
 import os
 import sys
 from pathlib import Path
@@ -34,6 +35,11 @@ app = typer.Typer(add_completion=False, no_args_is_help=True, help="Structured O
 @app.callback()
 def main() -> None:
     """Structured Output Agent."""
+    # Library warnings are already on screen as attempt / disagreement lines and in the JSONL log. Without a
+    # handler, Python's fallback handler would print each of them again on stderr.
+    soa_logger = logging.getLogger("soa")
+    if not any(isinstance(h, logging.NullHandler) for h in soa_logger.handlers):
+        soa_logger.addHandler(logging.NullHandler())
 
 
 class Glyphs(NamedTuple):

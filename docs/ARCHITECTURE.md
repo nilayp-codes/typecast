@@ -62,7 +62,7 @@ validated JobPosting (raw, what the model produced)
    skills:   normalize_skill(NormalizeSkillArgs) per skill ──► merge duplicates (required = any merged required)
    location: classify_location(JD header = first 10 non-empty lines) ──► FILL ONLY:
              city/country when null, mode when "unspecified"; model values are never overridden,
-             disagreements (model value vs tool value) are logged
+             disagreements (model value vs tool value) are logged and returned in ExtractionResult.disagreements
         │ invalid tool args → structured ToolError, logged; the original value is kept
         ▼
  re-validate the final JobPosting
@@ -90,6 +90,7 @@ def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = Fals
             doc_id: str = "adhoc", run_id: str | None = None, log_path: Path | None = None,
             normalize: bool = True) -> ExtractionResult
 # ExtractionResult: posting: JobPosting (post-processed), raw_posting: JobPosting (what the model produced),
+#                   disagreements: list[Disagreement] (field, model_value, tool_value; also logged),
 #                   attempts: int, api_retries: int, total_tokens: int, cost_usd: float, cost_known: bool,
 #                   latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
 # doc_id / run_id / log_path only label and place the log lines; they do not change extraction.

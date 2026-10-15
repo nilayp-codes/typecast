@@ -185,6 +185,22 @@ def test_extract_returns_raw_and_normalized_postings(
     assert result.posting.location.mode.value == "onsite"
     assert len(calls) == 1  # post-processing makes no LLM call
     assert result.attempts == 1
+    assert result.disagreements == []  # the model gave null: that is a fill, not a disagreement
+
+
+def test_extract_reports_tool_disagreements(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    pune = json.dumps({**VALID, "location": {"city": "Pune", "country": "India", "mode": "hybrid"}})
+    script(monkeypatch, [resp(pune), resp(pune)])
+    result = run_text(tmp_path / "a.jsonl", JD_HEADER)
+    assert [(d.field, d.model_value, d.tool_value) for d in result.disagreements] == [
+        ("location.city", "Pune", "Bengaluru"),
+        ("location.mode", "hybrid", "onsite"),
+    ]
+    assert result.posting.location.city == "Pune"  # the model's value is kept
+    off = run_text(tmp_path / "b.jsonl", JD_HEADER, normalize=False)
+    assert off.disagreements == []
 
 
 def test_extract_normalize_false_returns_the_model_output_unchanged(

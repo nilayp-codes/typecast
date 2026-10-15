@@ -14,7 +14,7 @@ from soa.errors import format_validation_errors
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, append_log, default_log_path
 from soa.schemas import JobPosting
-from soa.tools import postprocess
+from soa.tools import Disagreement, PostprocessResult, postprocess
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,7 @@ class ExtractionResult(BaseModel):
 
     posting: JobPosting
     raw_posting: JobPosting
+    disagreements: list[Disagreement]
     attempts: int = Field(ge=1)
     api_retries: int = Field(ge=0)
     total_tokens: int
@@ -247,8 +248,12 @@ def extract(
         results.append(result)
         api_retries += retries
         if result.posting is not None:
-            final = postprocess(result.posting, text, doc_id=doc_id) if normalize else result.posting
-            return summarize(final, result.posting, results, api_retries)
+            processed = (
+                postprocess(result.posting, text, doc_id=doc_id)
+                if normalize
+                else PostprocessResult(posting=result.posting, disagreements=[])
+            )
+            return summarize(processed, result.posting, results, api_retries)
         messages = messages + retry_messages(result)
     failure = ExtractionFailed(doc_id, results)
     logger.error("%s", failure)  # each attempt already has its own JSONL line
@@ -256,13 +261,14 @@ def extract(
 
 
 def summarize(
-    posting: JobPosting, raw_posting: JobPosting, results: list[AttemptResult], api_retries: int
+    processed: PostprocessResult, raw_posting: JobPosting, results: list[AttemptResult], api_retries: int
 ) -> ExtractionResult:
     """Sum tokens, cost and latency over every model call that was made."""
     responses = [r.response for r in results]
     return ExtractionResult(
-        posting=posting,
+        posting=processed.posting,
         raw_posting=raw_posting,
+        disagreements=processed.disagreements,
         attempts=len(results),
         api_retries=api_retries,
         total_tokens=sum(r.prompt_tokens + r.completion_tokens for r in responses),

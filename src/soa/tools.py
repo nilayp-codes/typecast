@@ -27,7 +27,7 @@ HEADER_MAX_CHARS = 2000
 SKILL_ALIAS_GROUPS: dict[str, tuple[str, ...]] = {
     "JavaScript": ("js", "java script", "ecmascript"),
     "TypeScript": ("ts",),
-    "Python": ("python3", "python 3", "py"),
+    "Python": ("python3", "python 3"),
     "PostgreSQL": ("postgres", "psql", "postgre sql"),
     "MySQL": ("my sql",),
     "MongoDB": ("mongo", "mongo db"),
@@ -36,7 +36,7 @@ SKILL_ALIAS_GROUPS: dict[str, tuple[str, ...]] = {
     "AWS": ("amazon web services",),
     "Google Cloud Platform": ("gcp", "google cloud"),
     "Microsoft Azure": ("azure", "ms azure"),
-    "TensorFlow": ("tf", "tensor flow"),
+    "TensorFlow": ("tensor flow",),
     "PyTorch": ("torch", "py torch"),
     "scikit-learn": ("sklearn", "scikit learn", "scikitlearn"),
     "Node.js": ("node", "nodejs", "node js"),
@@ -48,7 +48,7 @@ SKILL_ALIAS_GROUPS: dict[str, tuple[str, ...]] = {
     "REST APIs": ("rest", "restful", "rest api", "restful api", "restful apis"),
     "GraphQL": ("graph ql",),
     "Machine Learning": ("ml", "machine-learning"),
-    "Deep Learning": ("dl", "deep-learning"),
+    "Deep Learning": ("deep-learning",),
     "Natural Language Processing": ("nlp",),
     "Generative AI": ("genai", "gen ai", "gen-ai", "generative artificial intelligence"),
     "Large Language Models": ("llm", "llms", "large language model"),
@@ -217,16 +217,36 @@ def run_tool(spec: ToolSpec[A, R], raw_args: Mapping[str, object]) -> R | ToolEr
         raise ToolResponseError(spec.name, message) from exc
 
 
-def postprocess(posting: JobPosting, source_text: str, *, doc_id: str = "adhoc") -> JobPosting:
+class Disagreement(BaseModel):
+    """A location field where the model and the header tool both had a value and the values differ."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    field: str  # e.g. "location.city"
+    model_value: str
+    tool_value: str
+
+
+class PostprocessResult(BaseModel):
+    """The post-processed posting, plus every model-vs-tool disagreement that was found (and kept as the model's)."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    posting: JobPosting
+    disagreements: list[Disagreement]
+
+
+def postprocess(posting: JobPosting, source_text: str, *, doc_id: str = "adhoc") -> PostprocessResult:
     """Normalize skills (merging duplicates), fill location gaps from the JD header, re-validate the result.
 
     Raises `ToolResponseError` if the post-processed posting is invalid (our bug, logged first).
     """
     skills = merge_skills([_normalized(skill, doc_id) for skill in posting.skills])
-    location = _filled_location(posting.location, source_text, doc_id)
+    location, disagreements = _filled_location(posting.location, source_text, doc_id)
     candidate = posting.model_copy(update={"skills": skills, "location": location})
     try:
-        return JobPosting.model_validate_json(candidate.model_dump_json())
+        final = JobPosting.model_validate_json(candidate.model_dump_json())
+        return PostprocessResult(posting=final, disagreements=disagreements)
     except ValidationError as exc:
         message = format_validation_errors(exc)
         logger.error("%s: post-processed posting failed validation: %s", doc_id, message)
@@ -243,9 +263,8 @@ def merge_skills(skills: list[Skill]) -> list[Skill]:
     return list(merged.values())
 
 
-def fill_location(model: Location, tool: Location, doc_id: str = "adhoc") -> Location:
-    """Fill-only: city/country when the model gave null, mode when it gave 'unspecified'. Disagreements are logged."""
-    _log_disagreements(model, tool, doc_id)
+def fill_location(model: Location, tool: Location) -> Location:
+    """Fill-only: city/country when the model gave null, mode when it gave 'unspecified'. Never overrides."""
     return Location(
         city=model.city if model.city is not None else tool.city,
         country=model.country if model.country is not None else tool.country,
@@ -261,26 +280,30 @@ def _normalized(skill: Skill, doc_id: str) -> Skill:
     return result
 
 
-def _filled_location(model: Location, source_text: str, doc_id: str) -> Location:
+def _filled_location(model: Location, source_text: str, doc_id: str) -> tuple[Location, list[Disagreement]]:
     result = run_tool(CLASSIFY_LOCATION, {"raw": jd_header(source_text)})
     if isinstance(result, ToolError):
         logger.warning("%s: location left as the model gave it", doc_id)
-        return model
-    return fill_location(model, result, doc_id)
+        return model, []
+    found = location_disagreements(model, result)
+    for d in found:
+        logger.warning("%s: %s disagreement: model %r, header tool %r (model value kept)",
+                       doc_id, d.field, d.model_value, d.tool_value)
+    return fill_location(model, result), found
 
 
-def _log_disagreements(model: Location, tool: Location, doc_id: str) -> None:
+def location_disagreements(model: Location, tool: Location) -> list[Disagreement]:
+    """Fields where both sides have a value and the values differ (case-insensitive). Nothing is changed."""
     pairs = (
         ("city", model.city, tool.city),
         ("country", model.country, tool.country),
         ("mode", _mode_value(model.mode), _mode_value(tool.mode)),
     )
-    for field, model_value, tool_value in pairs:
-        if model_value is not None and tool_value is not None and model_value.casefold() != tool_value.casefold():
-            logger.warning(
-                "%s: location.%s disagreement: model %r, header tool %r (model value kept)",
-                doc_id, field, model_value, tool_value,
-            )
+    return [
+        Disagreement(field=f"location.{name}", model_value=m, tool_value=t)
+        for name, m, t in pairs
+        if m is not None and t is not None and m.casefold() != t.casefold()
+    ]
 
 
 def _mode_value(mode: WorkMode) -> str | None:

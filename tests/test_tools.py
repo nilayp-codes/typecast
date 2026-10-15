@@ -14,6 +14,7 @@ from soa.tools import (
     SKILL_ALIAS_GROUPS,
     SKILL_ALIASES,
     ClassifyLocationArgs,
+    Disagreement,
     NormalizeSkillArgs,
     ToolError,
     ToolResponseError,
@@ -21,6 +22,7 @@ from soa.tools import (
     classify_location,
     fill_location,
     jd_header,
+    location_disagreements,
     merge_skills,
     normalize_skill,
     postprocess,
@@ -69,6 +71,13 @@ def test_alias_map_sanity() -> None:
     for key in SKILL_ALIASES:
         assert key == " ".join(key.split()).casefold()  # keys are stored normalized
     assert set(SKILL_ALIASES.values()) == set(SKILL_ALIAS_GROUPS)
+
+
+def test_ambiguous_abbreviations_are_not_aliases() -> None:
+    # "tf" is often Terraform, "dl" and "py" are too vague: unknown names must pass through unchanged
+    for raw in ("tf", "dl", "py"):
+        assert raw not in SKILL_ALIASES
+        assert normalize_skill(NormalizeSkillArgs(raw=raw, required=True)).name == raw
 
 
 def test_alias_conflict_fails_loudly() -> None:
@@ -168,7 +177,7 @@ def test_duplicates_created_by_normalizing_are_merged_with_required_any() -> Non
         ]),
         HEADER,
     )
-    assert out.skills == [Skill(name="PostgreSQL", required=True), Skill(name="Kubernetes", required=False)]
+    assert out.posting.skills == [Skill(name="PostgreSQL", required=True), Skill(name="Kubernetes", required=False)]
 
 
 def test_merge_skills_keeps_first_position_and_order() -> None:
@@ -176,21 +185,46 @@ def test_merge_skills_keeps_first_position_and_order() -> None:
     assert merged == [Skill(name="A", required=True), Skill(name="B", required=True)]
 
 
-def test_fill_only_fills_gaps_and_never_overrides(caplog: pytest.LogCaptureFixture) -> None:
+def test_fill_only_fills_gaps_and_never_overrides() -> None:
     tool = Location(city="Bengaluru", country="India", mode=WorkMode.onsite)
+    model = Location(city="Pune", country="India", mode=WorkMode.hybrid)
+    assert fill_location(model, tool) == model  # nothing overridden
+    assert fill_location(Location(city=None, country=None, mode=WorkMode.unspecified), tool) == tool
+    partly = Location(city=None, country="India", mode=WorkMode.hybrid)
+    assert fill_location(partly, tool) == Location(city="Bengaluru", country="India", mode=WorkMode.hybrid)
+
+
+def test_disagreements_only_where_both_sides_have_a_differing_value() -> None:
+    tool = Location(city="Bengaluru", country="india", mode=WorkMode.onsite)
+    model = Location(city="Pune", country="India", mode=WorkMode.hybrid)
+    assert location_disagreements(model, tool) == [
+        Disagreement(field="location.city", model_value="Pune", tool_value="Bengaluru"),
+        Disagreement(field="location.mode", model_value="hybrid", tool_value="onsite"),
+    ]  # country differs only by case: not a disagreement
+    empty = Location(city=None, country=None, mode=WorkMode.unspecified)
+    assert location_disagreements(empty, tool) == []  # the model abstained: that is a fill, not a disagreement
+    assert location_disagreements(model, empty) == []  # the tool abstained
+
+
+def test_postprocess_returns_and_logs_disagreements_without_changing_values(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    given = posting(location={"city": "Pune", "country": None, "mode": "hybrid"})
     with caplog.at_level(logging.WARNING, logger="soa.tools"):
-        kept = fill_location(Location(city="Pune", country="India", mode=WorkMode.hybrid), tool, "jd_x")
-        filled = fill_location(Location(city=None, country=None, mode=WorkMode.unspecified), tool, "jd_x")
-    assert kept == Location(city="Pune", country="India", mode=WorkMode.hybrid)  # nothing overridden
-    assert filled == tool
-    assert "location.city disagreement: model 'Pune', header tool 'Bengaluru'" in caplog.text
-    assert "location.mode disagreement: model 'hybrid', header tool 'onsite'" in caplog.text
-    assert "location.country" not in caplog.text  # same value: not a disagreement
+        out = postprocess(given, HEADER, doc_id="jd_007")
+    assert out.posting.location == Location(city="Pune", country="India", mode=WorkMode.hybrid)
+    assert [(d.field, d.model_value, d.tool_value) for d in out.disagreements] == [
+        ("location.city", "Pune", "Bengaluru"),
+        ("location.mode", "hybrid", "onsite"),
+    ]
+    assert "jd_007: location.city disagreement: model 'Pune', header tool 'Bengaluru' (model value kept)" in caplog.text
+    assert "jd_007: location.mode disagreement: model 'hybrid', header tool 'onsite'" in caplog.text
 
 
 def test_postprocess_fills_a_null_location_from_the_header() -> None:
     out = postprocess(posting(), HEADER)
-    assert out.location == Location(city="Bengaluru", country="India", mode=WorkMode.onsite)
+    assert out.posting.location == Location(city="Bengaluru", country="India", mode=WorkMode.onsite)
+    assert out.disagreements == []
 
 
 def test_remote_only_in_the_body_does_not_change_mode() -> None:
@@ -198,15 +232,16 @@ def test_remote_only_in_the_body_does_not_change_mode() -> None:
     # "Remote" line sits beyond the first ten lines)
     body = "\n".join(["Entry level role for freshers.", "Key Requirements", "* Remote work options"] + ["filler"] * 8 + ["Remote"])
     text = "AI Engineer\nSkyTrainings\nBengaluru, Karnataka, India\n" + body
-    assert postprocess(posting(), text).location.mode is WorkMode.unspecified
+    assert postprocess(posting(), text).posting.location.mode is WorkMode.unspecified
     onsite = postprocess(posting(location={"city": None, "country": None, "mode": "onsite"}), text)
-    assert onsite.location.mode is WorkMode.onsite  # the model's value stays
+    assert onsite.posting.location.mode is WorkMode.onsite  # the model's value stays
 
 
 def test_unusable_header_leaves_the_model_location_and_logs(caplog: pytest.LogCaptureFixture) -> None:
     with caplog.at_level(logging.WARNING, logger="soa.tools"):
         out = postprocess(posting(location={"city": "Pune", "country": None, "mode": "hybrid"}), "")
-    assert out.location == Location(city="Pune", country=None, mode=WorkMode.hybrid)
+    assert out.posting.location == Location(city="Pune", country=None, mode=WorkMode.hybrid)
+    assert out.disagreements == []
     assert "invalid arguments" in caplog.text
 
 

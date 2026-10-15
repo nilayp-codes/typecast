@@ -92,7 +92,7 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
 | D | on | on | `extract(text, model, max_attempts=3, json_mode=True)` |
 
 - **Retry:** `max_attempts=1` is the no-retry path: one call, one validation, and failure raises `ExtractionFailed`
-  after logging. `max_attempts` defaults from `SOA_MAX_ATTEMPTS`.
+  after logging. `max_attempts` defaults to 3 in `extract()`; the CLI reads `SOA_MAX_ATTEMPTS` and passes it in.
 - **Native mode:** native mode means the provider's schema mode, built from `JobPosting.model_json_schema()`
   (`response_format` of type `json_schema`, or the provider's equivalent via LiteLLM). It is not `json_object`:
   that only guarantees valid JSON, so it cannot test the "shape, not meaning" claim, and it is not one of the four

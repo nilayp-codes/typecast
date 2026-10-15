@@ -1,0 +1,239 @@
+"""extract(): retry loop, error feedback, API backoff, totals. llm.call is mocked as a response sequence (rule 13)."""
+
+import json
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from soa import agent, llm
+from soa.agent import RETRY_PROMPT_TEMPLATE, ExtractionFailed, extract
+from soa.llm import LLMAPIError, LLMResponse, Message
+from soa.logger import AttemptLog
+
+VALID: dict[str, Any] = {
+    "title": "Backend Engineer",
+    "company": None,
+    "seniority": "mid",
+    "min_years_experience": 3,
+    "skills": [{"name": "Python", "required": True}],
+    "location": {"city": "Pune", "country": "India", "mode": "hybrid"},
+    "salary_mentioned": False,
+}
+GOOD = json.dumps(VALID)
+BAD_ENUM = json.dumps({**VALID, "seniority": "wizard"})
+BAD_TYPE = json.dumps({**VALID, "min_years_experience": "3"})
+NOT_JSON = "Sure! Here is the JSON you asked for."
+
+
+def resp(
+    text: str, *, prompt: int = 100, completion: int = 40, cost: float = 0.002, latency: int = 850, known: bool = True
+) -> LLMResponse:
+    return LLMResponse(
+        text=text, prompt_tokens=prompt, completion_tokens=completion, cost_usd=cost,
+        cost_known=known, latency_ms=latency, model="m",
+    )
+
+
+def api_error(*, retryable: bool = True, status: int = 429, message: str = "RateLimitError: slow down") -> LLMAPIError:
+    return LLMAPIError(message, model="m", retryable=retryable, status_code=status)
+
+
+@pytest.fixture
+def sleeps(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    """Replace time.sleep so no test waits; returns the waits that were requested."""
+    waits: list[float] = []
+    monkeypatch.setattr(agent.time, "sleep", lambda seconds: waits.append(seconds))
+    return waits
+
+
+def script(monkeypatch: pytest.MonkeyPatch, items: list[LLMResponse | LLMAPIError]) -> list[list[Message]]:
+    """llm.call returns (or raises) `items` in order. Returns the messages each call received."""
+    queue = list(items)
+    calls: list[list[Message]] = []
+
+    def fake(messages: list[Message], model: str, json_mode: bool = False) -> LLMResponse:
+        calls.append(list(messages))
+        item = queue.pop(0)
+        if isinstance(item, LLMAPIError):
+            raise item
+        return item
+
+    monkeypatch.setattr(llm, "call", fake)
+    return calls
+
+
+def read_log(path: Path) -> list[AttemptLog]:
+    return [AttemptLog.model_validate_json(x) for x in path.read_text(encoding="utf-8").splitlines()]
+
+
+def run(log: Path, max_attempts: int = 3) -> agent.ExtractionResult:
+    return extract("some jd", "m", max_attempts, doc_id="jd_007", run_id="run1", log_path=log)
+
+
+# --- validation retries ---------------------------------------------------
+
+
+def test_valid_first_try(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]) -> None:
+    calls = script(monkeypatch, [resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    result = run(log)
+    assert result.attempts == 1
+    assert result.api_retries == 0
+    assert result.posting.title == "Backend Engineer"
+    assert len(calls) == 1
+    assert [x.ok for x in read_log(log)] == [True]
+    assert sleeps == []
+
+
+def test_invalid_then_valid_feeds_first_error_back(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(BAD_ENUM), resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    result = run(log)
+    assert result.attempts == 2
+    first = read_log(log)[0]
+    assert first.ok is False and first.error is not None and "seniority" in first.error
+    assert [m.role for m in calls[0]] == ["system", "user"]
+    assert [m.role for m in calls[1]] == ["system", "user", "assistant", "user"]
+    assert calls[1][2].content == BAD_ENUM  # the rejected reply, verbatim
+    assert first.error in calls[1][3].content  # the first error text, verbatim
+    assert calls[1][3].content == RETRY_PROMPT_TEMPLATE.format(errors=first.error)
+    assert [x.attempt for x in read_log(log)] == [1, 2]
+
+
+def test_non_json_reply_is_retried_with_its_decode_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(NOT_JSON), resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    assert run(log).attempts == 2
+    first = read_log(log)[0]
+    assert first.error_type == "JSONDecodeError"
+    assert first.error is not None and first.error in calls[1][3].content
+
+
+def test_invalid_three_times_raises_extraction_failed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(BAD_ENUM), resp(BAD_TYPE), resp(NOT_JSON)])
+    log = tmp_path / "a.jsonl"
+    with pytest.raises(ExtractionFailed) as caught:
+        run(log)
+    lines = read_log(log)
+    assert len(lines) == 3
+    assert all(not x.ok for x in lines)
+    assert [x.attempt for x in lines] == [1, 2, 3]
+    assert len(calls) == 3
+    assert len(calls[2]) == 6  # system, user, then two (assistant, user) pairs
+    assert lines[0].error is not None and lines[1].error is not None
+    assert lines[0].error in calls[2][3].content and lines[1].error in calls[2][5].content
+    assert caught.value.doc_id == "jd_007"
+    assert len(caught.value.attempts) == 3
+    assert caught.value.last_error == lines[-1].error
+    assert caught.value.last_error in str(caught.value)
+
+
+def test_max_attempts_below_one_is_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    calls = script(monkeypatch, [])
+    with pytest.raises(ValueError):
+        run(tmp_path / "a.jsonl", max_attempts=0)
+    assert calls == []
+
+
+# --- API errors -----------------------------------------------------------
+
+
+def test_retryable_api_error_then_valid(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [api_error(), resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    result = run(log)
+    assert result.attempts == 1  # the API error is not a validation attempt
+    assert result.api_retries == 1
+    assert sleeps == [2.0]
+    assert len(calls) == 2 and calls[0] == calls[1]
+    lines = read_log(log)
+    assert [(x.error_type, x.ok, x.attempt) for x in lines] == [("APIError", False, 1), (None, True, 1)]
+    assert lines[0].raw_output == "" and lines[0].prompt_tokens == 0 and lines[0].cost_known is False
+    assert lines[0].error is not None and "slow down" in lines[0].error
+
+
+def test_backoff_is_exponential_and_exhaustion_raises(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [api_error(), api_error(), api_error(), api_error()])
+    log = tmp_path / "a.jsonl"
+    with pytest.raises(LLMAPIError):
+        run(log)
+    assert sleeps == [2.0, 4.0, 8.0]
+    assert len(calls) == 4  # first call + 3 retries
+    assert [x.error_type for x in read_log(log)] == ["APIError"] * 4
+
+
+def test_non_retryable_api_error_is_logged_and_raised_at_once(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [api_error(retryable=False, status=401, message="AuthenticationError: bad key")])
+    log = tmp_path / "a.jsonl"
+    with pytest.raises(LLMAPIError) as caught:
+        run(log)
+    assert caught.value.retryable is False
+    assert sleeps == []
+    assert len(calls) == 1
+    lines = read_log(log)
+    assert len(lines) == 1 and lines[0].error_type == "APIError"
+
+
+def test_api_error_between_validation_attempts_does_not_consume_one(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(BAD_ENUM), api_error(), resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    result = run(log, max_attempts=2)
+    assert result.attempts == 2
+    assert result.api_retries == 1
+    assert [(x.error_type, x.attempt) for x in read_log(log)] == [("ValidationError", 1), ("APIError", 2), (None, 2)]
+    assert calls[1] == calls[2]  # the retry re-sends the same conversation
+
+
+def test_api_key_values_are_kept_out_of_the_log(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-v1-supersecretvalue")
+    script(monkeypatch, [api_error(retryable=False, status=401, message="AuthenticationError: bad sk-or-v1-supersecretvalue")])
+    log = tmp_path / "a.jsonl"
+    with pytest.raises(LLMAPIError):
+        run(log)
+    text = log.read_text(encoding="utf-8")
+    assert "supersecretvalue" not in text and "***" in text
+
+
+# --- totals ---------------------------------------------------------------
+
+
+def test_tokens_cost_and_latency_are_summed_over_all_calls(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    script(monkeypatch, [
+        resp(BAD_ENUM, prompt=100, completion=40, cost=0.002, latency=800),
+        resp(BAD_TYPE, prompt=200, completion=50, cost=0.003, latency=900),
+        resp(GOOD, prompt=300, completion=60, cost=0.004, latency=1000),
+    ])
+    result = run(tmp_path / "a.jsonl")
+    assert result.attempts == 3
+    assert result.total_tokens == 100 + 40 + 200 + 50 + 300 + 60
+    assert result.cost_usd == pytest.approx(0.009)
+    assert result.latency_ms == 800 + 900 + 1000
+    assert result.cost_known is True
+
+
+def test_cost_known_is_false_if_any_call_cost_is_unknown(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    script(monkeypatch, [resp(BAD_ENUM, known=False, cost=0.0), resp(GOOD)])
+    result = run(tmp_path / "a.jsonl")
+    assert result.cost_known is False
+    assert result.cost_usd == pytest.approx(0.002)

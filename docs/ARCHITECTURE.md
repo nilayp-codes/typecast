@@ -71,8 +71,13 @@ model requests tool ──► validate args (ToolArgs model)
 
 ## Interfaces
 ```python
-def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = False) -> ExtractionResult
-# ExtractionResult: posting: JobPosting, attempts: int, total_tokens: int, cost_usd: float
+def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = False, *,
+            doc_id: str = "adhoc", run_id: str | None = None, log_path: Path | None = None) -> ExtractionResult
+# ExtractionResult: posting: JobPosting, attempts: int, total_tokens: int, cost_usd: float, cost_known: bool,
+#                   latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
+# doc_id / run_id / log_path only label and place the log lines; they do not change extraction.
+# extract_once(...) is the single-attempt building block (used by the Phase 2 baseline): it keeps its signature and
+# delegates to attempt_once(messages, ...), which extract() calls with the growing conversation.
 ```
 
 ## Eval setups: how retry and native mode are toggled

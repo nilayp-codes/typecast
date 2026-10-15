@@ -2,9 +2,10 @@
 
 import json
 import logging
+import uuid
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_core import ErrorDetails
 
 from soa import llm
@@ -41,6 +42,15 @@ Job description:
 Reply with the JSON object only.
 """
 
+RETRY_PROMPT_TEMPLATE = """Your previous reply did not pass validation. Errors, one per line as `field: problem (got: value)`:
+{errors}
+
+Fix every error above and reply again with the complete JSON object only. The same rules apply: no code fences, no commentary, no extra fields.
+"""
+
+# Some providers reject an empty assistant message, so an empty reply is replayed as this text.
+EMPTY_REPLY_PLACEHOLDER = "(empty reply)"
+
 MAX_INPUT_CHARS = 60
 
 
@@ -54,6 +64,23 @@ class AttemptResult(BaseModel):
     error_type: str | None
     error: str | None
     response: LLMResponse
+
+
+class ExtractionResult(BaseModel):
+    """A validated posting plus what it took: attempts used and totals across every model call."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    posting: JobPosting
+    attempts: int = Field(ge=1)
+    total_tokens: int
+    cost_usd: float
+    cost_known: bool
+    latency_ms: int
+
+
+class ExtractionFailed(Exception):
+    """Every attempt failed validation."""
 
 
 def read_jd(path: Path) -> str:
@@ -92,11 +119,74 @@ def extract_once(
     log_path: Path | None = None,
 ) -> AttemptResult:
     """One LLM call, one validation, one log line. No retries."""
-    response = llm.call(build_messages(text), model, json_mode=json_mode)
+    return attempt_once(
+        build_messages(text), model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path
+    )
+
+
+def attempt_once(
+    messages: list[Message],
+    model: str,
+    doc_id: str,
+    run_id: str,
+    *,
+    json_mode: bool,
+    attempt: int,
+    log_path: Path | None,
+) -> AttemptResult:
+    """One LLM call on `messages`, one validation, one log line."""
+    response = llm.call(messages, model, json_mode=json_mode)
     result = _validate(response, doc_id)
     entry = _to_log(result, run_id=run_id, doc_id=doc_id, attempt=attempt, model=model)
     append_log(entry, log_path or default_log_path())
     return result
+
+
+def retry_messages(result: AttemptResult) -> list[Message]:
+    """The rejected reply as an assistant turn, then a user turn with the validation errors (rule 11)."""
+    reply = result.response.text or EMPTY_REPLY_PLACEHOLDER
+    feedback = RETRY_PROMPT_TEMPLATE.format(errors=result.error or "")
+    return [Message(role="assistant", content=reply), Message(role="user", content=feedback)]
+
+
+def extract(
+    text: str,
+    model: str,
+    max_attempts: int = 3,
+    json_mode: bool = False,
+    *,
+    doc_id: str = "adhoc",
+    run_id: str | None = None,
+    log_path: Path | None = None,
+) -> ExtractionResult:
+    """Extract a JobPosting, feeding validation errors back to the model for up to `max_attempts` attempts."""
+    if max_attempts < 1:
+        raise ValueError(f"max_attempts must be >= 1, got {max_attempts}")
+    run_id = run_id or f"extract-{uuid.uuid4().hex[:8]}"
+    messages = build_messages(text)
+    results: list[AttemptResult] = []
+    for attempt in range(1, max_attempts + 1):
+        result = attempt_once(
+            messages, model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path
+        )
+        results.append(result)
+        if result.posting is not None:
+            return summarize(result.posting, results)
+        messages = messages + retry_messages(result)
+    raise ExtractionFailed(f"{doc_id}: no valid output after {max_attempts} attempts: {results[-1].error}")
+
+
+def summarize(posting: JobPosting, results: list[AttemptResult]) -> ExtractionResult:
+    """Sum tokens, cost and latency over every model call that was made."""
+    responses = [r.response for r in results]
+    return ExtractionResult(
+        posting=posting,
+        attempts=len(results),
+        total_tokens=sum(r.prompt_tokens + r.completion_tokens for r in responses),
+        cost_usd=sum(r.cost_usd for r in responses),
+        cost_known=all(r.cost_known for r in responses),
+        latency_ms=sum(r.latency_ms for r in responses),
+    )
 
 
 def _validate(response: LLMResponse, doc_id: str) -> AttemptResult:

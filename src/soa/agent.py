@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 import time
 import uuid
 from pathlib import Path
@@ -10,7 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from soa import llm
-from soa.errors import format_validation_errors
+from soa.errors import format_validation_errors, redact_keys
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, append_log, default_log_path
 from soa.schemas import JobPosting
@@ -56,6 +55,7 @@ Fix every error above and reply again with the complete JSON object only. The sa
 # Some providers reject an empty assistant message, so an empty reply is replayed as this text.
 EMPTY_REPLY_PLACEHOLDER = "(empty reply)"
 
+DEFAULT_MAX_ATTEMPTS = 3
 API_MAX_RETRIES = 3  # per model call; waits are API_BACKOFF_SECONDS * 2**n: 2, 4, 8 s
 API_BACKOFF_SECONDS = 2.0
 
@@ -72,11 +72,33 @@ class AttemptResult(BaseModel):
     response: LLMResponse
 
 
+class AttemptFailure(BaseModel):
+    """One rejected attempt: the validator's verdict on the model's reply (one line per error)."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    attempt: int = Field(ge=1)
+    error_type: str
+    error: str
+
+
+class Totals(BaseModel):
+    """Tokens, cost and latency summed over the model calls of one extraction."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    total_tokens: int
+    cost_usd: float
+    cost_known: bool
+    latency_ms: int
+
+
 class ExtractionResult(BaseModel):
     """A validated posting plus what it took: attempts used and totals across every model call.
 
     `raw_posting` is what the model produced (validity metrics are measured on it); `posting` is the
-    post-processed version (equal to `raw_posting` when `normalize=False`).
+    post-processed version (equal to `raw_posting` when `normalize=False`). `failed_attempts` lists the
+    attempts that were rejected before the one that succeeded.
     """
 
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -84,6 +106,7 @@ class ExtractionResult(BaseModel):
     posting: JobPosting
     raw_posting: JobPosting
     disagreements: list[Disagreement]
+    failed_attempts: list[AttemptFailure]
     attempts: int = Field(ge=1)
     api_retries: int = Field(ge=0)
     total_tokens: int
@@ -98,6 +121,8 @@ class ExtractionFailed(Exception):
     def __init__(self, doc_id: str, attempts: list[AttemptResult]) -> None:
         self.doc_id = doc_id
         self.attempts = attempts
+        self.failures = failures_of(attempts)
+        self.totals = sum_responses(attempts)
         self.last_error = attempts[-1].error or ""
         super().__init__(f"{doc_id}: no valid output after {len(attempts)} attempts. Last error: {self.last_error}")
 
@@ -193,7 +218,7 @@ def _log_api_error(
         model=exc.model,
         ok=False,
         error_type="APIError",
-        error=_redact_keys(" ".join(str(exc).split())),
+        error=redact_keys(" ".join(str(exc).split())),
         raw_output="",
         latency_ms=latency_ms,
         prompt_tokens=0,
@@ -202,14 +227,6 @@ def _log_api_error(
         cost_known=False,
     )
     append_log(entry, log_path or default_log_path())
-
-
-def _redact_keys(text: str) -> str:
-    """Keep API key values out of logs (MEMORY.md decision): mask any *_API_KEY env value found in `text`."""
-    for name, value in os.environ.items():
-        if name.endswith("_API_KEY") and len(value) >= 8:
-            text = text.replace(value, "***")
-    return text
 
 
 def retry_messages(result: AttemptResult) -> list[Message]:
@@ -222,7 +239,7 @@ def retry_messages(result: AttemptResult) -> list[Message]:
 def extract(
     text: str,
     model: str,
-    max_attempts: int = 3,
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
     json_mode: bool = False,
     *,
     doc_id: str = "adhoc",
@@ -263,19 +280,40 @@ def extract(
 def summarize(
     processed: PostprocessResult, raw_posting: JobPosting, results: list[AttemptResult], api_retries: int
 ) -> ExtractionResult:
-    """Sum tokens, cost and latency over every model call that was made."""
-    responses = [r.response for r in results]
+    """The result of a successful extraction: the posting(s), the rejected attempts, and the totals."""
+    totals = sum_responses(results)
     return ExtractionResult(
         posting=processed.posting,
         raw_posting=raw_posting,
         disagreements=processed.disagreements,
+        failed_attempts=failures_of(results),
         attempts=len(results),
         api_retries=api_retries,
+        total_tokens=totals.total_tokens,
+        cost_usd=totals.cost_usd,
+        cost_known=totals.cost_known,
+        latency_ms=totals.latency_ms,
+    )
+
+
+def sum_responses(results: list[AttemptResult]) -> Totals:
+    """Sum tokens, cost and latency over every model call that was made."""
+    responses = [r.response for r in results]
+    return Totals(
         total_tokens=sum(r.prompt_tokens + r.completion_tokens for r in responses),
         cost_usd=sum(r.cost_usd for r in responses),
         cost_known=all(r.cost_known for r in responses),
         latency_ms=sum(r.latency_ms for r in responses),
     )
+
+
+def failures_of(results: list[AttemptResult]) -> list[AttemptFailure]:
+    """The attempts that did not produce a posting, numbered as in the log."""
+    return [
+        AttemptFailure(attempt=n, error_type=r.error_type or "", error=r.error or "")
+        for n, r in enumerate(results, start=1)
+        if r.posting is None
+    ]
 
 
 def _validate(response: LLMResponse, doc_id: str) -> AttemptResult:

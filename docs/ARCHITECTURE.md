@@ -14,7 +14,7 @@ structured-output-agent/
 ├── src/soa/
 │   ├── schemas.py      # JobPosting, Skill, Location, enums
 │   ├── tools.py        # normalize_skill, classify_location (deterministic post-processing) + arg/response models
-│   ├── errors.py       # format_validation_errors: one line per error (rule 11), shared by agent.py and tools.py
+│   ├── errors.py       # format_validation_errors (rule 11) and redact_keys, shared by agent.py, tools.py, cli.py
 │   ├── llm.py          # thin LiteLLM wrapper: call(), token/cost capture
 │   ├── agent.py        # extract(): prompt → call → validate → retry
 │   ├── logger.py       # AttemptLog model + JSONL writer
@@ -91,11 +91,15 @@ def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = Fals
             normalize: bool = True) -> ExtractionResult
 # ExtractionResult: posting: JobPosting (post-processed), raw_posting: JobPosting (what the model produced),
 #                   disagreements: list[Disagreement] (field, model_value, tool_value; also logged),
+#                   failed_attempts: list[AttemptFailure] (attempt, error_type, error; the rejected ones),
 #                   attempts: int, api_retries: int, total_tokens: int, cost_usd: float, cost_known: bool,
 #                   latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
 # doc_id / run_id / log_path only label and place the log lines; they do not change extraction.
 # normalize=False skips tools.postprocess: posting == raw_posting. Validity metrics use raw_posting.
 # Post-processing failing re-validation raises tools.ToolResponseError (our bug), not ExtractionFailed.
+# ExtractionFailed carries doc_id, attempts (list[AttemptResult]), failures (list[AttemptFailure]), totals
+# (tokens, cost, cost_known, latency) and last_error, so the CLI can report a failed run in the same format.
+# cli.py reads SOA_MODEL_PRIMARY / SOA_MAX_ATTEMPTS and passes them in; extract() itself reads no environment.
 # extract_once(...) is the single-attempt building block (used by the Phase 2 baseline): it keeps its signature and
 # delegates to attempt_once(messages, ...), which extract() calls with the growing conversation.
 ```

@@ -49,6 +49,20 @@ Validators:
   attempt 1 ✗ skills.3.name: String should have at most 40 characters
 { ...pretty JSON... }
 ```
+`soa extract <file> [--model M] [--json-mode] [--no-normalize] [--max-attempts N]`
+- Defaults: model from `SOA_MODEL_PRIMARY`, attempts from `SOA_MAX_ATTEMPTS` (else 3). `.env` is loaded from the
+  working directory (or a parent); variables already set are not overridden. The file is read as UTF-8 (a BOM is dropped).
+- Header: `✓ Valid after N attempt(s)  (tokens · cost · seconds)`. Cost is `n/a` when `cost_known` is false. Seconds is the
+  summed model-call time (backoff waits excluded). `· N API retries` is appended when there were any. A failed run
+  prints `✗ Failed after N attempts  (...)`.
+- Then one block per rejected attempt (`attempt N ✗ <first error>`, any further errors aligned underneath), then
+  any `tool disagreement` lines, then pretty JSON of the normalized posting (`--no-normalize`: the model's raw
+  output, and no post-processing). The result goes to stdout; error messages go to stderr.
+- Exit codes: 0 success; 1 `ExtractionFailed` (or a post-processing bug); 2 bad input file or config, or an API
+  error (including retries exhausted).
+- Windows console: stdout is switched to UTF-8; if that is impossible and the stream cannot carry ✓/✗/·, they are
+  printed as `OK` / `FAIL` / `-`. API key values are never printed.
+
 `soa eval --model <model>`
 ```
 model         n   first-try  final   avg calls  cost

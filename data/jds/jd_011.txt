@@ -1,0 +1,35 @@
+AI Technical Architect
+Capgemini
+Hyderabad, Telangana, India
+On-site
+Full-time
+
+About the job
+Choosing Capgemini means choosing a company where you will be empowered to shape your career in the way you'd like, where you'll be supported and inspired by a collaborative community of colleagues around the world, and where you'll be able to reimagine what's possible. Join us and help the world's leading organizations unlock the value of technology and build a more sustainable, more inclusive world.
+
+Your Role
+
+In this role, you will architect enterprise-scale AI and agentic solutions that help organizations accelerate digital transformation and business innovation.
+
+* Design end-to-end AI and agentic architectures aligned with enterprise strategy and governance.
+* Partner with business, product, and engineering teams to shape scalable solutions.
+* Guide adoption of generative AI, orchestration frameworks, and human-in-the-loop capabilities.
+* Ensure security, compliance, resilience, and responsible AI principles across solution designs.
+* Provide architectural leadership from discovery through implementation and enterprise-scale adoption.
+
+Your Profile
+
+* We are looking for someone with 12+ years of experience.
+* Proven experience designing complex enterprise solutions as a Solution Architect.
+* Strong expertise in application, data, integration, and cloud-native architecture patterns.
+* Experience supporting AI, machine learning, analytics, automation, or digital transformation initiatives.
+* Knowledge of generative AI, LLM platforms, agentic workflows, APIs, and orchestration frameworks.
+* Excellent stakeholder management, communication, and architecture governance capabilities.
+
+What You'll Love About Working Here
+
+* Work on innovative AI and emerging technology initiatives that help global organizations transform how they operate.
+* Access continuous learning, certifications, and career development opportunities to build future-ready skills.
+* Collaborate with diverse global teams across business, engineering, and technology disciplines.
+
+Capgemini is an AI-powered global business and technology transformation partner, delivering tangible business value. We imagine the future of organizations and make it real with AI, technology and people. With our strong heritage of nearly 60 years, we are a responsible and diverse group of 420,000 team members in more than 50 countries. We deliver end-to-end services and solutions with our deep industry expertise and strong partner ecosystem, leveraging our capabilities across strategy, technology, design, engineering and business operations. The Group reported 2024 global revenues of €22.1 billion.

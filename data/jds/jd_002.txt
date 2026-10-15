@@ -1,0 +1,74 @@
+AI / LLM Engineer
+Kaleidofin Private Limited
+Bengaluru, Karnataka, India
+On-site
+Full-time
+
+About the job
+The Core Responsibilities For The Job Include The Following
+
+AI and LLM Engineering:
+
+Design and develop LLM-powered features, including RAG (Retrieval-Augmented Generation) pipelines and prompt engineering.
+Build and evaluate agentic AI systems using frameworks.
+Integrate vector databases for semantic search and knowledge retrieval.
+Explore self-hosted LLM deployments using Ollama, vLLM, or similar frameworks.
+
+Machine Learning And Modeling
+
+Build, train, and evaluate ML models for credit risk, fraud detection, anomaly detection, and customer segmentation.
+Perform feature engineering, hyperparameter tuning, model selection, and error analysis.
+Apply ensemble methods (boosting, bagging, stacking) to improve model robustness.
+Conduct A/B testing, multivariate experiments, and statistical analysis to validate model performance.
+
+Cloud And Production
+
+Build and maintain scalable ML pipelines and data workflows on cloud infrastructure.
+Collaborate with data engineers to integrate models into production systems using MLOps best practices.
+Write clean, production-level Python code and contribute to shared AI tooling and libraries.
+
+Requirements
+
+1-5 years of industry or project experience in AI/ML engineering (internships and academic projects strongly count).
+Bachelor's OR master's degree in statistics, computer science, engineering, mathematics, or a related technical field.
+
+AI And LLM Skills (Must Have)
+
+Hands-on experience or strong project exposure to LLM prompt engineering and RAG pipelines.
+Familiarity with Hugging Face Transformers, OpenAI API, or equivalent LLM frameworks.
+Understanding of vector embeddings, semantic search, and knowledge retrieval concepts.
+Awareness of GenAI and Agentic AI methodologies and their practical applications.
+
+Programming / Cloud / Data Skills (Must Have)
+
+Strong Python programming skills and clean, maintainable, production-ready code.
+Proficient in ML libraries: scikit-learn, TensorFlow or PyTorch, XGBoost, pandas, and NumPy.
+Solid SQL skills for data querying, transformation, and mining structured datasets.
+Experience normalizing and preprocessing data for consistency, quality, and model readiness.
+Working knowledge of at least one major cloud platform: AWS, GCP, or Azure.
+Understanding of cloud storage, compute, and containerization basics (Docker, Kubernetes).
+Exposure to big data tools such as Spark or Hadoop (MapReduce, Hive, Pig) is a plus.
+
+Machine Learning Algorithms (Good To Have)
+
+Clear understanding, coding, implementation, error analysis, and model tuning across:
+Supervised Learning: Linear Regression, Logistic Regression, SVM, Decision Trees, Random Forest, and XGBoost.
+Neural Networks: Shallow neural networks and familiarity with deep learning architectures.
+Unsupervised Learning: Clustering (K-Means, DBSCAN), Recommender Systems.
+Time Series and Anomaly Detection: ARIMA, Isolation Forest, statistical anomaly methods.
+Strong command of model selection, cross-validation, feature selection, and ensemble methods (boosting, bagging, stacking).
+Ability to perform hyperparameter tuning using Grid Search, Random Search, or Bayesian optimization.
+
+Nice To Have
+
+Experience in fintech, credit scoring, risk analytics, or financial inclusion domains.
+Contributions to open-source ML/AI projects or a strong personal project portfolio on GitHub.
+Familiarity with MCP (Model Context Protocol) or building AI tool integrations.
+Experience with MLflow, Weights & Biases, or other experiment tracking tools.
+
+Soft Skills
+
+Genuine curiosity about AI/ML and eagerness to learn in a fast-moving field.
+Strong problem-solving mindset able to break down complex challenges into actionable steps.
+Clear communication skills to present model results and insights to non-technical stakeholders.
+Collaborative team player who thrives in a cross-functional, mission-driven environment.

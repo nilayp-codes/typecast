@@ -1,0 +1,69 @@
+AI Engineer
+BT Group
+Greater Bengaluru Area
+Hybrid
+Full-time
+
+About the job
+Job Title: AI Engineer
+Job Function: Software Engineering
+Division: Digital
+Job Location: IND-Bengaluru-RMZ Ecoworld
+Advertised Salary: Competitive
+Location: Bengaluru
+Salary: Competitive
+
+About The Role
+
+You will build and own scoped AI service features within the Mind.AI platform. You work within the architecture set by the Lead AI Engineer, take feature specifications and deliver production-quality implementations: a chunking strategy module, a guardrail model integration, an embedding pipeline stage, a RAGAS metric computation job. You are expected to work independently within scope - take ownership, write tests, benchmark your work, and ship to the Lead's quality bar.
+
+You have built ML or AI features in production before. You know that a model that scores well in a notebook evaluation is not done - it needs to be packaged, served, monitored, and maintained. You are comfortable with the full lifecycle from experiment to production deployment.
+
+What You'll Be Doing
+
+RAG & Knowledge Retrieval
+Build and optimise enterprise-grade RAG pipelines for accurate knowledge retrieval
+Develop document ingestion, indexing, embedding, and retrieval workflows
+Implement hybrid search, re-ranking, and citation-based response generation
+Improve retrieval quality, relevance, and scalability across large knowledge bases
+AI Safety & Guardrails
+Implement PII detection, data protection, and content redaction controls
+Integrate prompt injection, toxicity, and misuse detection mechanisms
+Build AI guardrails to ensure safe, compliant, and trustworthy responses
+Develop automated response quality and faithfulness evaluation frameworks
+Memory & Knowledge Management
+Design and implement long-term AI memory frameworks
+Build user, agent, and organisational knowledge retention capabilities
+Develop knowledge graph and graph-based retrieval solutions
+Optimise context management through intelligent summarisation and memory retrieval
+Evaluation & Optimisation
+Define and implement AI evaluation metrics and testing frameworks
+Create and maintain golden datasets for model validation
+Conduct experiments to improve retrieval, reasoning, and response quality
+Drive continuous performance optimisation through benchmarking and analytics
+Platform Engineering
+Design scalable, production-ready AI services and APIs
+Optimise latency, throughput, reliability, and cost of AI workloads
+Build monitoring, observability, and auditability for AI systems
+Collaborate with platform, data, and product teams to deliver enterprise AI solutions
+Agentic AI & Multi-Agent Systems
+Design and develop autonomous AI agents and multi-agent workflows
+Build orchestration frameworks for planning, reasoning, and task execution
+Implement agent memory, tool calling, and decision-making capabilities
+Enable enterprise-scale deployment, governance, and monitoring of agentic solutions
+
+Essential Skills / Experience
+
+Systems Architecture Experience with distributed systems and microservices architecture. Knowledge of event-driven systems using Kafka and NATS. Skilled in REST APIs, real-time communication, API security, JWT, rate limiting, and resilience patterns.
+LLM Orchestration & Agentic AI Experience building AI agents using LangChain and LangGraph. Skilled in single-agent and multi-agent workflows, including ReAct, Planning, and Tool-Use patterns. Strong understanding of prompt engineering, context management, memory, and multi-LLM integration.
+Python & AI/ML Stack Strong programming skills in Python, FastAPI, and Pydantic. Experience with NLP and AI frameworks including SpaCy, Sentence Transformers, PyTorch, and Hugging Face. Knowledge of ONNX, LoRA/QLoRA fine-tuning, vLLM, LangChain, LangGraph, and RAGAS.
+Retrieval & Search Experience designing Retrieval-Augmented Generation (RAG) solutions. Skilled in document chunking, embeddings, vector databases, and Elasticsearch (BM25). Knowledge of hybrid search and cross-encoder re-ranking techniques.
+Evaluation, Safety & Responsible AI Experience with AI evaluation frameworks such as RAGAS and DeepEval. Skilled in benchmarking, LLM-as-a-Judge, and human-in-the-loop evaluation. Knowledge of AI safety, prompt injection prevention, red teaming, and industry safety benchmarks.
+Data Platforms Experience with PostgreSQL, pgvector, and Redis. Knowledge of Kafka for event streaming and data processing. Skilled in building and working with Neo4j knowledge graphs.
+
+Desirable Skills / Experience
+
+Data Platforms & Infrastructure Experience working with ClickHouse for high-performance analytics and data processing. Knowledge of containerization and deployment using Docker and Kubernetes. Skilled in building and managing scalable and cloud-native infrastructure.
+Observability & MLOps Experience with OpenTelemetry, Dynatrace, and MLflow for monitoring and model management. Skilled in implementing observability through logging, monitoring, and distributed tracing. Knowledge of performance optimization, model tracking, and operationalizing AI/ML workloads.
+
+BT is the UK's leading communications group and the holding company behind some of the country's most recognised brands – including BT, EE, Openreach and Plusnet. Our purpose is as simple as it is ambitious: we connect for good. Our customers include consumers, small, medium and large businesses, public sector organisations and other communications providers.

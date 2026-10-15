@@ -1,0 +1,42 @@
+AI/ML/Gen AI Engineer
+Ascendion
+Bengaluru, Karnataka, India
+On-site
+Full-time
+
+About the job
+About the Role"
+
+We are looking for a GenAI Engineer with a strong foundation in Data Science and 4-5 years of industry experience. The ideal candidate should have expertise in designing and deploying Generative AI and Agentic AI systems, managing end-to-end development, and effectively communicating with clients.
+
+"Job Title"
+
+GenAI Engineer
+
+"Responsibilities"
+
+* Design and develop Generative and Agent-based AI solutions using LLMs, agent frameworks, and RAG pipelines.
+* Engage in prompt engineering, model fine-tuning, and optimization for performance improvement.
+* Create agentic systems capable of autonomous task execution.
+* Integrate AI models with production environments using APIs, cloud services, and vector databases.
+* Lead client engagements, gather requirements, present solutions, and manage feedback loops effectively.
+* Stay updated on GenAI trends, tools, and techniques to apply them innovatively in real-world scenarios.
+
+"Required Skills"
+
+* 4-5 years of hands-on experience in Machine Learning, Deep Learning, and Generative AI applications.
+* Strong background in Data Science with a bachelor's or master's degree in data science, Computer Science, or related fields.
+* Expertise in GenAI tools like LangChain, AutoGen, OpenAI APIs, and other LLM ecosystems.
+* Proficiency in Python, prompt engineering, and API integration.
+* Experience in deploying and scaling AI models on cloud platforms (AWS or Azure).
+* Ability to manage technical delivery while engaging with business stakeholders and clients.
+
+"Desirable Skills"
+
+* Experience with other AI frameworks and tools.
+* Knowledge of natural language processing (NLP) techniques.
+* Familiarity with big data technologies and databases.
+
+"Education Qualification"
+
+* Bachelor's or master's degree in Data Science, Computer Science, or related fields.

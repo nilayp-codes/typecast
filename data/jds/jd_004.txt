@@ -1,0 +1,75 @@
+AI Engineer – Generative AI
+TrnDigital
+India
+Remote
+Full-time
+
+About the job
+About Trndigital
+
+Trndigital is a Boston-based Microsoft Gold Certified Partner specializing in managed IT services, cloud solutions, and digital transformation. We help enterprises leverage cutting-edge AI technologies, particularly Microsoft 365 Copilot and generative AI solutions, to drive business innovation and productivity. Our team focuses on delivering intelligent, scalable solutions with a strong emphasis on AI adoption, security, and compliance across healthcare, pharmaceutical, finance, and manufacturing sectors.
+
+Position Overview
+
+We're seeking an experienced AI Engineer with strong expertise in Generative AI to join our growing team. You'll work directly with enterprise clients to design, implement, and optimize GenAI solutions, helping organizations build custom AI applications. This is a client-facing role where you'll translate business challenges into innovative AI-powered solutions.
+
+Key Responsibilities
+
+Generative AI Solution Development
+
+Design and develop generative AI applications using large language models (LLMs) and foundation models
+Build custom AI solutions for document generation, content creation, intelligent search, and conversational interfaces
+Develop and optimize prompts, fine-tune models, and implement retrieval-augmented generation (RAG) architectures
+Create custom copilots and AI assistants tailored to specific business workflows and industry requirements
+Implement AI-powered automation solutions that enhance productivity and reduce manual work
+
+Required Qualifications
+
+Technical Skills
+
+3+ years of experience in AI/ML engineering, with significant focus on Generative AI and LLMs
+Strong expertise in Large Language Models (GPT-4, Claude, Llama, Gemini, ) and understanding of transformer architectures
+Hands-on experience with prompt engineering, including advanced techniques like chain-of-thought, few-shot learning, and system prompts
+Proficiency in Python and AI/ML libraries (LangChain, LangGraph, LangSmith, LlamaIndex, Hugging Face Transformers, OpenAI SDK)
+Experience building RAG (Retrieval-Augmented Generation) systems with vector databases and semantic search
+Strong understanding of fine-tuning techniques, including LoRA, full fine-tuning, and parameter-efficient methods
+Knowledge of API integration and building production-ready AI applications
+Experience with evaluation frameworks for LLM outputs (accuracy, hallucination detection, quality metrics)
+Understanding of token optimization, context management, and cost-efficient LLM usage
+
+Professional Experience
+
+Proven track record of implementing Generative AI solutions in enterprise or production environments
+Background in consulting or client-facing roles with ability to communicate technical concepts to business stakeholders
+Experience translating business requirements into AI-powered solutions
+Strong problem-solving skills and ability to manage multiple projects simultaneously
+Understanding of data security, privacy, and compliance in AI implementations
+
+Soft Skills
+
+Excellent communication and presentation skills
+Ability to explain complex GenAI concepts to non-technical audiences
+Strong analytical thinking and creative problem-solving
+Self-motivated with ability to learn and adapt quickly
+Collaborative mindset and team-oriented approach
+Client-focused with commitment to delivering high-quality solutions
+
+Preferred Qualifications (Good To Have)
+
+Additional Technical Skills
+
+Experience working with LangSmith for validation and LangGraph for orchestration
+Experience with Azure OpenAI Service, Azure AI services, or other cloud AI platforms
+Knowledge of vector databases (Pinecone, Weaviate, ChromaDB, FAISS)
+Experience with MLOps/LLMOps practices and deployment pipelines
+Understanding of multimodal AI (vision-language models, audio processing)
+Experience with agent-based architectures and autonomous AI systems
+Knowledge of model evaluation frameworks and benchmarking tools
+
+Location
+
+India Remote
+
+How to Apply
+
+Please submit your resume and portfolio of GenAI projects (GitHub repos, case studies, or project descriptions).

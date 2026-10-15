@@ -1,0 +1,43 @@
+Python Developer – GenAI/NLP Integration
+Gramener
+Bengaluru, Karnataka, India
+On-site
+Full-time
+
+About the job
+Work Location: Hyderabad/Bangalore
+
+What Gramener offers you
+
+Gramener will offer you an inviting workplace, talented colleagues from diverse backgrounds, career path, steady growth prospects with great scope to innovate. Our goal is to create an ecosystem of easily configurable data applications focused on storytelling for public and private use.
+
+About The Role
+
+We are seeking an experienced Python Developer with expertise in GenAI/NLP integration to design, build, and scale AI-driven applications. You will work on developing high-performance backend services, integrating cutting-edge GenAI/NLP models, and enabling scalable API-driven solutions. This role requires strong problem-solving skills, hands-on development experience, and the ability to collaborate closely with data scientists, solution architects, and business teams to deliver impactful AI solutions at scale. You will be part of a highly skilled engineering team, contributing to the development of AI-first products and solutions that transform how organizations harness data and AI for decision-making.
+
+Roles and Responsibilities
+
+* Core Python Development: 4–8 years of hands-on experience.
+* GenAI/NLP Integration: Proven experience in integrating and scaling GenAI or NLP solutions as services.
+* Data Processing: Strong knowledge of Pandas, Dask; PySpark (optional).
+* API Development: Expertise in RESTful API design and development.
+* Frameworks: Mandatory experience with FastAPI (must-have), (Flask, or Django optional).
+* Databases: (one from each category).
+* a. Relational: PostgreSQL / MySQL.
+* b. NoSQL / Vector DB: MongoDB, Pinecone, Amazon Bedrock Vector Store or Amazon OpenSearch Serverless.
+
+DevOps/Cloud
+
+* Experience with Docker, AWS Lambda, S3, ECS/EKS.
+* CI/CD familiarity is a must.
+* Version Control: Proficient with Git.
+
+Good to Have
+
+* Experience deploying ML/GenAI models to production.
+* Knowledge of Agentic frameworks is a plus (Langgraph, Langchain, etc).
+* Knowledge of prompt engineering or LLM fine-tuning.
+
+About Us
+
+We help consult and deliver solutions to organizations where data is at the core of decision making. We undertake strategic data consulting for organizations in laying out the roadmap for data driven decision making, in order to equip organizations to convert data into a strategic differentiator. Through a host of our product and service offerings we analyse and visualize large amounts of data.

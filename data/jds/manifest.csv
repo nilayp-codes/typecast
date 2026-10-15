@@ -1,0 +1,12 @@
+doc_id,source,url,date_collected,notes
+jd_001,LinkedIn,,2026-10-15,"Hybrid; multi-location (Bangalore, Gurgaon); 4+ years; no salary"
+jd_002,LinkedIn,,2026-10-15,"On-site; years range 1-5; no salary; very long skill list (may exceed 30)"
+jd_003,LinkedIn,,2026-10-15,"Hybrid; salary says 'Competitive' with no figure; years not stated; very long skill list"
+jd_004,LinkedIn,,2026-10-15,"Remote (India); 3+ years; no salary; city not stated"
+jd_005,LinkedIn,https://www.linkedin.com/jobs/view/4472691351/,2026-10-15,"On-site; years not stated; no salary; nested skill list"
+jd_006,LinkedIn,https://www.linkedin.com/jobs/view/4437784583/,2026-10-15,"Hybrid; salary stated (INR 20-27 LPA); years not stated; mentions mentoring interns (not an intern role)"
+jd_007,LinkedIn,https://www.linkedin.com/jobs/view/4476291019/,2026-10-15,"On-site but lists remote options; freshers/entry level; very short; 'competitive salary' with no figure"
+jd_008,LinkedIn,https://www.linkedin.com/jobs/view/4439851926/,2026-10-15,"On-site; years range 4-5; no salary; stray quote marks in headings"
+jd_009,LinkedIn,https://www.linkedin.com/jobs/view/4288486888/,2026-10-15,"On-site; multi-location (Hyderabad/Bangalore); years range 4-8; no salary"
+jd_010,LinkedIn,,2026-10-15,"Internship; remote; part-time; years not stated; no salary; run-on formatting (headings glued to text)"
+jd_011,LinkedIn,https://www.linkedin.com/jobs/view/4479266491/,2026-10-15,"Architect role (lead); on-site Hyderabad; 12+ years; no salary; revenue figure in EUR that is not a salary"

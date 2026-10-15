@@ -1,0 +1,24 @@
+GCP GENAI Engineer
+Impetus
+Bengaluru, Karnataka, India
+Hybrid
+Full-time
+
+About the job
+About Impetus
+Impetus Technologies is a digital engineering company focused on delivering expert services and products to help enterprises achieve their transformation goals. We solve the analytics, AI, and cloud puzzle, enabling businesses to drive unmatched innovation and growth.Founded in 1991, we are cloud and data engineering leaders providing solutions to fortune 100 enterprises, headquartered in Los Gatos, California, with development centers in NOIDA, Indore, Gurugram, Bengaluru, Pune, and Hyderabad with over 3000 global team members. We also have offices in Canada and Australia and collaborate with a number of established companies, including American Express, Bank of America, Capital One, Toyota, United Airlines, and Verizon.
+Job Location- Bangalore, Gurgaon
+Roles & ResponsibilitiesWe are seeking a talented and passionate GenAI Developer with strong expertise in Google Cloud Platform (GCP) and Python to design, develop, and deploy cutting-edge generative AI solutions. The ideal candidate will be instrumental in leveraging GCP's AI services to build scalable, robust, and performant GenAI applications that solve complex business problems. You will work on the full lifecycle of GenAI projects, from ideation and prototyping to deployment and optimization, contributing to the advancement of our AI capabilities.
+Design, develop, and implement generative AI applications using Python and GCP's AI/ML services (e.g., Vertex AI, GenAI APIs, Google Kubernetes Engine, Cloud Functions, BigQuery).
+Collaborate with product managers, data scientists, and other engineers to understand requirements and translate them into technical specifications for GenAI solutions.
+Stay up-to-date with the latest advancements in generative AI, large language models (LLMs), and related technologies.
+Develop and integrate APIs and services for seamless interaction between GenAI models and existing systems.
+Participate in code reviews, contribute to architectural discussions, and promote best practices within the team.
+Document technical designs, processes, and model specifications.
+
+QualificationDegree – Graduates/Postgraduate in CSE/IT or related field
+
+Requirements added by the job poster
+• 4+ years of work experience with Vertex AI
+• 4+ years of work experience with Python (Programming Language)
+• 4+ years of work experience with Google Cloud Platform (GCP)

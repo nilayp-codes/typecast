@@ -1,0 +1,47 @@
+AI ENGINEERING SPECIALIST - Python
+Happiest Minds Technologies
+Bengaluru, Karnataka, India
+On-site
+Full-time
+
+About the job
+
+* Design and develop Generative AI solutions using Python and LangChain.
+* Build and optimize RAG-based applications using vector databases.
+* Develop AI agents and multi-agent systems using LangChain, LangGraph, CrewAI, AutoGen, or similar frameworks.
+* Integrate OpenAI, Azure OpenAI, Claude, Gemini, Llama, and other LLM models into business applications.
+* Develop REST APIs and microservices for AI applications using FastAPI or Flask.
+* Create prompt engineering strategies to improve model responses and accuracy.
+* Implement document processing pipelines for PDFs, Word documents, emails, and structured/unstructured data.
+* Work with embeddings, semantic search, vector databases, and knowledge retrieval systems.
+* Collaborate with business stakeholders, architects, and data scientists to translate business requirements into AI-powered solutions.
+* Optimize AI applications for scalability, security, performance, and cost efficiency.
+* Monitor model performance and continuously improve AI workflows.
+
+Required SkillsTechnical Skills
+
+* Strong programming experience in Python.
+* Hands-on experience with LangChain, LangGraph, CrewAI, AutoGen, or similar frameworks.
+* Experience with LLMs such as OpenAI GPT, Azure OpenAI, Claude, Gemini, Llama, Mistral, etc.
+* Knowledge of RAG Architecture and semantic search implementations.
+* Experience with Vector Databases:
+   * Pinecone
+   * ChromaDB
+   * Weaviate
+   * FAISS
+   * Azure AI Search
+* Proficiency in API development using FastAPI or Flask.
+* Understanding of Prompt Engineering, Function Calling, and Tool Integration.
+* Experience with databases such as PostgreSQL, MongoDB, SQL Server, or Cosmos DB.
+* Familiarity with Docker, Kubernetes, CI/CD pipelines, and Git.
+* Experience working on Azure, AWS, or GCP cloud platforms.
+
+Preferred Skills
+
+* Experience with Agentic AI and Autonomous AI Agents.
+* Knowledge of MCP (Model Context Protocol).
+* Experience with Graph Databases such as Neo4j.
+* Knowledge of Knowledge Graphs and Ontology models.
+* Hands-on experience with Azure AI Studio, Azure Machine Learning, or Databricks.
+* Exposure to NLP, Machine Learning, and Deep Learning concepts.
+* Experience in chatbot, virtual assistant, or enterprise AI solution development.

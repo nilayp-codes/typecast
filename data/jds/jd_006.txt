@@ -1,0 +1,38 @@
+Artificial Intelligence Engineer
+PeopleX Ventures
+Bengaluru, Karnataka, India
+2M INR/yr - 2.7M INR/yr
+Hybrid
+Full-time
+
+About the job
+Company: PeopleX Ventures
+Business Type: Startup
+Company Type: Product & Service
+Business Model: B2B
+Funding Stage: Pre-seed
+Industry: Information Technology
+Salary Range: ₹ 20-27 Lacs PA
+
+Job Description
+
+We are seeking a versatile AI Engineer with strong Python skills and a problem-solving mindset. The role involves building end-to-end applied AI/ML solutions — from data pipelines to agentic workflows to deployment. You'll collaborate closely with leadership and mentor junior team members while shaping the company's technical direction.
+
+Key Responsibilities
+
+* Design and implement AI-driven solutions using Python and modern ML/data science libraries.
+* Work with prompt engineering, RAG, and agentic workflows to build intelligent systems.
+* Develop and manage data pipelines and integrate with databases and vector databases.
+* Prototype quickly and transition solutions from experimentation to production.
+* Containerize and deploy applications using Docker or similar tools.
+* Collaborate with cross-functional teams to deliver AI-powered products and solutions.
+* Mentor interns and junior engineers to build a strong learning-oriented tech culture.
+
+Requirements
+
+* Experience in software or AI engineering.
+* Strong command of Python and data science libraries (Pandas, NumPy, scikit-learn).
+* Familiarity with prompt engineering, retrieval-augmented generation (RAG), and agentic workflows.
+* Experience with databases, vector DBs, and containerization (e.g., Docker).
+* Solid understanding of computer science fundamentals and best coding practices.
+* Prior experience in a fast-paced product or startup environment is a plus

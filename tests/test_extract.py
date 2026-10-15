@@ -136,6 +136,22 @@ def test_invalid_three_times_raises_extraction_failed(
     assert caught.value.last_error in str(caught.value)
 
 
+def test_max_attempts_one_is_the_no_retry_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(BAD_ENUM), resp(GOOD)])  # the valid reply must never be requested
+    log = tmp_path / "a.jsonl"
+    with pytest.raises(ExtractionFailed) as caught:
+        run(log, max_attempts=1)
+    assert len(calls) == 1
+    assert [m.role for m in calls[0]] == ["system", "user"]  # no retry message was built or sent
+    lines = read_log(log)
+    assert len(lines) == 1 and lines[0].ok is False and lines[0].attempt == 1
+    assert len(caught.value.attempts) == 1
+    assert caught.value.last_error == lines[0].error
+    assert sleeps == []
+
+
 def test_max_attempts_below_one_is_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     calls = script(monkeypatch, [])
     with pytest.raises(ValueError):

@@ -1,4 +1,4 @@
-"""Typer CLI: `soa extract`. Output format: docs/DESIGN.md section 2.
+"""Typer CLI: `soa extract` and `soa eval`. Output format: docs/DESIGN.md section 2.
 
 Exit codes: 0 success; 1 ExtractionFailed (or post-processing broke); 2 bad input or config, or an API error.
 Errors go to stderr; the result (header, attempt lines, JSON) goes to stdout. API key values are never printed.
@@ -12,6 +12,7 @@ from typing import Annotated, NamedTuple, NoReturn
 import typer
 from dotenv import find_dotenv, load_dotenv
 
+from soa import eval as soa_eval
 from soa.agent import (
     DEFAULT_MAX_ATTEMPTS,
     AttemptFailure,
@@ -32,7 +33,7 @@ app = typer.Typer(add_completion=False, no_args_is_help=True, help="Structured O
 
 @app.callback()
 def main() -> None:
-    """Keeps `soa extract ...` a subcommand even while it is the only one."""
+    """Structured Output Agent."""
 
 
 class Glyphs(NamedTuple):
@@ -186,3 +187,31 @@ def extract_cmd(
     except ToolResponseError as exc:
         fail(f"post-processing failed (a bug in the tools; try --no-normalize): {exc}", EXIT_FAILED)
     report_success(result, glyphs, raw=no_normalize)
+
+
+@app.command("eval")
+def eval_cmd(
+    model: ModelOpt = None,
+    json_mode: JsonModeOpt = False,
+    no_retry: Annotated[bool, typer.Option("--no-retry", help="One attempt per document (setups A and C).")] = False,
+    limit: Annotated[int | None, typer.Option("--limit", min=1, help="Run at most N documents.")] = None,
+    data_dir: Annotated[Path, typer.Option("--data-dir", help="Folder of job description .txt files.")] = (
+        soa_eval.DEFAULT_DATA_DIR
+    ),
+) -> None:
+    """Run the evaluation over a folder of job descriptions (implemented in Phase 6)."""
+    load_env()
+    pick_glyphs()
+    options = soa_eval.EvalOptions(
+        model=resolve_model(model), json_mode=json_mode, no_retry=no_retry, limit=limit, data_dir=data_dir
+    )
+    try:
+        plan = soa_eval.plan_eval(options)
+    except FileNotFoundError as exc:
+        fail(str(exc))
+    for line in plan.describe():
+        typer.echo(line)
+    try:
+        soa_eval.run_eval(plan)
+    except NotImplementedError as exc:
+        fail(str(exc))

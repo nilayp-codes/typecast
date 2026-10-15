@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 
 from soa import agent, cli, llm
 from soa.cli import app
+from soa.eval import EvalOptions
 from soa.llm import LLMAPIError, LLMResponse, Message
 
 runner = CliRunner()
@@ -244,4 +245,70 @@ def test_glyphs_fall_back_when_reconfigure_fails(monkeypatch: pytest.MonkeyPatch
 
     monkeypatch.setattr(cli.sys, "stdout", Stuck())
     assert cli.pick_glyphs() == cli.ASCII_GLYPHS
+
+
+# --- eval stub ------------------------------------------------------------
+
+
+def make_data(root: Path, n_docs: int, n_labels: int) -> Path:
+    jds = root / "data" / "jds"
+    labels = root / "data" / "labels"
+    jds.mkdir(parents=True)
+    labels.mkdir(parents=True)
+    for i in range(n_docs):
+        (jds / f"jd_{i:03d}.txt").write_text(JD, encoding="utf-8")
+    for i in range(n_labels):
+        (labels / f"jd_{i:03d}.json").write_text("{}", encoding="utf-8")
+    return jds
+
+
+def test_eval_without_labels_skips_field_accuracy(isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=4, n_labels=0)
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds)])
+    assert result.exit_code == 2  # the stub: Phase 6 is not implemented
+    assert "setup B (retry on, native off)" in result.stdout
+    assert "documents: 4 in" in result.stdout
+    assert "field accuracy: skipped (no labels in" in result.stdout
+    assert "not implemented yet (Phase 6)" in result.stderr
+
+
+def test_eval_with_labels_and_flags(isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=5, n_labels=2)
+    result = runner.invoke(
+        app, ["eval", "--model", "m", "--json-mode", "--no-retry", "--limit", "3", "--data-dir", str(jds)]
+    )
+    assert "setup C (retry off, native on)" in result.stdout
+    assert "documents: 3 in" in result.stdout and "(limit 3)" in result.stdout
+    assert "field accuracy: 2 label files in" in result.stdout
+
+
+def test_eval_missing_data_dir_exits_2(isolated: Path) -> None:
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(isolated / "nowhere")])
+    assert result.exit_code == 2 and "data directory not found" in result.stderr
+
+
+def test_eval_empty_data_dir_exits_2(isolated: Path) -> None:
+    (isolated / "empty").mkdir()
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(isolated / "empty")])
+    assert result.exit_code == 2 and "no .txt job descriptions" in result.stderr
+
+
+def test_eval_default_data_dir_is_data_jds(isolated: Path) -> None:
+    make_data(isolated, n_docs=1, n_labels=0)  # relative to the working directory
+    result = runner.invoke(app, ["eval", "--model", "m"])
+    assert "documents: 1 in data" in result.stdout.replace("\\", "/")
+
+
+def test_eval_without_a_model_exits_2(isolated: Path) -> None:
+    make_data(isolated, n_docs=1, n_labels=0)
+    result = runner.invoke(app, ["eval"])
+    assert result.exit_code == 2 and "SOA_MODEL_PRIMARY" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("no_retry", "json_mode", "setup"), [(True, False, "A"), (False, False, "B"), (True, True, "C"), (False, True, "D")]
+)
+def test_setup_letters(no_retry: bool, json_mode: bool, setup: str, isolated: Path) -> None:
+    options = EvalOptions(model="m", json_mode=json_mode, no_retry=no_retry, limit=None, data_dir=isolated)
+    assert options.setup == setup
 

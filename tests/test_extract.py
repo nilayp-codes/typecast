@@ -5,11 +5,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import BaseModel
 
 from soa import agent, llm
 from soa.agent import RETRY_PROMPT_TEMPLATE, ExtractionFailed, extract
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog
+from soa.schemas import JobPosting
 
 VALID: dict[str, Any] = {
     "title": "Backend Engineer",
@@ -52,7 +54,7 @@ def script(monkeypatch: pytest.MonkeyPatch, items: list[LLMResponse | LLMAPIErro
     queue = list(items)
     calls: list[list[Message]] = []
 
-    def fake(messages: list[Message], model: str, json_mode: bool = False) -> LLMResponse:
+    def fake(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
         calls.append(list(messages))
         item = queue.pop(0)
         if isinstance(item, LLMAPIError):
@@ -69,6 +71,36 @@ def read_log(path: Path) -> list[AttemptLog]:
 
 def run(log: Path, max_attempts: int = 3) -> agent.ExtractionResult:
     return extract("some jd", "m", max_attempts, doc_id="jd_007", run_id="run1", log_path=log)
+
+
+# --- native (schema) mode -------------------------------------------------
+
+
+@pytest.mark.parametrize(("json_mode", "expected"), [(True, JobPosting), (False, None)])
+def test_json_mode_selects_response_model_on_every_attempt(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float],
+    json_mode: bool, expected: type[BaseModel] | None,
+) -> None:
+    queue = [resp(BAD_ENUM), resp(GOOD)]
+    seen: list[type[BaseModel] | None] = []
+
+    def fake(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
+        seen.append(response_model)
+        return queue.pop(0)
+
+    monkeypatch.setattr(llm, "call", fake)
+    result = extract("some jd", "m", 3, json_mode, doc_id="jd_007", run_id="run1", log_path=tmp_path / "a.jsonl")
+    assert result.attempts == 2
+    assert seen == [expected, expected]  # the retry stays in the same mode
+
+
+def test_schema_mode_rejection_is_not_retried(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]) -> None:
+    calls = script(monkeypatch, [api_error(retryable=False, status=400, message="schema mode unsupported by m")])
+    log = tmp_path / "a.jsonl"
+    with pytest.raises(LLMAPIError, match="schema mode unsupported by m"):
+        extract("some jd", "m", 3, True, doc_id="jd_007", run_id="run1", log_path=log)
+    assert len(calls) == 1 and sleeps == []  # no backoff, no second call
+    assert [x.error_type for x in read_log(log)] == ["APIError"]
 
 
 # --- validation retries ---------------------------------------------------

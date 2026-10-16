@@ -170,7 +170,7 @@ def report_failure(exc: ExtractionFailed, g: Glyphs) -> None:
 
 FileArg = Annotated[Path, typer.Argument(help="Job description text file (UTF-8).")]
 ModelOpt = Annotated[str | None, typer.Option("--model", help="LiteLLM model string. Default: SOA_MODEL_PRIMARY.")]
-JsonModeOpt = Annotated[bool, typer.Option("--json-mode", help="Ask the provider for JSON output.")]
+JsonModeOpt = Annotated[bool, typer.Option("--json-mode", help="Use the provider's JSON-schema mode (built from JobPosting).")]
 
 
 @app.command("extract")

@@ -165,8 +165,8 @@ def attempt_once(
     attempt: int,
     log_path: Path | None,
 ) -> AttemptResult:
-    """One LLM call on `messages`, one validation, one log line."""
-    response = llm.call(messages, model, json_mode=json_mode)
+    """One LLM call on `messages`, one validation, one log line. `json_mode` = native schema mode (JobPosting)."""
+    response = llm.call(messages, model, response_model=JobPosting if json_mode else None)
     result = _validate(response, doc_id)
     entry = _to_log(result, run_id=run_id, doc_id=doc_id, attempt=attempt, model=model)
     append_log(entry, log_path or default_log_path())

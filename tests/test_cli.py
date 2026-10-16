@@ -6,12 +6,14 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import BaseModel
 from typer.testing import CliRunner
 
 from soa import agent, cli, llm
 from soa.cli import app
 from soa.eval import EvalOptions
 from soa.llm import LLMAPIError, LLMResponse, Message
+from soa.schemas import JobPosting
 
 runner = CliRunner()
 
@@ -36,13 +38,22 @@ def resp(text: str, *, known: bool = True) -> LLMResponse:
     )
 
 
-def script(monkeypatch: pytest.MonkeyPatch, items: list[LLMResponse | LLMAPIError]) -> list[str]:
-    """llm.call returns (or raises) `items` in order; returns the model string of each call."""
+def script(
+    monkeypatch: pytest.MonkeyPatch,
+    items: list[LLMResponse | LLMAPIError],
+    modes: list[type[BaseModel] | None] | None = None,
+) -> list[str]:
+    """llm.call returns (or raises) `items` in order; returns the model string of each call.
+
+    Pass a list as `modes` to also collect the `response_model` of each call.
+    """
     queue = list(items)
     models: list[str] = []
+    modes = [] if modes is None else modes
 
-    def fake(messages: list[Message], model: str, json_mode: bool = False) -> LLMResponse:
+    def fake(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
         models.append(model)
+        modes.append(response_model)
         item = queue.pop(0)
         if isinstance(item, LLMAPIError):
             raise item
@@ -101,6 +112,22 @@ def test_success_exits_0_with_header_and_pretty_json(monkeypatch: pytest.MonkeyP
     assert [s["name"] for s in data["skills"]] == ["PostgreSQL"]  # normalized: duplicates merged
     assert data["skills"][0]["required"] is True
     assert data["location"] == {"city": "Bengaluru", "country": "India", "mode": "onsite"}  # filled from the header
+
+
+def test_json_mode_flag_requests_schema_mode_for_jobposting(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:
+    modes: list[type[BaseModel] | None] = []
+    script(monkeypatch, [resp(GOOD), resp(GOOD)], modes)
+    assert runner.invoke(app, ["extract", str(jd_file), "--model", "m", "--json-mode"]).exit_code == 0
+    assert runner.invoke(app, ["extract", str(jd_file), "--model", "m"]).exit_code == 0
+    assert modes == [JobPosting, None]
+
+
+def test_schema_mode_unsupported_exits_2_with_the_reason(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:
+    err = LLMAPIError("schema mode unsupported by m: BadRequestError: nope", model="m", retryable=False, status_code=400)
+    script(monkeypatch, [err])
+    result = runner.invoke(app, ["extract", str(jd_file), "--model", "m", "--json-mode"])
+    assert result.exit_code == 2
+    assert "schema mode unsupported by m" in status(result) and "retries exhausted" not in status(result)
 
 
 def test_retry_success_lists_each_failed_attempt(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:

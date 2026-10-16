@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from soa import agent, llm
 from soa.agent import SYSTEM_PROMPT, build_messages, extract_once, read_jd
@@ -36,8 +36,8 @@ def mock_call(monkeypatch: pytest.MonkeyPatch, text: str) -> list[dict[str, Any]
     """Make llm.call return `text`; return a list capturing each call's arguments."""
     calls: list[dict[str, Any]] = []
 
-    def fake(messages: list[Message], model: str, json_mode: bool = False) -> LLMResponse:
-        calls.append({"messages": messages, "model": model, "json_mode": json_mode})
+    def fake(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
+        calls.append({"messages": messages, "model": model, "response_model": response_model})
         return response(text)
 
     monkeypatch.setattr(llm, "call", fake)
@@ -103,13 +103,21 @@ def test_schema_violation_is_logged_with_one_line_per_error(
     assert "skills: List should have at least 1 item after validation, not 0 (got: [])" in lines
 
 
-def test_attempt_and_json_mode_are_forwarded(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_attempt_is_forwarded_and_json_mode_means_schema_mode_for_jobposting(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     calls = mock_call(monkeypatch, json.dumps(VALID))
     log = tmp_path / "attempts.jsonl"
     run(log, json_mode=True, attempt=2)
-    assert calls[0]["json_mode"] is True
+    assert calls[0]["response_model"] is JobPosting
     assert calls[0]["model"] == "gemini/x"
     assert read_log(log)[0].attempt == 2
+
+
+def test_json_mode_off_passes_no_response_model(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    calls = mock_call(monkeypatch, json.dumps(VALID))
+    run(tmp_path / "attempts.jsonl")
+    assert calls[0]["response_model"] is None
 
 
 def test_log_path_defaults_to_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -123,7 +131,7 @@ def test_log_path_defaults_to_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
 def test_api_error_propagates_without_a_validation_log(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    def boom(messages: list[Message], model: str, json_mode: bool = False) -> LLMResponse:
+    def boom(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
         raise LLMAPIError("RateLimitError: slow", model=model, retryable=True, status_code=429)
 
     monkeypatch.setattr(llm, "call", boom)

@@ -80,7 +80,7 @@ reported raw and normalized (Phase 6). Post-processing can be turned off (`extra
 | Max attempts | 3 | Diminishing returns past 2; caps cost |
 | API errors | Separate from validation: retryable (429/5xx/timeout) waits 2, 4, 8 s and re-sends the same call, max 3 times per call; non-retryable raises at once. Each is logged as `error_type="APIError"` and never consumes a validation attempt | A provider outage says nothing about the model's output, and must not burn the 3-attempt budget |
 | Validation | `model_validate_json` (not `json.loads` + validate) | Single step, better error locations |
-| JSON mode | Off by default, togglable. The eval runs it both on and off, as a required comparison (setups A-D) | Measure raw model behaviour first; answer "why not just native structured outputs?" with numbers |
+| Native mode (`json_mode`) | Off by default, togglable. There is ONE native mode: the provider's JSON-schema mode built from `JobPosting.model_json_schema()` (no plain `json_object` path). The eval runs it both on and off, as a required comparison (setups A-D) | Measure raw model behaviour first; answer "why not just native structured outputs?" with numbers |
 | Logging | Pydantic `AttemptLog` → JSONL | Logs are themselves validated; trivially parseable for eval |
 | Client | LiteLLM | Model swap for evals; aligns with LiteLLM ecosystem |
 
@@ -95,6 +95,7 @@ def extract(text: str, model: str, max_attempts: int = 3, json_mode: bool = Fals
 #                   attempts: int, api_retries: int, total_tokens: int, cost_usd: float, cost_known: bool,
 #                   latency_ms: int   (totals over every model call; cost_known is False if any call's cost is unknown)
 # doc_id / run_id / log_path only label and place the log lines; they do not change extraction.
+# json_mode=True = native schema mode: every model call gets response_model=JobPosting (retries too).
 # normalize=False skips tools.postprocess: posting == raw_posting. Validity metrics use raw_posting.
 # Post-processing failing re-validation raises tools.ToolResponseError (our bug), not ExtractionFailed.
 # ExtractionFailed carries doc_id, attempts (list[AttemptResult]), failures (list[AttemptFailure]), totals
@@ -123,8 +124,16 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   `response_model: type[BaseModel] | None` (`None` when native mode is off), not a schema dict, so rule 2 holds.
   `llm.py` calls `model_json_schema()` on it and builds the provider setting. Rule 9 still holds (the schema is
   generated from the model, never hand-written), and so does rule 5: no provider SDK or `response_format` outside
-  `llm.py`. (As of Phase 2, `llm.call()` takes `json_mode: bool` and maps it to `json_object`; replacing that with
-  `response_model` is a Phase 5 task.)
+  `llm.py`. The signature is `call(messages, model, response_model: type[BaseModel] | None = None)`; with a model
+  it sends `response_format={"type": "json_schema", "json_schema": {"name": <class name>, "schema":
+  <model_json_schema()>, "strict": True}}`. `json_mode` stays the boolean name on `extract()` and the CLI
+  (`--json-mode`) and means `response_model=JobPosting`; there is no `json_object` path any more.
+- **Provider rejects schema mode:** a 400-class error (LiteLLM `BadRequestError`, which includes
+  `UnsupportedParamsError`) on a request that asked for schema mode becomes
+  `LLMAPIError(retryable=False, "schema mode unsupported by <model>: <provider message>")`: no backoff, no
+  retry, logged as an `APIError` line. A 400 can have other causes, which is why the provider's message is kept in
+  the text. `eval.py` (Phase 6) reports C and D for that model as "not supported". Caveat: a provider that
+  silently ignores `response_format` raises nothing; telling that apart from real schema mode is Phase 6 work.
 - **Provider schema subsets:** provider strict-schema modes support only a subset of JSON Schema. If a constraint
   must be dropped for the provider, record which ones in `results/` and still validate the output with our full
   Pydantic model. Dropped constraints are reported as a finding in the README.

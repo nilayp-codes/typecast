@@ -4,11 +4,19 @@ from typing import Any
 
 import litellm
 import pytest
-from litellm.exceptions import AuthenticationError, InternalServerError, RateLimitError, Timeout
+from litellm.exceptions import (
+    AuthenticationError,
+    BadRequestError,
+    InternalServerError,
+    RateLimitError,
+    Timeout,
+    UnsupportedParamsError,
+)
 from pydantic import ValidationError
 
 from soa import llm
 from soa.llm import LLMAPIError, LLMResponse, Message
+from soa.schemas import JobPosting
 
 MESSAGES = [Message(role="system", content="be brief"), Message(role="user", content="hi")]
 
@@ -56,16 +64,58 @@ def test_messages_are_sent_as_role_content_pairs(monkeypatch: pytest.MonkeyPatch
     assert seen["model"] == "gpt-4o-mini"
 
 
-def test_json_mode_off_sends_no_response_format(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_no_response_model_sends_no_response_format(monkeypatch: pytest.MonkeyPatch) -> None:
     seen = stub_completion(monkeypatch, fake_response())
     llm.call(MESSAGES, "gpt-4o-mini")
     assert seen["response_format"] is None
 
 
-def test_json_mode_on_requests_json_object(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_response_model_puts_its_schema_in_response_format(monkeypatch: pytest.MonkeyPatch) -> None:
     seen = stub_completion(monkeypatch, fake_response())
-    llm.call(MESSAGES, "gpt-4o-mini", json_mode=True)
-    assert seen["response_format"] == {"type": "json_object"}
+    llm.call(MESSAGES, "gpt-4o-mini", response_model=JobPosting)
+    assert seen["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {"name": "JobPosting", "schema": JobPosting.model_json_schema(), "strict": True},
+    }
+    assert seen["response_format"]["json_schema"]["schema"]["additionalProperties"] is False  # really from the model
+
+
+def test_plain_json_object_mode_is_gone() -> None:
+    with pytest.raises(TypeError):
+        llm.call(MESSAGES, "gpt-4o-mini", json_mode=True)  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        BadRequestError("response_format json_schema is not supported", model="m", llm_provider="openrouter"),
+        UnsupportedParamsError("openrouter does not support parameters: ['response_format']", llm_provider="openrouter", model="m"),
+    ],
+)
+def test_provider_rejecting_schema_mode_raises_non_retryable_unsupported(
+    monkeypatch: pytest.MonkeyPatch, exc: Exception
+) -> None:
+    stub_completion(monkeypatch, exc)
+    with pytest.raises(LLMAPIError) as caught:
+        llm.call(MESSAGES, "openrouter/m", response_model=JobPosting)
+    assert str(caught.value).startswith("schema mode unsupported by openrouter/m")
+    assert caught.value.retryable is False
+    assert caught.value.status_code == 400
+    assert caught.value.__cause__ is exc
+
+
+def test_a_400_without_schema_mode_is_an_ordinary_api_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, BadRequestError("prompt too long", model="m", llm_provider="openrouter"))
+    with pytest.raises(LLMAPIError) as caught:
+        llm.call(MESSAGES, "openrouter/m")
+    assert "schema mode" not in str(caught.value) and caught.value.retryable is False
+
+
+def test_other_errors_in_schema_mode_keep_their_retry_class(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, RateLimitError("slow down", llm_provider="openrouter", model="m"))
+    with pytest.raises(LLMAPIError) as caught:
+        llm.call(MESSAGES, "openrouter/m", response_model=JobPosting)
+    assert caught.value.retryable is True and "schema mode" not in str(caught.value)
 
 
 def test_unknown_model_costs_zero_and_is_flagged(monkeypatch: pytest.MonkeyPatch) -> None:

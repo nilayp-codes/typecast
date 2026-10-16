@@ -8,6 +8,7 @@ import litellm
 from litellm.exceptions import (
     APIConnectionError,
     BadGatewayError,
+    BadRequestError,
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
@@ -61,22 +62,43 @@ class LLMAPIError(Exception):
         self.status_code = status_code
 
 
-def call(messages: list[Message], model: str, json_mode: bool = False) -> LLMResponse:
-    """Send messages to `model` and return text, token counts, cost and latency."""
+def call(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
+    """Send messages to `model` and return text, token counts, cost and latency.
+
+    With `response_model`, the provider's schema mode is requested, built from `response_model.model_json_schema()`
+    (native mode, eval setups C and D). A provider that rejects it raises a non-retryable LLMAPIError.
+    """
     started = time.perf_counter()
     try:
         raw = litellm.completion(
             model=model,
             messages=[m.model_dump() for m in messages],
-            response_format={"type": "json_object"} if json_mode else None,
+            response_format=_schema_format(response_model) if response_model else None,
         )
     except APIError as exc:
-        raise _to_api_error(exc, model) from exc
+        raise _to_api_error(exc, model, schema_mode=response_model is not None) from exc
     latency_ms = round((time.perf_counter() - started) * 1000)
     return _build_response(raw, model, latency_ms)
 
 
-def _to_api_error(exc: APIError, model: str) -> LLMAPIError:
+def _schema_format(response_model: type[BaseModel]) -> dict[str, object]:
+    """The OpenAI-style `json_schema` response_format; LiteLLM translates it per provider."""
+    return {
+        "type": "json_schema",
+        "json_schema": {"name": response_model.__name__, "schema": response_model.model_json_schema(), "strict": True},
+    }
+
+
+def _to_api_error(exc: APIError, model: str, *, schema_mode: bool = False) -> LLMAPIError:
+    # A 400 on a request that asked for schema mode is read as "this model/provider does not support it". The
+    # provider's own message stays in the text, since a 400 can have another cause (e.g. a prompt that is too long).
+    if schema_mode and isinstance(exc, BadRequestError):
+        return LLMAPIError(
+            f"schema mode unsupported by {model}: {type(exc).__name__}: {exc}",
+            model=model,
+            retryable=False,
+            status_code=getattr(exc, "status_code", None),
+        )
     return LLMAPIError(
         f"{type(exc).__name__}: {exc}",
         model=model,

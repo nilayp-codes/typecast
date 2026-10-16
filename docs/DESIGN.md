@@ -51,6 +51,8 @@ stdout:  { ...pretty JSON... }
 ```
 **stdout carries only the JSON** (so `soa extract jd.txt > out.json` and pipes work); all status output goes to stderr.
 `soa extract <file> [--model M] [--json-mode] [--no-normalize] [--max-attempts N]`
+- `--json-mode` = the provider's JSON-schema mode, built from `JobPosting.model_json_schema()` (the only native mode).
+  A provider that rejects it exits 2 with `schema mode unsupported by <model>`.
 - Defaults: model from `SOA_MODEL_PRIMARY`, attempts from `SOA_MAX_ATTEMPTS` (else 3). `.env` is loaded from the
   working directory (or a parent); variables already set are not overridden. The file is read as UTF-8 (a BOM is dropped).
 - Header: `✓ Valid after N attempt(s)  (tokens · cost · seconds)`. Cost is `n/a` when `cost_known` is false. Seconds is the

@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from soa import llm
 from soa.errors import format_validation_errors, redact_keys
 from soa.llm import LLMAPIError, LLMResponse, Message
-from soa.logger import AttemptLog, append_log, default_log_path
+from soa.logger import AttemptLog, Setup, append_log, default_log_path
 from soa.schemas import JobPosting
 from soa.tools import Disagreement, PostprocessResult, postprocess
 
@@ -148,10 +148,12 @@ def extract_once(
     json_mode: bool = False,
     attempt: int = 1,
     log_path: Path | None = None,
+    setup: Setup | None = None,
 ) -> AttemptResult:
     """One LLM call, one validation, one log line. No retries."""
     return attempt_once(
-        build_messages(text), model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path
+        build_messages(text), model, doc_id, run_id,
+        json_mode=json_mode, attempt=attempt, log_path=log_path, setup=setup,
     )
 
 
@@ -164,11 +166,12 @@ def attempt_once(
     json_mode: bool,
     attempt: int,
     log_path: Path | None,
+    setup: Setup | None = None,
 ) -> AttemptResult:
     """One LLM call on `messages`, one validation, one log line. `json_mode` = native schema mode (JobPosting)."""
     response = llm.call(messages, model, response_model=JobPosting if json_mode else None)
     result = _validate(response, doc_id)
-    entry = _to_log(result, run_id=run_id, doc_id=doc_id, attempt=attempt, model=model)
+    entry = _to_log(result, run_id=run_id, doc_id=doc_id, attempt=attempt, model=model, setup=setup, json_mode=json_mode)
     append_log(entry, log_path or default_log_path())
     return result
 
@@ -182,6 +185,7 @@ def attempt_with_backoff(
     json_mode: bool,
     attempt: int,
     log_path: Path | None,
+    setup: Setup | None = None,
 ) -> tuple[AttemptResult, int]:
     """attempt_once, re-sending after a retryable LLMAPIError with exponential backoff (max API_MAX_RETRIES).
 
@@ -193,12 +197,15 @@ def attempt_with_backoff(
         started = time.perf_counter()
         try:
             result = attempt_once(
-                messages, model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path
+                messages, model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path, setup=setup
             )
             return result, retries
         except LLMAPIError as exc:
             latency_ms = round((time.perf_counter() - started) * 1000)
-            _log_api_error(exc, doc_id=doc_id, run_id=run_id, attempt=attempt, latency_ms=latency_ms, log_path=log_path)
+            _log_api_error(
+                exc, doc_id=doc_id, run_id=run_id, attempt=attempt, latency_ms=latency_ms, log_path=log_path,
+                setup=setup, json_mode=json_mode,
+            )
             if not exc.retryable or retries >= API_MAX_RETRIES:
                 raise
             wait = API_BACKOFF_SECONDS * 2**retries
@@ -208,7 +215,15 @@ def attempt_with_backoff(
 
 
 def _log_api_error(
-    exc: LLMAPIError, *, doc_id: str, run_id: str, attempt: int, latency_ms: int, log_path: Path | None
+    exc: LLMAPIError,
+    *,
+    doc_id: str,
+    run_id: str,
+    attempt: int,
+    latency_ms: int,
+    log_path: Path | None,
+    setup: Setup | None,
+    json_mode: bool,
 ) -> None:
     """One `APIError` line. No model output, no tokens, cost 0.0 with cost_known=False (nothing was measured)."""
     entry = AttemptLog(
@@ -216,6 +231,8 @@ def _log_api_error(
         doc_id=doc_id,
         attempt=attempt,
         model=exc.model,
+        setup=setup,
+        json_mode=json_mode,
         ok=False,
         error_type="APIError",
         error=redact_keys(" ".join(str(exc).split())),
@@ -246,11 +263,13 @@ def extract(
     run_id: str | None = None,
     log_path: Path | None = None,
     normalize: bool = True,
+    setup: Setup | None = None,
 ) -> ExtractionResult:
     """Extract a JobPosting, feeding validation errors back to the model for up to `max_attempts` attempts.
 
     With `normalize` (default), the validated posting is then post-processed by the deterministic tools
-    (tools.postprocess); the model's own output stays available as `raw_posting`.
+    (tools.postprocess); the model's own output stays available as `raw_posting`. `setup` only labels the log
+    lines (eval runs); it does not change what is sent.
     """
     if max_attempts < 1:
         raise ValueError(f"max_attempts must be >= 1, got {max_attempts}")
@@ -260,21 +279,23 @@ def extract(
     api_retries = 0
     for attempt in range(1, max_attempts + 1):
         result, retries = attempt_with_backoff(
-            messages, model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path
+            messages, model, doc_id, run_id, json_mode=json_mode, attempt=attempt, log_path=log_path, setup=setup
         )
         results.append(result)
         api_retries += retries
         if result.posting is not None:
-            processed = (
-                postprocess(result.posting, text, doc_id=doc_id)
-                if normalize
-                else PostprocessResult(posting=result.posting, disagreements=[])
-            )
+            processed = _post_process(result.posting, text, doc_id, normalize)
             return summarize(processed, result.posting, results, api_retries)
         messages = messages + retry_messages(result)
     failure = ExtractionFailed(doc_id, results)
     logger.error("%s", failure)  # each attempt already has its own JSONL line
     raise failure
+
+
+def _post_process(posting: JobPosting, text: str, doc_id: str, normalize: bool) -> PostprocessResult:
+    if normalize:
+        return postprocess(posting, text, doc_id=doc_id)
+    return PostprocessResult(posting=posting, disagreements=[])
 
 
 def summarize(
@@ -328,13 +349,17 @@ def _validate(response: LLMResponse, doc_id: str) -> AttemptResult:
     return AttemptResult(ok=True, posting=posting, error_type=None, error=None, response=response)
 
 
-def _to_log(result: AttemptResult, *, run_id: str, doc_id: str, attempt: int, model: str) -> AttemptLog:
+def _to_log(
+    result: AttemptResult, *, run_id: str, doc_id: str, attempt: int, model: str, setup: Setup | None, json_mode: bool
+) -> AttemptLog:
     resp = result.response
     return AttemptLog(
         run_id=run_id,
         doc_id=doc_id,
         attempt=attempt,
         model=model,
+        setup=setup,
+        json_mode=json_mode,
         ok=result.ok,
         error_type=result.error_type,
         error=result.error,

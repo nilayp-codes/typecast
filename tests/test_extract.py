@@ -94,6 +94,26 @@ def test_json_mode_selects_response_model_on_every_attempt(
     assert seen == [expected, expected]  # the retry stays in the same mode
 
 
+def test_setup_and_json_mode_are_written_to_every_log_line(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    script(monkeypatch, [api_error(), resp(BAD_ENUM), resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    extract("some jd", "m", 3, True, doc_id="jd_007", run_id="run1", log_path=log, setup="D")
+    rows = read_log(log)
+    assert [r.error_type for r in rows] == ["APIError", "ValidationError", None]  # API error line included
+    assert {(r.setup, r.json_mode) for r in rows} == {("D", True)}
+
+
+def test_setup_defaults_to_none_and_json_mode_to_false_in_the_log(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    script(monkeypatch, [resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    run(log)
+    assert {(r.setup, r.json_mode) for r in read_log(log)} == {(None, False)}
+
+
 def test_schema_mode_rejection_is_not_retried(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]) -> None:
     calls = script(monkeypatch, [api_error(retryable=False, status=400, message="schema mode unsupported by m")])
     log = tmp_path / "a.jsonl"

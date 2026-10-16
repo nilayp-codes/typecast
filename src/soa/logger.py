@@ -3,15 +3,22 @@
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 DEFAULT_LOG_PATH = "logs/attempts.jsonl"
 
+# A = plain prompt, no retry; B = plain + retry; C = schema mode, no retry; D = schema mode + retry.
+Setup = Literal["A", "B", "C", "D"]
+
 
 class AttemptLog(BaseModel):
-    """One LLM attempt at extracting one document. Written as one JSONL line (DESIGN.md section 3)."""
+    """One LLM attempt at extracting one document. Written as one JSONL line (DESIGN.md section 3).
+
+    `setup` is the eval setup (null outside eval runs) and `json_mode` says whether schema mode was requested.
+    Both have defaults so log lines written before Phase 6 still parse (they were all plain-prompt runs).
+    """
 
     model_config = ConfigDict(extra="forbid", strict=True)
 
@@ -19,6 +26,8 @@ class AttemptLog(BaseModel):
     doc_id: str
     attempt: int = Field(ge=1)
     model: str
+    setup: Setup | None = None
+    json_mode: bool = False
     ok: bool
     error_type: str | None
     error: str | None
@@ -45,6 +54,17 @@ class AttemptLog(BaseModel):
 def default_log_path() -> Path:
     """Log file location: SOA_LOG_PATH from the environment, else logs/attempts.jsonl."""
     return Path(os.environ.get("SOA_LOG_PATH", DEFAULT_LOG_PATH))
+
+
+def read_log(path: Path) -> list[AttemptLog]:
+    """Every line of a JSONL log as an AttemptLog, in file order. A missing file is an empty log.
+
+    A line that does not validate raises (a corrupt log must not be silently skipped).
+    """
+    if not path.is_file():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [AttemptLog.model_validate_json(line) for line in lines if line.strip()]
 
 
 def append_log(entry: AttemptLog, path: Path) -> None:

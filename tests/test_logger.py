@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from soa.logger import AttemptLog, append_log, default_log_path
+from soa.logger import AttemptLog, append_log, default_log_path, read_log
 
 
 def entry(**overrides: Any) -> AttemptLog:
@@ -43,9 +43,58 @@ def test_append_writes_one_json_line(tmp_path: Path) -> None:
     assert row["doc_id"] == "jd_001"
     assert row["ok"] is True
     assert set(row) == {
-        "run_id", "doc_id", "attempt", "model", "ok", "error_type", "error", "raw_output",
+        "run_id", "doc_id", "attempt", "model", "setup", "json_mode", "ok", "error_type", "error", "raw_output",
         "latency_ms", "prompt_tokens", "completion_tokens", "cost_usd", "cost_known", "ts",
     }
+    assert (row["setup"], row["json_mode"]) == (None, False)  # non-eval run, plain prompt
+
+
+@pytest.mark.parametrize("setup", ["A", "B", "C", "D", None])
+def test_setup_and_json_mode_round_trip(tmp_path: Path, setup: str | None) -> None:
+    path = tmp_path / "attempts.jsonl"
+    append_log(entry(setup=setup, json_mode=True), path)
+    [row] = read_log(path)
+    assert (row.setup, row.json_mode) == (setup, True)
+
+
+@pytest.mark.parametrize("bad", ["E", "b", "", "AB"])
+def test_setup_must_be_a_to_d(bad: str) -> None:
+    with pytest.raises(ValidationError):
+        entry(setup=bad)
+
+
+def test_json_mode_must_be_a_bool() -> None:
+    with pytest.raises(ValidationError):
+        entry(json_mode="yes")
+
+
+def test_a_log_line_from_before_phase_6_still_parses() -> None:
+    old = entry().model_dump(mode="json")
+    del old["setup"], old["json_mode"]
+    row = AttemptLog.model_validate_json(json.dumps(old))
+    assert (row.setup, row.json_mode) == (None, False)
+
+
+def test_read_log_returns_lines_in_order_and_skips_blank_lines(tmp_path: Path) -> None:
+    path = tmp_path / "attempts.jsonl"
+    append_log(entry(doc_id="jd_001"), path)
+    append_log(entry(doc_id="jd_002", **FAILED), path)
+    with path.open("a", encoding="utf-8") as f:
+        f.write("\n")
+    assert [r.doc_id for r in read_log(path)] == ["jd_001", "jd_002"]
+
+
+def test_read_log_of_a_missing_file_is_empty(tmp_path: Path) -> None:
+    assert read_log(tmp_path / "nope.jsonl") == []
+
+
+def test_read_log_raises_on_a_corrupt_line(tmp_path: Path) -> None:
+    path = tmp_path / "attempts.jsonl"
+    append_log(entry(), path)
+    with path.open("a", encoding="utf-8") as f:
+        f.write('{"run_id": "x"}\n')
+    with pytest.raises(ValidationError):
+        read_log(path)
 
 
 def test_append_adds_lines_and_roundtrips(tmp_path: Path) -> None:

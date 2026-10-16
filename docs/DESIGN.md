@@ -96,7 +96,8 @@ model    setup  retry  native  first-try  final  avg calls  field acc  cost
  "completion_tokens":330,"cost_usd":0.0006,"ts":"…"}
 ```
 `setup` is `"A"`, `"B"`, `"C"` or `"D"` (see ARCHITECTURE.md "Eval setups"), or `null` for non-eval runs.
-`json_mode` is a bool. `AttemptLog` gets both fields when `eval.py` is built (Phase 6).
+`json_mode` is a bool (true = schema mode was requested). Both fields are on `AttemptLog` and written on every line,
+including `APIError` lines. They default to `null` / `false`, so lines written before Phase 6 still parse.
 
 ## 4. README layout
 1. CI badge at the top, then the one-line pitch

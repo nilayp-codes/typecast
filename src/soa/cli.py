@@ -1,6 +1,7 @@
 """Typer CLI: `soa extract` and `soa eval`. Output format: docs/DESIGN.md section 2.
 
-Exit codes: 0 success; 1 ExtractionFailed (or post-processing broke); 2 bad input or config, or an API error.
+Exit codes: 0 success; 1 ExtractionFailed (or post-processing broke), or `soa eval` declined at the prompt;
+2 bad input or config, or an API error.
 stdout carries only the result JSON of `soa extract`, so it can be piped; the header, attempt lines, tool
 disagreements and errors go to stderr. API key values are never printed.
 """
@@ -204,33 +205,60 @@ def extract_cmd(
     report_success(result, glyphs, raw=no_normalize)
 
 
+SetupOpt = Annotated[
+    str,
+    typer.Option(
+        "--setup",
+        help="A plain/no retry, B plain/retry, C schema mode/no retry, D schema mode/retry, or all.",
+    ),
+]
+LabelsDirOpt = Annotated[
+    Path | None,
+    typer.Option("--labels-dir", help="Folder of gold label .json files. Default: labels/ beside --data-dir."),
+]
+
+
+def run_plan(plan: soa_eval.EvalPlan, results_dir: Path) -> None:
+    """Run each setup of the plan, save its results, then print the summary table and notes."""
+    reports: list[soa_eval.EvalReport] = []
+    for setup in plan.setups:
+        typer.echo(f"running {soa_eval.setup_label(setup)} ...")
+        try:
+            report = soa_eval.run_eval(plan.model, setup, plan.data_dir, plan.labels_dir, plan.limit)
+        except ToolResponseError as exc:
+            fail(f"post-processing failed (a bug in the tools): {exc}", EXIT_FAILED)
+        typer.echo(f"saved {soa_eval.write_results(report, results_dir)}")
+        reports.append(report)
+    typer.echo("")
+    typer.echo(soa_eval.SUMMARY_HEADER + "".join(soa_eval.summary_row(r) for r in reports), nl=False)
+    for note in (n for r in reports for n in soa_eval.report_notes(r)):
+        typer.echo(note)
+
+
 @app.command("eval")
 def eval_cmd(
     model: ModelOpt = None,
-    json_mode: JsonModeOpt = False,
-    no_retry: Annotated[bool, typer.Option("--no-retry", help="One attempt per document (setups A and C).")] = False,
+    setup: SetupOpt = "B",
     limit: Annotated[int | None, typer.Option("--limit", min=1, help="Run at most N documents.")] = None,
     data_dir: Annotated[Path, typer.Option("--data-dir", help="Folder of job description .txt files.")] = (
         soa_eval.DEFAULT_DATA_DIR
     ),
-    labels_dir: Annotated[
-        Path | None, typer.Option("--labels-dir", help="Folder of gold label .json files. Default: labels/ beside --data-dir.")
-    ] = None,
+    labels_dir: LabelsDirOpt = None,
+    results_dir: Annotated[Path, typer.Option("--results-dir", help="Where reports and summary.md go.")] = (
+        soa_eval.RESULTS_DIR
+    ),
+    yes: Annotated[bool, typer.Option("--yes", help="Do not ask for confirmation before making model calls.")] = False,
 ) -> None:
-    """Run the evaluation over a folder of job descriptions (implemented in Phase 6)."""
+    """Run one or all eval setups over a folder of job descriptions. Makes REAL model calls."""
     load_env()
     pick_glyphs()
-    options = soa_eval.EvalOptions(
-        model=resolve_model(model), json_mode=json_mode, no_retry=no_retry, limit=limit, data_dir=data_dir,
-        labels_dir=labels_dir,
-    )
+    chosen = resolve_model(model)
     try:
-        plan = soa_eval.plan_eval(options)
-    except FileNotFoundError as exc:
+        plan = soa_eval.plan_eval(chosen, soa_eval.parse_setups(setup), data_dir, labels_dir, limit)
+    except (ValueError, FileNotFoundError) as exc:
         fail(str(exc))
     for line in plan.describe():
         typer.echo(line)
-    try:
-        soa_eval.run_planned(plan)
-    except NotImplementedError as exc:
-        fail(str(exc))
+    if not yes:
+        typer.confirm("Make these model calls now?", abort=True)
+    run_plan(plan, results_dir)

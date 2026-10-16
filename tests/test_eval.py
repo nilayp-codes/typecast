@@ -15,6 +15,9 @@ from soa.eval import (
     failure_breakdown,
     first_error_loc,
     load_labels,
+    parse_setups,
+    plan_eval,
+    report_notes,
     run_eval,
     score_fields,
     setup_args,
@@ -435,3 +438,50 @@ def test_skipped_labels_show_up_in_the_report(tmp_path: Path, monkeypatch: pytes
     (labels / "jd_001.json").write_text(json.dumps({**VALID, "title": "TODO"}), encoding="utf-8")
     r = run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl")
     assert r.labels_skipped == ["jd_001"] and r.accuracy_raw is None
+
+
+# --- plan and notes -------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("A", ["A"]), ("b", ["B"]), (" d ", ["D"]), ("all", ["A", "B", "C", "D"]), ("ALL", ["A", "B", "C", "D"])],
+)
+def test_parse_setups(value: str, expected: list[str]) -> None:
+    assert parse_setups(value) == expected
+
+
+@pytest.mark.parametrize("value", ["", "E", "AB", "A,B", "none"])
+def test_parse_setups_rejects_anything_else(value: str) -> None:
+    with pytest.raises(ValueError, match="unknown setup"):
+        parse_setups(value)
+
+
+def test_call_range_is_docs_times_attempts_per_setup(tmp_path: Path) -> None:
+    jds = tmp_path / "jds"
+    jds.mkdir()
+    for i in range(4):
+        (jds / f"jd_{i}.txt").write_text("x", encoding="utf-8")
+    assert plan_eval("m", ["A"], jds).call_range() == (4, 4)
+    assert plan_eval("m", ["B"], jds).call_range() == (4, 12)
+    assert plan_eval("m", ["A", "B", "C", "D"], jds).call_range() == (16, 32)
+    assert plan_eval("m", ["D"], jds, limit=2).call_range() == (2, 6)
+
+
+def test_plan_counts_label_files_and_defaults_to_the_sibling_folder(tmp_path: Path) -> None:
+    (tmp_path / "jds").mkdir()
+    (tmp_path / "jds" / "jd_1.txt").write_text("x", encoding="utf-8")
+    (tmp_path / "labels").mkdir()
+    (tmp_path / "labels" / "jd_1.json").write_text("{}", encoding="utf-8")
+    plan = plan_eval("m", ["B"], tmp_path / "jds")
+    assert (plan.n_labels, plan.labels_dir) == (1, tmp_path / "labels")
+    assert plan_eval("m", ["B"], tmp_path / "jds", tmp_path / "elsewhere").n_labels == 0
+
+
+def test_report_notes_only_mention_what_happened() -> None:
+    assert report_notes(report([doc("r1")], [line("r1")])) == []
+    notes = report_notes(report())  # 1 doc without a response, 4 API error lines
+    assert notes == [
+        "setup B: 4 API error line(s) in the log (not counted as validation attempts)",
+        "setup B: 1 doc(s) got no model response and are left out of the validity numbers",
+    ]

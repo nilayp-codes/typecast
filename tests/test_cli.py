@@ -11,7 +11,6 @@ from typer.testing import CliRunner
 
 from soa import agent, cli, llm
 from soa.cli import app
-from soa.eval import EvalOptions
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.schemas import JobPosting
 
@@ -314,24 +313,109 @@ def make_data(root: Path, n_docs: int, n_labels: int) -> Path:
     return jds
 
 
-def test_eval_without_labels_skips_field_accuracy(isolated: Path) -> None:
+def plain_label() -> str:
+    """A label that validates (no duplicate skills)."""
+    return json.dumps({**VALID, "skills": [{"name": "PostgreSQL", "required": True}]}, ensure_ascii=False)
+
+
+def out(result: Any) -> str:
+    return utf8(result)
+
+
+def test_eval_shows_the_plan_and_an_estimate_and_asks_before_calling(
+    monkeypatch: pytest.MonkeyPatch, isolated: Path
+) -> None:
     jds = make_data(isolated, n_docs=4, n_labels=0)
-    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds)])
-    assert result.exit_code == 2  # the stub: Phase 6 is not implemented
-    assert "setup B (retry on, native off)" in result.stdout
-    assert "documents: 4 in" in result.stdout
-    assert "field accuracy: skipped (no labels in" in result.stdout
-    assert "not implemented yet (Phase 6)" in result.stderr
+    models = script(monkeypatch, [])
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds)], input="n\n")
+    text = out(result)
+    assert result.exit_code == 1  # declined
+    assert "documents: 4 in" in text and "field accuracy: skipped (no labels in" in text
+    assert "setup B (retry on, native off): 4 to 12 calls" in text
+    assert "estimated model calls: 4 to 12 (real API calls)" in text
+    assert "Make these model calls now?" in text
+    assert models == [] and not (isolated / "results").exists()  # nothing sent, nothing written
 
 
-def test_eval_with_labels_and_flags(isolated: Path) -> None:
-    jds = make_data(isolated, n_docs=5, n_labels=2)
-    result = runner.invoke(
-        app, ["eval", "--model", "m", "--json-mode", "--no-retry", "--limit", "3", "--data-dir", str(jds)]
-    )
-    assert "setup C (retry off, native on)" in result.stdout
-    assert "documents: 3 in" in result.stdout and "(limit 3)" in result.stdout
-    assert "field accuracy: 2 label files in" in result.stdout
+def test_eval_runs_after_a_yes_and_saves_results(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=3, n_labels=0)
+    models = script(monkeypatch, [resp(GOOD)] * 3)
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds)], input="y\n")
+    assert result.exit_code == 0, result.output
+    assert len(models) == 3
+    summary = (isolated / "results" / "summary.md").read_text(encoding="utf-8").splitlines()
+    assert summary[0].startswith("| model | setup | n |") and len(summary) == 3
+    assert summary[2].startswith("| m | B | 3 | 100.0% | 100.0% | 1.00 | n/a | $0.0027 |")
+    assert summary[2] in out(result)  # the same row is printed
+    assert len(list((isolated / "results").glob("*_m_B.json"))) == 1
+
+
+def test_eval_yes_skips_the_prompt(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=1, n_labels=0)
+    script(monkeypatch, [resp(GOOD)])
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])  # no input given
+    assert result.exit_code == 0 and "Make these model calls now?" not in out(result)
+
+
+def test_eval_without_yes_and_no_terminal_input_aborts(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=1, n_labels=0)
+    models = script(monkeypatch, [])
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds)])  # stdin is empty
+    assert result.exit_code == 1 and models == []
+
+
+def test_eval_all_runs_the_four_setups_and_writes_four_rows(
+    monkeypatch: pytest.MonkeyPatch, isolated: Path
+) -> None:
+    jds = make_data(isolated, n_docs=2, n_labels=0)
+    modes: list[type[BaseModel] | None] = []
+    script(monkeypatch, [resp(GOOD)] * 8, modes)
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--setup", "all", "--yes"])
+    assert result.exit_code == 0, result.output
+    assert "estimated model calls: 8 to 16 (real API calls)" in out(result)  # A 2, B 2-6, C 2, D 2-6
+    assert modes == [None] * 4 + [JobPosting] * 4  # A, B plain; C, D schema mode
+    names = sorted(p.name for p in (isolated / "results").glob("*.json"))
+    assert [n.rsplit("_", 1)[1] for n in names] == ["A.json", "B.json", "C.json", "D.json"]
+    rows = (isolated / "results" / "summary.md").read_text(encoding="utf-8").splitlines()[2:]
+    assert [r.split(" | ")[1] for r in rows] == ["A", "B", "C", "D"]
+
+
+def test_eval_setup_is_case_insensitive_and_validated(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=1, n_labels=0)
+    script(monkeypatch, [])
+    ok = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--setup", "d"], input="n\n")
+    assert "setup D (retry on, native on)" in out(ok)
+    bad = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--setup", "E"])
+    assert bad.exit_code == 2 and "unknown setup 'E'" in bad.stderr
+
+
+def test_eval_scores_field_accuracy_when_labels_exist(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=2, n_labels=0)
+    (isolated / "data" / "labels" / "jd_000.json").write_text(plain_label(), encoding="utf-8")
+    (isolated / "data" / "labels" / "jd_001.json").write_text('{"title": "TODO"}', encoding="utf-8")
+    script(monkeypatch, [resp(GOOD)] * 2)
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
+    assert result.exit_code == 0, result.output
+    assert "field accuracy: 2 label files in" in out(result)
+    assert "labels skipped (invalid or still TODO): jd_001" in out(result)
+    row = next(x for x in out(result).splitlines() if x.startswith("| m | B"))
+    cells = [c.strip() for c in row.strip("| ").split("|")]
+    assert cells[6] != "n/a" and cells[6].endswith("%")  # the field acc (norm) cell has a number
+    [report_file] = (isolated / "results").glob("*.json")
+    data = json.loads(report_file.read_text(encoding="utf-8"))
+    assert (data["n_labelled"], data["n_labelled_with_output"]) == (1, 1)
+
+
+def test_eval_reports_docs_without_a_model_response(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=2, n_labels=0)
+    err = LLMAPIError("AuthenticationError: bad key", model="m", retryable=False, status_code=401)
+    script(monkeypatch, [err, resp(GOOD)])
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
+    assert result.exit_code == 0, result.output
+    text = out(result)
+    assert "| m | B | 2 (1 scored) | 100.0% | 100.0% |" in text
+    assert "setup B: 1 API error line(s) in the log" in text
+    assert "setup B: 1 doc(s) got no model response and are left out of the validity numbers" in text
 
 
 def test_eval_labels_dir_overrides_the_sibling_folder(isolated: Path) -> None:
@@ -340,16 +424,23 @@ def test_eval_labels_dir_overrides_the_sibling_folder(isolated: Path) -> None:
     other.mkdir()
     for name in ("a", "b", "c"):
         (other / f"{name}.json").write_text("{}", encoding="utf-8")
-    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--labels-dir", str(other)])
-    assert "field accuracy: 3 label files in" in result.stdout and "gold" in result.stdout
+    args = ["eval", "--model", "m", "--data-dir", str(jds), "--labels-dir", str(other)]
+    result = runner.invoke(app, args, input="n\n")
+    assert "field accuracy: 3 label files in" in out(result) and "gold" in out(result)
 
 
 def test_eval_labels_dir_missing_means_no_field_accuracy(isolated: Path) -> None:
     jds = make_data(isolated, n_docs=2, n_labels=1)
-    result = runner.invoke(
-        app, ["eval", "--model", "m", "--data-dir", str(jds), "--labels-dir", str(isolated / "nope")]
-    )
-    assert "field accuracy: skipped (no labels in" in result.stdout
+    args = ["eval", "--model", "m", "--data-dir", str(jds), "--labels-dir", str(isolated / "nope")]
+    assert "field accuracy: skipped (no labels in" in out(runner.invoke(app, args, input="n\n"))
+
+
+def test_eval_limit_is_shown_in_the_plan_and_caps_the_estimate(isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=5, n_labels=2)
+    result = runner.invoke(app, ["eval", "--model", "m", "--limit", "3", "--data-dir", str(jds)], input="n\n")
+    assert "documents: 3 in" in out(result) and "(limit 3)" in out(result)
+    assert "estimated model calls: 3 to 9" in out(result)
+    assert "field accuracy: 2 label files in" in out(result)
 
 
 def test_eval_missing_data_dir_exits_2(isolated: Path) -> None:
@@ -365,8 +456,8 @@ def test_eval_empty_data_dir_exits_2(isolated: Path) -> None:
 
 def test_eval_default_data_dir_is_data_jds(isolated: Path) -> None:
     make_data(isolated, n_docs=1, n_labels=0)  # relative to the working directory
-    result = runner.invoke(app, ["eval", "--model", "m"])
-    assert "documents: 1 in data" in result.stdout.replace("\\", "/")
+    result = runner.invoke(app, ["eval", "--model", "m"], input="n\n")
+    assert "documents: 1 in data" in out(result).replace("\\", "/")
 
 
 def test_eval_without_a_model_exits_2(isolated: Path) -> None:
@@ -375,10 +466,8 @@ def test_eval_without_a_model_exits_2(isolated: Path) -> None:
     assert result.exit_code == 2 and "SOA_MODEL_PRIMARY" in result.stderr
 
 
-@pytest.mark.parametrize(
-    ("no_retry", "json_mode", "setup"), [(True, False, "A"), (False, False, "B"), (True, True, "C"), (False, True, "D")]
-)
-def test_setup_letters(no_retry: bool, json_mode: bool, setup: str, isolated: Path) -> None:
-    options = EvalOptions(model="m", json_mode=json_mode, no_retry=no_retry, limit=None, data_dir=isolated)
-    assert options.setup == setup
+def test_eval_no_longer_takes_the_old_setup_flags(isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=1, n_labels=0)
+    for flag in ("--json-mode", "--no-retry"):
+        assert runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), flag]).exit_code == 2
 

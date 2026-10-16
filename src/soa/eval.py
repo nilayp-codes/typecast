@@ -435,55 +435,62 @@ def write_results(report: EvalReport, results_dir: Path = RESULTS_DIR) -> Path:
     return json_path
 
 
-# --- `soa eval` stub (removed when the CLI is wired to run_eval) -------------
+# --- the plan shown before a run ---------------------------------------------
+
+SETUPS: tuple[Setup, ...] = ("A", "B", "C", "D")
 
 
-class EvalOptions(BaseModel):
-    """What `soa eval` was asked to do. The setup letter follows DESIGN.md section 2."""
+def parse_setups(value: str) -> list[Setup]:
+    """`A`..`D` (any case) or `all`. Raises ValueError on anything else."""
+    key = value.strip().upper()
+    if key == "ALL":
+        return list(SETUPS)
+    for setup in SETUPS:
+        if key == setup:
+            return [setup]
+    raise ValueError(f"unknown setup {value!r}: use A, B, C, D or all")
 
-    model_config = ConfigDict(extra="forbid", strict=True)
+
+def setup_label(setup: Setup) -> str:
+    attempts, native = setup_args(setup)
+    return f"setup {setup} (retry {'on' if attempts > 1 else 'off'}, native {'on' if native else 'off'})"
+
+
+class EvalPlan(StrictModel):
+    """What a run would cover and how many model calls it can make, shown before anything is sent."""
 
     model: str
-    json_mode: bool
-    no_retry: bool
-    limit: int | None = Field(default=None, ge=1)
+    setups: list[Setup]
     data_dir: Path
-    labels_dir: Path | None = None  # None: the labels/ folder beside data_dir
-
-    @property
-    def setup(self) -> str:
-        """A = no retry, B = default, C = no retry + native, D = native."""
-        return {(True, False): "A", (False, False): "B", (True, True): "C", (False, True): "D"}[
-            (self.no_retry, self.json_mode)
-        ]
-
-
-class EvalPlan(BaseModel):
-    """What a run would cover: documents, and whether field accuracy can be computed."""
-
-    model_config = ConfigDict(extra="forbid", strict=True)
-
-    options: EvalOptions
-    n_docs: int
     labels_dir: Path
+    limit: int | None
+    n_docs: int
     n_labels: int
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS
 
-    @property
-    def field_accuracy(self) -> bool:
-        return self.n_labels > 0
+    def call_range(self) -> tuple[int, int]:
+        """(fewest, most) model calls: every doc valid at once vs every doc using all its attempts.
+
+        Provider-level retries after API errors (up to 3 per call) come on top and are not counted.
+        """
+        most = sum(self.n_docs * setup_args(s, self.max_attempts)[0] for s in self.setups)
+        return self.n_docs * len(self.setups), most
 
     def describe(self) -> list[str]:
-        o = self.options
-        retry = "off" if o.no_retry else "on"
-        native = "on" if o.json_mode else "off"
-        accuracy = f"{self.n_labels} label files in {self.labels_dir}" if self.field_accuracy else (
-            f"skipped (no labels in {self.labels_dir})"
+        accuracy = (
+            f"{self.n_labels} label files in {self.labels_dir}" if self.n_labels
+            else f"skipped (no labels in {self.labels_dir})"
         )
-        return [
-            f"model: {o.model}   setup {o.setup} (retry {retry}, native {native})",
-            f"documents: {self.n_docs} in {o.data_dir}" + (f" (limit {o.limit})" if o.limit else ""),
+        low, high = self.call_range()
+        calls = str(low) if low == high else f"{low} to {high}"
+        lines = [
+            f"model: {self.model}",
+            f"documents: {self.n_docs} in {self.data_dir}" + (f" (limit {self.limit})" if self.limit else ""),
             f"field accuracy: {accuracy}",
         ]
+        lines += [f"{setup_label(s)}: {self.n_docs} to {self.n_docs * setup_args(s, self.max_attempts)[0]} calls"
+                  for s in self.setups]
+        return lines + [f"estimated model calls: {calls} (real API calls)"]
 
 
 def labels_dir_for(data_dir: Path) -> Path:
@@ -491,14 +498,27 @@ def labels_dir_for(data_dir: Path) -> Path:
     return data_dir.parent / "labels"
 
 
-def plan_eval(options: EvalOptions) -> EvalPlan:
-    """Count the documents and labels. Raises FileNotFoundError if the folder is missing or has no .txt files."""
-    n_docs = len(list_jds(options.data_dir, options.limit))
-    labels = options.labels_dir or labels_dir_for(options.data_dir)
+def plan_eval(
+    model: str, setups: list[Setup], data_dir: Path, labels_dir: Path | None = None, limit: int | None = None
+) -> EvalPlan:
+    """Count the documents and label files. Raises FileNotFoundError if the folder is missing or has no .txt files."""
+    n_docs = len(list_jds(data_dir, limit))
+    labels = labels_dir or labels_dir_for(data_dir)
     n_labels = len(list(labels.glob("*.json"))) if labels.is_dir() else 0
-    return EvalPlan(options=options, n_docs=n_docs, labels_dir=labels, n_labels=n_labels)
+    return EvalPlan(
+        model=model, setups=setups, data_dir=data_dir, labels_dir=labels, limit=limit, n_docs=n_docs, n_labels=n_labels
+    )
 
 
-def run_planned(plan: EvalPlan) -> None:
-    """The old stub: not implemented."""
-    raise NotImplementedError("soa eval is not implemented yet (Phase 6); the plan above is all it does today")
+def report_notes(report: EvalReport) -> list[str]:
+    """Short lines about things the summary row hides: API failures, skipped labels, tool disagreements."""
+    notes: list[str] = []
+    if report.api_error_count:
+        notes.append(f"{report.api_error_count} API error line(s) in the log (not counted as validation attempts)")
+    if report.n_api_failed:
+        notes.append(f"{report.n_api_failed} doc(s) got no model response and are left out of the validity numbers")
+    if report.labels_skipped:
+        notes.append(f"labels skipped (invalid or still TODO): {', '.join(report.labels_skipped)}")
+    if report.disagreement_count:
+        notes.append(f"{report.disagreement_count} model-vs-header-tool disagreement(s)")
+    return [f"setup {report.setup}: {note}" for note in notes]

@@ -72,11 +72,19 @@ stdout:  { ...pretty JSON... }
 model         n   first-try  final   avg calls  cost
 <model>       50  82.0%      100%    1.20       $0.04
 ```
-`soa eval --model <m> [--json-mode] [--no-retry] [--limit N] [--data-dir PATH] [--labels-dir PATH]`: the two flags select the setup. A = `--no-retry`, B = (default),
-C = `--no-retry --json-mode`, D = `--json-mode`. `--data-dir` is the folder of JD `.txt` files (default `data/jds/`); the
-gold labels are read from `--labels-dir` (default: the sibling `labels/` folder of `--data-dir`), and field accuracy is
-skipped when it holds no `.json` labels. Until Phase 6 the command prints this plan (model, setup, document count, labels) and exits 2 ("not
-implemented yet"). The runs are combined into the 4-setup comparison table:
+`soa eval --model <m> [--setup A|B|C|D|all] [--limit N] [--data-dir PATH] [--labels-dir PATH] [--results-dir PATH] [--yes]`.
+`--setup` picks the setup (default B; `all` runs A, B, C, D in turn): A = plain prompt, no retry; B = plain prompt +
+retry; C = schema mode, no retry; D = schema mode + retry. (This replaces the earlier `--json-mode` / `--no-retry`
+pair on `eval`; `soa extract` keeps `--json-mode`.) `--data-dir` is the folder of JD `.txt` files (default
+`data/jds/`); the gold labels are read from `--labels-dir` (default: the sibling `labels/` folder of `--data-dir`), and
+field accuracy is skipped when no label is usable. **These are real model calls.** Before sending anything the command
+prints the plan (model, documents, labels, calls per setup, `estimated model calls: LOW to HIGH`: every doc valid at
+once vs every doc using all its attempts; API-level retries come on top) and asks `Make these model calls now?`;
+`--yes` skips the question, and declining (or no terminal input) exits 1 having sent nothing. Each setup then saves
+`results/<date>_<model-slug>_<setup>.json` and appends a row to `results/summary.md` (`--results-dir`), and the
+rows are printed as a markdown table followed by notes (API errors, docs without a model response, skipped labels,
+tool disagreements). Metric definitions: ARCHITECTURE.md "Eval metrics". The runs are combined into the 4-setup
+comparison table:
 ```
 EXAMPLE ONLY - placeholder values, not results
 model    setup  retry  native  first-try  final  avg calls  field acc  cost

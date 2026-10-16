@@ -1,7 +1,8 @@
 """Typer CLI: `soa extract` and `soa eval`. Output format: docs/DESIGN.md section 2.
 
 Exit codes: 0 success; 1 ExtractionFailed (or post-processing broke); 2 bad input or config, or an API error.
-Errors go to stderr; the result (header, attempt lines, JSON) goes to stdout. API key values are never printed.
+stdout carries only the result JSON of `soa extract`, so it can be piped; the header, attempt lines, tool
+disagreements and errors go to stderr. API key values are never printed.
 """
 
 import logging
@@ -64,8 +65,16 @@ def load_env() -> None:
         load_dotenv(path)
 
 
+def status(line: str) -> None:
+    """One status line (header, attempt, disagreement) on stderr, keeping stdout for the JSON."""
+    typer.echo(line, err=True)
+
+
 def pick_glyphs() -> Glyphs:
-    """UTF-8 glyphs when stdout can carry them, otherwise OK/FAIL. Switches stdout/stderr to UTF-8 where possible."""
+    """UTF-8 glyphs when stderr (where status lines go) can carry them, otherwise OK/FAIL.
+
+    Switches stdout/stderr to UTF-8 where possible.
+    """
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if callable(reconfigure):
@@ -74,7 +83,7 @@ def pick_glyphs() -> Glyphs:
             except (OSError, ValueError):
                 pass  # the stream keeps its encoding; the encode check below decides whether glyphs are safe
     try:
-        "".join(UNICODE_GLYPHS).encode(sys.stdout.encoding or "ascii")
+        "".join(UNICODE_GLYPHS).encode(sys.stderr.encoding or "ascii")
     except (LookupError, UnicodeEncodeError):
         return ASCII_GLYPHS
     return UNICODE_GLYPHS
@@ -146,17 +155,17 @@ def report_success(result: ExtractionResult, g: Glyphs, raw: bool) -> None:
         total_tokens=result.total_tokens, cost_usd=result.cost_usd,
         cost_known=result.cost_known, latency_ms=result.latency_ms,
     )
-    typer.echo(header_line(True, result.attempts, totals, result.api_retries, g))
+    status(header_line(True, result.attempts, totals, result.api_retries, g))
     for line in failure_lines(result.failed_attempts, g) + disagreement_lines(result.disagreements):
-        typer.echo(line)
+        status(line)
     posting = result.raw_posting if raw else result.posting
     typer.echo(posting.model_dump_json(indent=2))
 
 
 def report_failure(exc: ExtractionFailed, g: Glyphs) -> None:
-    typer.echo(header_line(False, len(exc.attempts), exc.totals, 0, g))
+    status(header_line(False, len(exc.attempts), exc.totals, 0, g))
     for line in failure_lines(exc.failures, g):
-        typer.echo(line)
+        status(line)
 
 
 FileArg = Annotated[Path, typer.Argument(help="Job description text file (UTF-8).")]

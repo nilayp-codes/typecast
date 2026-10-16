@@ -45,10 +45,11 @@ Validators:
 ## 2. CLI output
 `soa extract jd.txt`
 ```
-✓ Valid after 2 attempts  (1,240 tokens · $0.0009 · 2.1s)
-  attempt 1 ✗ skills.3.name: String should have at most 40 characters
-{ ...pretty JSON... }
+stderr:  ✓ Valid after 2 attempts  (1,240 tokens · $0.0009 · 2.1s)
+stderr:    attempt 1 ✗ skills.3.name: String should have at most 40 characters
+stdout:  { ...pretty JSON... }
 ```
+**stdout carries only the JSON** (so `soa extract jd.txt > out.json` and pipes work); all status output goes to stderr.
 `soa extract <file> [--model M] [--json-mode] [--no-normalize] [--max-attempts N]`
 - Defaults: model from `SOA_MODEL_PRIMARY`, attempts from `SOA_MAX_ATTEMPTS` (else 3). `.env` is loaded from the
   working directory (or a parent); variables already set are not overridden. The file is read as UTF-8 (a BOM is dropped).
@@ -57,11 +58,12 @@ Validators:
   prints `✗ Failed after N attempts  (...)`.
 - Then one block per rejected attempt (`attempt N ✗ <first error>`, any further errors aligned underneath), then
   any `tool disagreement` lines, then pretty JSON of the normalized posting (`--no-normalize`: the model's raw
-  output, and no post-processing). The result goes to stdout; error messages go to stderr.
+  output, and no post-processing). Only the JSON goes to stdout; the header, attempt lines, tool disagreement
+  lines and error messages go to stderr. A failed run prints nothing on stdout.
 - Exit codes: 0 success; 1 `ExtractionFailed` (or a post-processing bug); 2 bad input file or config, or an API
   error (including retries exhausted).
-- Windows console: stdout is switched to UTF-8; if that is impossible and the stream cannot carry ✓/✗/·, they are
-  printed as `OK` / `FAIL` / `-`. API key values are never printed.
+- Windows console: stdout and stderr are switched to UTF-8; if that is impossible for stderr (where the status
+  lines go) and the stream cannot carry ✓/✗/·, they are printed as `OK` / `FAIL` / `-`. API key values are never printed.
 
 `soa eval --model <model>`
 ```

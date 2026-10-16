@@ -76,9 +76,15 @@ def utf8(result: Any) -> str:
     return decoded.replace("\r\n", "\n")
 
 
-def posting_json(output: str) -> dict[str, Any]:
-    start = output.index("\n{\n") + 1
-    parsed: dict[str, Any] = json.loads(output[start:])
+def status(result: Any) -> str:
+    """The raw stderr bytes (header, attempt lines, disagreements, errors) decoded as UTF-8, CRLF normalized."""
+    decoded: str = result.stderr_bytes.decode("utf-8")
+    return decoded.replace("\r\n", "\n")
+
+
+def posting_json(result: Any) -> dict[str, Any]:
+    """stdout must be exactly one JSON document and nothing else."""
+    parsed: dict[str, Any] = json.loads(utf8(result))
     return parsed
 
 
@@ -89,10 +95,9 @@ def test_success_exits_0_with_header_and_pretty_json(monkeypatch: pytest.MonkeyP
     script(monkeypatch, [resp(GOOD)])
     result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
     assert result.exit_code == 0, result.output
-    out = utf8(result)
-    assert out.splitlines()[0] == "✓ Valid after 1 attempt  (1,240 tokens · $0.0009 · 2.1s)"
-    assert '\n  "title": "Développeur Backend"' in out  # pretty-printed, UTF-8 kept
-    data = posting_json(out)
+    assert status(result).splitlines()[0] == "✓ Valid after 1 attempt  (1,240 tokens · $0.0009 · 2.1s)"
+    assert '\n  "title": "Développeur Backend"' in utf8(result)  # pretty-printed, UTF-8 kept
+    data = posting_json(result)  # stdout parses as JSON: the status lines are not in it
     assert [s["name"] for s in data["skills"]] == ["PostgreSQL"]  # normalized: duplicates merged
     assert data["skills"][0]["required"] is True
     assert data["location"] == {"city": "Bengaluru", "country": "India", "mode": "onsite"}  # filled from the header
@@ -102,34 +107,35 @@ def test_retry_success_lists_each_failed_attempt(monkeypatch: pytest.MonkeyPatch
     script(monkeypatch, [resp(BAD), resp(GOOD)])
     result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
     assert result.exit_code == 0
-    lines = utf8(result).splitlines()
+    lines = status(result).splitlines()
     assert lines[0] == "✓ Valid after 2 attempts  (2,480 tokens · $0.0018 · 4.2s)"
     assert lines[1].startswith("  attempt 1 ✗ seniority: Input should be")
+    assert posting_json(result)["seniority"] == "mid"
 
 
 def test_tool_disagreements_are_shown(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:
     pune = json.dumps({**VALID, "location": {"city": "Pune", "country": "India", "mode": "hybrid"}})
     script(monkeypatch, [resp(pune)])
     result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
-    out = utf8(result)
-    assert "  tool disagreement  location.city: model 'Pune', header tool 'Bengaluru' (model value kept)" in out
-    assert posting_json(out)["location"]["city"] == "Pune"
+    assert "  tool disagreement  location.city: model 'Pune', header tool 'Bengaluru' (model value kept)" in status(result)
+    assert "tool disagreement" not in utf8(result)
+    assert posting_json(result)["location"]["city"] == "Pune"
 
 
 def test_no_normalize_prints_the_raw_posting(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:
     script(monkeypatch, [resp(GOOD)])
     result = runner.invoke(app, ["extract", str(jd_file), "--model", "m", "--no-normalize"])
     assert result.exit_code == 0
-    data = posting_json(utf8(result))
+    data = posting_json(result)
     assert [s["name"] for s in data["skills"]] == ["postgres", "PostgreSQL"]  # as the model wrote them
     assert data["location"]["city"] is None  # not filled from the header
-    assert "tool disagreement" not in utf8(result)
+    assert "tool disagreement" not in status(result)
 
 
 def test_unknown_cost_is_shown_as_na(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:
     script(monkeypatch, [resp(GOOD, known=False)])
     result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
-    assert utf8(result).splitlines()[0] == "✓ Valid after 1 attempt  (1,240 tokens · n/a · 2.1s)"
+    assert status(result).splitlines()[0] == "✓ Valid after 1 attempt  (1,240 tokens · n/a · 2.1s)"
 
 
 # --- extract: failures and exit codes -------------------------------------
@@ -139,12 +145,12 @@ def test_extraction_failed_exits_1_and_shows_every_attempt(monkeypatch: pytest.M
     script(monkeypatch, [resp(BAD), resp("not json at all"), resp(BAD)])
     result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
     assert result.exit_code == 1
-    lines = utf8(result).splitlines()
+    lines = status(result).splitlines()
     assert lines[0] == "✗ Failed after 3 attempts  (3,720 tokens · $0.0027 · 6.3s)"
     attempts = [line for line in lines if line.startswith("  attempt ")]
     assert [line.split()[1] for line in attempts] == ["1", "2", "3"]
-    assert len(lines) == 1 + 3  # header + one line per attempt: no posting JSON is printed
-    assert all(not line.startswith("{") for line in lines)
+    assert len(lines) == 1 + 3  # header + one line per attempt
+    assert result.stdout_bytes == b""  # a failed run prints no JSON
 
 
 def test_library_log_warnings_do_not_leak_to_stderr(
@@ -157,8 +163,12 @@ def test_library_log_warnings_do_not_leak_to_stderr(
     script(monkeypatch, [resp(BAD), resp(pune)])
     result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
     assert result.exit_code == 0
-    assert result.stderr == ""
-    assert "attempt 1 ✗" in utf8(result)  # the same information is still on stdout
+    err = status(result)
+    # stderr holds exactly the CLI's own status lines, each once (city and mode both disagree with the header);
+    # a leaking logging handler would repeat them
+    assert err.count("attempt 1 ✗") == 1 and err.count("tool disagreement") == 2
+    assert "WARNING" not in err and "output failed validation" not in err
+    assert posting_json(result)["location"]["city"] == "Pune"
 
 
 def test_missing_file_exits_2(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
@@ -247,7 +257,7 @@ class NarrowStream:
 
 
 def test_glyphs_fall_back_to_ascii_when_the_stream_cannot_carry_them(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(cli.sys, "stdout", NarrowStream())
+    monkeypatch.setattr(cli.sys, "stderr", NarrowStream())
     assert cli.pick_glyphs() == cli.ASCII_GLYPHS
     header = cli.header_line(True, 2, agent.Totals(total_tokens=10, cost_usd=0.0, cost_known=True, latency_ms=0), 0, cli.ASCII_GLYPHS)
     assert header.startswith("OK Valid after 2 attempts") and header.isascii()
@@ -258,7 +268,7 @@ def test_glyphs_fall_back_when_reconfigure_fails(monkeypatch: pytest.MonkeyPatch
         def reconfigure(self, **kwargs: Any) -> None:
             raise OSError("cannot change encoding")
 
-    monkeypatch.setattr(cli.sys, "stdout", Stuck())
+    monkeypatch.setattr(cli.sys, "stderr", Stuck())
     assert cli.pick_glyphs() == cli.ASCII_GLYPHS
 
 

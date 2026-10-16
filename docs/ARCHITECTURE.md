@@ -26,7 +26,8 @@ structured-output-agent/
 ├── logs/               # attempts.jsonl (gitignored)
 ├── results/            # eval outputs (committed)
 ├── tests/
-├── scripts/            # standalone scripts, e.g. baseline.py (Phase 2 real-API baseline run)
+├── scripts/            # standalone scripts: baseline.py (Phase 2 real-API baseline run),
+│                       #   make_label_templates.py (TODO templates in data/labels/), check_labels.py (validate labels)
 ├── .github/workflows/ci.yml   # pytest + mypy --strict src/ on push and PR (Phase 7)
 └── docs/  (these .md files)
 ```

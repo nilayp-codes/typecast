@@ -173,5 +173,11 @@ doc invalid and the run continues; a doc whose calls all fail at the API level i
   coverage). title / company: case-insensitive exact; seniority, mode, salary_mentioned, min_years_experience, city,
   country: exact; skills: precision / recall / F1 on casefolded names, micro-averaged over docs. `overall` = mean of
   the eight fields and skills F1. Labels that fail validation or still contain `TODO` are skipped and listed.
+- **Output:** `write_results(report)` saves `results/<date>_<model-slug>_<setup>.json` (the whole `EvalReport`,
+  including every doc's raw and normalized posting, so a run can be re-scored without API calls; a name already taken
+  gets `_2`, `_3`..., nothing is overwritten) and appends one row to `results/summary.md`:
+  `model | setup | n | first-try | final | avg calls | field acc (norm) | cost`. `n` reads `N (K scored)` when some
+  docs got no model response; the percentages are over the scored ones. Stored values keep full precision; the table
+  rounds to one decimal only for display.
 - **Failure breakdown:** every rejected attempt (not `APIError`), counted by `error_type` and by the location of its
   first error line (numeric path parts become `*`: `skills.*.name`).

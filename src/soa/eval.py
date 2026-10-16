@@ -5,7 +5,9 @@ and postings in, report out), so it is tested without any model. The plan helper
 `soa eval` stub and go away when the CLI is wired to `run_eval`.
 """
 
+import itertools
 import logging
+import re
 import uuid
 from collections import Counter
 from collections.abc import Callable
@@ -367,6 +369,70 @@ def run_eval(
         model=model, setup=setup, max_attempts=attempts, docs=docs, logs=read_log(log), labels=load_labels(labels_dir),
         run_date=run_date or date.today().isoformat(),
     )
+
+
+# --- results/ ---------------------------------------------------------------
+
+RESULTS_DIR = Path("results")
+SUMMARY_FILE = "summary.md"
+SUMMARY_HEADER = (
+    "| model | setup | n | first-try | final | avg calls | field acc (norm) | cost |\n"
+    "|---|---|---|---|---|---|---|---|\n"
+)
+
+
+def model_slug(model: str) -> str:
+    """A file-name-safe model string: `openrouter/qwen/qwen-2.5-7b-instruct` -> `openrouter_qwen_qwen-2.5-7b-instruct`."""
+    return re.sub(r"[^A-Za-z0-9.-]+", "_", model).strip("_")
+
+
+def _fmt_pct(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.1f}%"
+
+
+def summary_row(report: EvalReport) -> str:
+    """One markdown table row for summary.md. `n` shows the scored count when some docs got no model response."""
+    n = str(report.n) if report.n_scored == report.n else f"{report.n} ({report.n_scored} scored)"
+    accuracy = report.accuracy_normalized.overall if report.accuracy_normalized else None
+    calls = "n/a" if report.avg_calls is None else f"{report.avg_calls:.2f}"
+    cost = "n/a" if report.total_cost_usd is None else f"${report.total_cost_usd:.4f}"
+    cells = [
+        report.model.replace("|", "\\|"), report.setup, n, _fmt_pct(report.first_try_valid_pct),
+        _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), cost,
+    ]
+    return "| " + " | ".join(cells) + " |\n"
+
+
+def _write_new(directory: Path, stem: str, suffix: str, text: str) -> Path:
+    """Write `<stem><suffix>`, or `<stem>_2<suffix>`, `_3`... if taken: an earlier result is never overwritten."""
+    for n in itertools.count(1):
+        path = directory / f"{stem}{'' if n == 1 else f'_{n}'}{suffix}"
+        try:
+            with path.open("x", encoding="utf-8", newline="\n") as handle:
+                handle.write(text)
+        except FileExistsError:
+            continue
+        return path
+    raise AssertionError("unreachable")  # itertools.count never ends
+
+
+def _append_summary(path: Path, row: str) -> None:
+    existing = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if not existing.strip():
+        prefix = SUMMARY_HEADER
+    else:
+        prefix = "" if existing.endswith("\n") else "\n"
+    with path.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(prefix + row)
+
+
+def write_results(report: EvalReport, results_dir: Path = RESULTS_DIR) -> Path:
+    """Save `<date>_<model-slug>_<setup>.json` (the full report) and append a row to summary.md. Returns the JSON path."""
+    results_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"{report.run_date}_{model_slug(report.model)}_{report.setup}"
+    json_path = _write_new(results_dir, stem, ".json", report.model_dump_json(indent=2) + "\n")
+    _append_summary(results_dir / SUMMARY_FILE, summary_row(report))
+    return json_path
 
 
 # --- `soa eval` stub (removed when the CLI is wired to run_eval) -------------

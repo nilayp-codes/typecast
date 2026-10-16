@@ -307,6 +307,24 @@ def test_eval_with_labels_and_flags(isolated: Path) -> None:
     assert "field accuracy: 2 label files in" in result.stdout
 
 
+def test_eval_labels_dir_overrides_the_sibling_folder(isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=2, n_labels=1)  # the sibling folder holds 1 label
+    other = isolated / "gold"
+    other.mkdir()
+    for name in ("a", "b", "c"):
+        (other / f"{name}.json").write_text("{}", encoding="utf-8")
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--labels-dir", str(other)])
+    assert "field accuracy: 3 label files in" in result.stdout and "gold" in result.stdout
+
+
+def test_eval_labels_dir_missing_means_no_field_accuracy(isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=2, n_labels=1)
+    result = runner.invoke(
+        app, ["eval", "--model", "m", "--data-dir", str(jds), "--labels-dir", str(isolated / "nope")]
+    )
+    assert "field accuracy: skipped (no labels in" in result.stdout
+
+
 def test_eval_missing_data_dir_exits_2(isolated: Path) -> None:
     result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(isolated / "nowhere")])
     assert result.exit_code == 2 and "data directory not found" in result.stderr

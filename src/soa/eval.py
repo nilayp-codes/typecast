@@ -20,6 +20,7 @@ class EvalOptions(BaseModel):
     no_retry: bool
     limit: int | None = Field(default=None, ge=1)
     data_dir: Path
+    labels_dir: Path | None = None  # None: the labels/ folder beside data_dir
 
     @property
     def setup(self) -> str:
@@ -70,7 +71,7 @@ def plan_eval(options: EvalOptions) -> EvalPlan:
     if not docs:
         raise FileNotFoundError(f"no .txt job descriptions in {options.data_dir}")
     n_docs = min(len(docs), options.limit) if options.limit else len(docs)
-    labels = labels_dir_for(options.data_dir)
+    labels = options.labels_dir or labels_dir_for(options.data_dir)
     n_labels = len(list(labels.glob("*.json"))) if labels.is_dir() else 0
     return EvalPlan(options=options, n_docs=n_docs, labels_dir=labels, n_labels=n_labels)
 

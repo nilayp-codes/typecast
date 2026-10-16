@@ -213,12 +213,16 @@ def eval_cmd(
     data_dir: Annotated[Path, typer.Option("--data-dir", help="Folder of job description .txt files.")] = (
         soa_eval.DEFAULT_DATA_DIR
     ),
+    labels_dir: Annotated[
+        Path | None, typer.Option("--labels-dir", help="Folder of gold label .json files. Default: labels/ beside --data-dir.")
+    ] = None,
 ) -> None:
     """Run the evaluation over a folder of job descriptions (implemented in Phase 6)."""
     load_env()
     pick_glyphs()
     options = soa_eval.EvalOptions(
-        model=resolve_model(model), json_mode=json_mode, no_retry=no_retry, limit=limit, data_dir=data_dir
+        model=resolve_model(model), json_mode=json_mode, no_retry=no_retry, limit=limit, data_dir=data_dir,
+        labels_dir=labels_dir,
     )
     try:
         plan = soa_eval.plan_eval(options)

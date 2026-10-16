@@ -70,10 +70,10 @@ stdout:  { ...pretty JSON... }
 model         n   first-try  final   avg calls  cost
 <model>       50  82.0%      100%    1.20       $0.04
 ```
-`soa eval --model <m> [--json-mode] [--no-retry] [--limit N] [--data-dir PATH]`: the two flags select the setup. A = `--no-retry`, B = (default),
+`soa eval --model <m> [--json-mode] [--no-retry] [--limit N] [--data-dir PATH] [--labels-dir PATH]`: the two flags select the setup. A = `--no-retry`, B = (default),
 C = `--no-retry --json-mode`, D = `--json-mode`. `--data-dir` is the folder of JD `.txt` files (default `data/jds/`); the
-gold labels are read from the sibling `labels/` folder, and field accuracy is skipped when it holds no `.json`
-labels. Until Phase 6 the command prints this plan (model, setup, document count, labels) and exits 2 ("not
+gold labels are read from `--labels-dir` (default: the sibling `labels/` folder of `--data-dir`), and field accuracy is
+skipped when it holds no `.json` labels. Until Phase 6 the command prints this plan (model, setup, document count, labels) and exits 2 ("not
 implemented yet"). The runs are combined into the 4-setup comparison table:
 ```
 EXAMPLE ONLY - placeholder values, not results

@@ -29,6 +29,14 @@ RETRYABLE_ERRORS = (
 )
 
 
+OPENROUTER_PREFIX = "openrouter/"
+# OpenRouter routes to any provider by default and silently drops parameters that provider lacks. With
+# require_parameters it only routes to providers that support every parameter in the request (here: response_format),
+# so schema mode is never quietly downgraded to plain text. https://openrouter.ai/docs/features/provider-routing
+OPENROUTER_REQUIRE_PARAMETERS: dict[str, object] = {"provider": {"require_parameters": True}}
+SCHEMA_REJECTION_MARKERS = ("response_format", "json_schema", "unsupported")
+
+
 class Message(BaseModel):
     """One chat message."""
 
@@ -69,11 +77,15 @@ def call(messages: list[Message], model: str, response_model: type[BaseModel] | 
     (native mode, eval setups C and D). A provider that rejects it raises a non-retryable LLMAPIError.
     """
     started = time.perf_counter()
+    extra: dict[str, object] = {}
+    if response_model and model.startswith(OPENROUTER_PREFIX):
+        extra["extra_body"] = OPENROUTER_REQUIRE_PARAMETERS
     try:
         raw = litellm.completion(
             model=model,
             messages=[m.model_dump() for m in messages],
             response_format=_schema_format(response_model) if response_model else None,
+            **extra,
         )
     except APIError as exc:
         raise _to_api_error(exc, model, schema_mode=response_model is not None) from exc
@@ -90,9 +102,10 @@ def _schema_format(response_model: type[BaseModel]) -> dict[str, object]:
 
 
 def _to_api_error(exc: APIError, model: str, *, schema_mode: bool = False) -> LLMAPIError:
-    # A 400 on a request that asked for schema mode is read as "this model/provider does not support it". The
-    # provider's own message stays in the text, since a 400 can have another cause (e.g. a prompt that is too long).
-    if schema_mode and isinstance(exc, BadRequestError):
+    # A 400 on a schema-mode request is labelled "unsupported" only when the provider's message says so (it names
+    # response_format / json_schema or says unsupported). Any other 400 (e.g. a prompt that is too long) stays a
+    # generic non-retryable error with the provider's text. The class name counts: UnsupportedParamsError.
+    if schema_mode and isinstance(exc, BadRequestError) and _mentions_schema_rejection(f"{type(exc).__name__} {exc}"):
         return LLMAPIError(
             f"schema mode unsupported by {model}: {type(exc).__name__}: {exc}",
             model=model,
@@ -105,6 +118,11 @@ def _to_api_error(exc: APIError, model: str, *, schema_mode: bool = False) -> LL
         retryable=isinstance(exc, RETRYABLE_ERRORS),
         status_code=getattr(exc, "status_code", None),
     )
+
+
+def _mentions_schema_rejection(text: str) -> bool:
+    lowered = text.lower()
+    return any(marker in lowered for marker in SCHEMA_REJECTION_MARKERS)
 
 
 def _build_response(raw: object, model: str, latency_ms: int) -> LLMResponse:

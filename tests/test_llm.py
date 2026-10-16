@@ -104,6 +104,31 @@ def test_provider_rejecting_schema_mode_raises_non_retryable_unsupported(
     assert caught.value.__cause__ is exc
 
 
+def test_a_400_in_schema_mode_with_an_unrelated_message_stays_generic(monkeypatch: pytest.MonkeyPatch) -> None:
+    exc = BadRequestError("maximum context length is 8192 tokens", model="m", llm_provider="openrouter")
+    stub_completion(monkeypatch, exc)
+    with pytest.raises(LLMAPIError) as caught:
+        llm.call(MESSAGES, "openrouter/m", response_model=JobPosting)
+    assert "schema mode" not in str(caught.value)
+    assert "maximum context length is 8192 tokens" in str(caught.value)  # the provider's text is kept
+    assert caught.value.retryable is False and caught.value.status_code == 400
+
+
+def test_openrouter_schema_mode_requires_all_parameters_to_be_supported(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen = stub_completion(monkeypatch, fake_response())
+    llm.call(MESSAGES, "openrouter/qwen/qwen-2.5-7b-instruct", response_model=JobPosting)
+    assert seen["extra_body"] == {"provider": {"require_parameters": True}}
+
+
+def test_require_parameters_is_sent_only_for_openrouter_schema_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    plain = stub_completion(monkeypatch, fake_response())
+    llm.call(MESSAGES, "openrouter/qwen/qwen-2.5-7b-instruct")  # no response_model
+    assert "extra_body" not in plain
+    other = stub_completion(monkeypatch, fake_response())
+    llm.call(MESSAGES, "gpt-4o-mini", response_model=JobPosting)  # not OpenRouter
+    assert "extra_body" not in other
+
+
 def test_a_400_without_schema_mode_is_an_ordinary_api_error(monkeypatch: pytest.MonkeyPatch) -> None:
     stub_completion(monkeypatch, BadRequestError("prompt too long", model="m", llm_provider="openrouter"))
     with pytest.raises(LLMAPIError) as caught:

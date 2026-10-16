@@ -129,12 +129,19 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   it sends `response_format={"type": "json_schema", "json_schema": {"name": <class name>, "schema":
   <model_json_schema()>, "strict": True}}`. `json_mode` stays the boolean name on `extract()` and the CLI
   (`--json-mode`) and means `response_model=JobPosting`; there is no `json_object` path any more.
-- **Provider rejects schema mode:** a 400-class error (LiteLLM `BadRequestError`, which includes
-  `UnsupportedParamsError`) on a request that asked for schema mode becomes
-  `LLMAPIError(retryable=False, "schema mode unsupported by <model>: <provider message>")`: no backoff, no
-  retry, logged as an `APIError` line. A 400 can have other causes, which is why the provider's message is kept in
-  the text. `eval.py` (Phase 6) reports C and D for that model as "not supported". Caveat: a provider that
-  silently ignores `response_format` raises nothing; telling that apart from real schema mode is Phase 6 work.
+- **Provider rejects schema mode:** a 400 (LiteLLM `BadRequestError`, which includes `UnsupportedParamsError`) on
+  a request that asked for schema mode becomes
+  `LLMAPIError(retryable=False, "schema mode unsupported by <model>: <provider message>")` only when the
+  provider's message (or the exception class name) mentions `response_format`, `json_schema` or `unsupported`.
+  Any other 400 stays a generic non-retryable `LLMAPIError` with the provider's text. No backoff either way, and
+  it is logged as an `APIError` line. `eval.py` reports C and D for a model that raises the "unsupported" form as
+  "not supported".
+- **No silent downgrade on OpenRouter:** OpenRouter drops request parameters the routed provider lacks. So for a
+  `openrouter/...` model with `response_model` set, `llm.py` also sends
+  `extra_body={"provider": {"require_parameters": True}}` (OpenRouter provider routing), which routes only to
+  providers supporting every parameter. It is not sent without `response_model` or for other providers. If no
+  provider qualifies OpenRouter returns an error instead of a degraded answer; its exact status for that case is
+  not in the docs and is unverified (a 404 would not be labelled "unsupported", only a 400 is).
 - **Provider schema subsets:** provider strict-schema modes support only a subset of JSON Schema. If a constraint
   must be dropped for the provider, record which ones in `results/` and still validate the output with our full
   Pydantic model. Dropped constraints are reported as a finding in the README.

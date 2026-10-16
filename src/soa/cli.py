@@ -231,6 +231,6 @@ def eval_cmd(
     for line in plan.describe():
         typer.echo(line)
     try:
-        soa_eval.run_eval(plan)
+        soa_eval.run_planned(plan)
     except NotImplementedError as exc:
         fail(str(exc))

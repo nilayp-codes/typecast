@@ -8,6 +8,7 @@ from typing import Literal, Self
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 DEFAULT_LOG_PATH = "logs/attempts.jsonl"
+API_ERROR_TYPE = "APIError"  # error_type of a line for a failed provider call; not a validation attempt
 
 # A = plain prompt, no retry; B = plain + retry; C = schema mode, no retry; D = schema mode + retry.
 Setup = Literal["A", "B", "C", "D"]

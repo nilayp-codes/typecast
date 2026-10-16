@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from soa import llm
 from soa.errors import format_validation_errors, redact_keys
 from soa.llm import LLMAPIError, LLMResponse, Message
-from soa.logger import AttemptLog, Setup, append_log, default_log_path
+from soa.logger import API_ERROR_TYPE, AttemptLog, Setup, append_log, default_log_path
 from soa.schemas import JobPosting
 from soa.tools import Disagreement, PostprocessResult, postprocess
 
@@ -234,7 +234,7 @@ def _log_api_error(
         setup=setup,
         json_mode=json_mode,
         ok=False,
-        error_type="APIError",
+        error_type=API_ERROR_TYPE,
         error=redact_keys(" ".join(str(exc).split())),
         raw_output="",
         latency_ms=latency_ms,

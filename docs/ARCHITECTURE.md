@@ -154,3 +154,24 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   as "not supported" and never a number. How support is detected is decided in Phase 6.
 - **Which documents:** the 4-setup comparison (A-D) runs on the gold set (25-30 JDs) for both models. Setup B
   (retry on, native off) also runs on all 50 JDs for the headline validity numbers.
+
+## Eval metrics (`eval.py`)
+`run_eval(model, setup, data_dir, labels_dir, limit)` calls `extract()` once per JD (name order, first `limit`) with a
+fresh `run_id` (`eval-<setup>-<id>-<doc>`) and the setup's `max_attempts` / `json_mode`. `ExtractionFailed` marks the
+doc invalid and the run continues; a doc whose calls all fail at the API level is `api_error`. The result is an
+`EvalReport`, built by the pure `build_report(docs, logs, labels)`: the validity numbers are read back from
+`logs/attempts.jsonl` (only the run's own `run_id`s), the postings come from `ExtractionResult`.
+- **n / n_scored / n_api_failed:** n = documents run; n_scored = those with at least one model response;
+  n_api_failed = the rest. A doc with no response says nothing about the model, so it is left out of the validity
+  numbers and counted separately. `APIError` log lines never count as attempts.
+- **first-try %** = scored docs whose first model response (attempt 1) was valid; **final %** = scored docs with any
+  valid response; **avg calls** = model responses per scored doc (so a failed doc contributes its attempts).
+- **cost** = sum over model responses, `n/a` if any of them has an unknown cost (`APIError` lines are not counted);
+  **avg latency** = summed model-call time per scored doc, averaged. **Tool disagreements** = sum over valid docs.
+- **Field accuracy** (percent) is computed twice, on `raw_posting` and on the normalized `posting`, over labelled docs
+  that produced a valid posting (validity is reported separately; `n_labelled` and `n_labelled_with_output` show the
+  coverage). title / company: case-insensitive exact; seniority, mode, salary_mentioned, min_years_experience, city,
+  country: exact; skills: precision / recall / F1 on casefolded names, micro-averaged over docs. `overall` = mean of
+  the eight fields and skills F1. Labels that fail validation or still contain `TODO` are skipped and listed.
+- **Failure breakdown:** every rejected attempt (not `APIError`), counted by `error_type` and by the location of its
+  first error line (numeric path parts become `*`: `skills.*.name`).

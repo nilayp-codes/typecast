@@ -10,7 +10,7 @@ import logging
 import re
 import uuid
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import date
 from pathlib import Path
 from typing import Literal, Self
@@ -123,11 +123,14 @@ class EvalReport(StrictModel):
     avg_latency_ms: float | None
     api_error_count: int
     disagreement_count: int
-    n_labelled: int
+    n_labelled: int  # usable labelled docs in this run
     n_labelled_with_output: int
+    coverage_pct: float | None  # n_labelled_with_output / n_labelled
     labels_skipped: list[str]
-    accuracy_raw: FieldAccuracy | None
+    accuracy_raw: FieldAccuracy | None  # accuracy on valid outputs only
     accuracy_normalized: FieldAccuracy | None
+    end_to_end_raw: FieldAccuracy | None  # over all usable labelled docs; no valid output scores 0 on every field
+    end_to_end_normalized: FieldAccuracy | None
     failures: FailureBreakdown
     docs: list[DocRun]
 
@@ -233,18 +236,30 @@ def _skill_names(posting: JobPosting) -> set[str]:
     return {skill.name.strip().casefold() for skill in posting.skills}
 
 
-def _skill_scores(pairs: list[tuple[JobPosting, JobPosting]]) -> tuple[float, float, float]:
-    """(precision, recall, F1) in percent, micro-averaged. Never divides by zero: every posting has >= 1 skill."""
+Pair = tuple[JobPosting, JobPosting | None]  # (gold, predicted); predicted None = no valid output for that doc
+
+
+def _skill_scores(pairs: Sequence[Pair]) -> tuple[float, float, float]:
+    """(precision, recall, F1) in percent, micro-averaged. A gold posting has >= 1 skill, so recall and F1 are defined.
+
+    A missing prediction adds its gold skills as misses and no predicted skills; precision is 0.0 if nothing at all
+    was predicted.
+    """
     tp = fp = fn = 0
     for gold, predicted in pairs:
-        g, p = _skill_names(gold), _skill_names(predicted)
+        g = _skill_names(gold)
+        p = set() if predicted is None else _skill_names(predicted)
         tp, fp, fn = tp + len(g & p), fp + len(p - g), fn + len(g - p)
-    return 100 * tp / (tp + fp), 100 * tp / (tp + fn), 100 * 2 * tp / (2 * tp + fp + fn)
+    precision = 100 * tp / (tp + fp) if tp + fp else 0.0
+    return precision, 100 * tp / (tp + fn), 100 * 2 * tp / (2 * tp + fp + fn)
 
 
-def score_fields(pairs: list[tuple[JobPosting, JobPosting]]) -> FieldAccuracy:
-    """Score (gold, predicted) pairs. Needs at least one pair."""
-    rates = {name: 100 * sum(match(g, p) for g, p in pairs) / len(pairs) for name, match in FIELD_MATCHERS.items()}
+def score_fields(pairs: Sequence[Pair]) -> FieldAccuracy:
+    """Score (gold, predicted) pairs; a pair with no prediction scores 0 on every field. Needs at least one pair."""
+    rates = {
+        name: 100 * sum(p is not None and match(g, p) for g, p in pairs) / len(pairs)
+        for name, match in FIELD_MATCHERS.items()
+    }
     precision, recall, f1 = _skill_scores(pairs)
     overall = (sum(rates.values()) + f1) / (len(rates) + 1)
     return FieldAccuracy(
@@ -269,18 +284,33 @@ def load_labels(labels_dir: Path) -> Labels:
     return Labels(by_doc=by_doc, skipped=skipped)
 
 
-def _accuracy(docs: list[DocRun], labels: Labels) -> tuple[int, int, FieldAccuracy | None, FieldAccuracy | None]:
-    """(labelled docs, labelled docs with output, raw accuracy, normalized accuracy); None when nothing to score."""
-    raw: list[tuple[JobPosting, JobPosting]] = []
-    normalized: list[tuple[JobPosting, JobPosting]] = []
+class Accuracy(StrictModel):
+    """Everything the labels say about a run. None where there is nothing to score."""
+
+    n_labelled: int
+    n_with_output: int
+    raw: FieldAccuracy | None
+    normalized: FieldAccuracy | None
+    end_to_end_raw: FieldAccuracy | None
+    end_to_end_normalized: FieldAccuracy | None
+
+
+def _score(pairs: Sequence[Pair]) -> FieldAccuracy | None:
+    return score_fields(pairs) if pairs else None
+
+
+def _accuracy(docs: list[DocRun], labels: Labels) -> Accuracy:
+    """Accuracy over valid outputs only, and end to end over every labelled doc (no valid output scores 0)."""
     labelled = [d for d in docs if d.doc_id in labels.by_doc]
-    for doc in labelled:
-        if doc.raw_posting is not None and doc.posting is not None:
-            raw.append((labels.by_doc[doc.doc_id], doc.raw_posting))
-            normalized.append((labels.by_doc[doc.doc_id], doc.posting))
-    if not raw:
-        return len(labelled), 0, None, None
-    return len(labelled), len(raw), score_fields(raw), score_fields(normalized)
+    with_output = [d for d in labelled if d.raw_posting is not None]
+    return Accuracy(
+        n_labelled=len(labelled),
+        n_with_output=len(with_output),
+        raw=_score([(labels.by_doc[d.doc_id], d.raw_posting) for d in with_output]),
+        normalized=_score([(labels.by_doc[d.doc_id], d.posting) for d in with_output]),
+        end_to_end_raw=_score([(labels.by_doc[d.doc_id], d.raw_posting) for d in labelled]),
+        end_to_end_normalized=_score([(labels.by_doc[d.doc_id], d.posting) for d in labelled]),
+    )
 
 
 # --- the report -------------------------------------------------------------
@@ -292,7 +322,7 @@ def build_report(
 ) -> EvalReport:
     """Score a run. `logs` may hold other runs' lines too; only the docs' run_ids are read."""
     v = validity_stats(docs, logs)
-    n_labelled, n_with_output, raw, normalized = _accuracy(docs, labels)
+    acc = _accuracy(docs, labels)
     doc_ids = {d.doc_id for d in docs}
     return EvalReport(
         model=model, setup=setup, json_mode=setup_args(setup)[1], max_attempts=max_attempts, run_date=run_date,
@@ -302,9 +332,11 @@ def build_report(
         total_cost_usd=v.cost_usd,
         avg_latency_ms=v.latency_ms / v.n_scored if v.n_scored else None,
         api_error_count=v.api_errors, disagreement_count=sum(d.disagreements for d in docs),
-        n_labelled=n_labelled, n_labelled_with_output=n_with_output,
+        n_labelled=acc.n_labelled, n_labelled_with_output=acc.n_with_output,
+        coverage_pct=_pct(acc.n_with_output, acc.n_labelled),
         labels_skipped=[s for s in labels.skipped if s in doc_ids],
-        accuracy_raw=raw, accuracy_normalized=normalized,
+        accuracy_raw=acc.raw, accuracy_normalized=acc.normalized,
+        end_to_end_raw=acc.end_to_end_raw, end_to_end_normalized=acc.end_to_end_normalized,
         failures=failure_breakdown(docs, logs), docs=docs,
     )
 
@@ -376,8 +408,8 @@ def run_eval(
 RESULTS_DIR = Path("results")
 SUMMARY_FILE = "summary.md"
 SUMMARY_HEADER = (
-    "| model | setup | n | first-try | final | avg calls | field acc (norm) | cost |\n"
-    "|---|---|---|---|---|---|---|---|\n"
+    "| model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | cost |\n"
+    "|---|---|---|---|---|---|---|---|---|\n"
 )
 
 
@@ -398,7 +430,7 @@ def summary_row(report: EvalReport) -> str:
     cost = "n/a" if report.total_cost_usd is None else f"${report.total_cost_usd:.4f}"
     cells = [
         report.model.replace("|", "\\|"), report.setup, n, _fmt_pct(report.first_try_valid_pct),
-        _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), cost,
+        _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), _fmt_pct(report.coverage_pct), cost,
     ]
     return "| " + " | ".join(cells) + " |\n"
 

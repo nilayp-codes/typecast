@@ -28,20 +28,20 @@ def test_model_slug(model: str, slug: str) -> None:
 
 def test_row_for_the_fixture_run_without_labels() -> None:
     # 5 docs, 4 scored; first-try 2/4, final 3/4, 7 responses / 4 docs, cost 7 x 0.001
-    assert summary_row(report()) == "| m | B | 5 (4 scored) | 50.0% | 75.0% | 1.75 | n/a | $0.0070 |\n"
+    assert summary_row(report()) == "| m | B | 5 (4 scored) | 50.0% | 75.0% | 1.75 | n/a | n/a | $0.0070 |\n"
 
 
 def test_row_shows_normalized_field_accuracy_and_plain_n_when_every_doc_was_scored() -> None:
     docs = [doc("r1")]
     r = report(docs, [line("r1")], Labels(by_doc={"doc-r1": posting()}, skipped=[]))
-    assert summary_row(r) == "| m | B | 1 | 100.0% | 100.0% | 1.00 | 100.0% | $0.0010 |\n"
+    assert summary_row(r) == "| m | B | 1 | 100.0% | 100.0% | 1.00 | 100.0% | 100.0% | $0.0010 |\n"
 
 
 def test_row_uses_n_a_for_unknown_cost_and_for_unscored_runs() -> None:
     unknown = report([doc("r1")], [line("r1", known=False)])
     assert summary_row(unknown).endswith("| n/a |\n")
     nothing = report([doc("r4", "api_error")], [])
-    assert summary_row(nothing) == "| m | B | 1 (0 scored) | n/a | n/a | n/a | n/a | $0.0000 |\n"
+    assert summary_row(nothing) == "| m | B | 1 (0 scored) | n/a | n/a | n/a | n/a | n/a | $0.0000 |\n"
 
 
 def test_a_pipe_in_the_model_name_does_not_break_the_table() -> None:
@@ -67,7 +67,7 @@ def test_write_results_saves_the_full_report_and_a_summary_row(tmp_path: Path) -
     assert EvalReport.model_validate_json(path.read_text(encoding="utf-8")) == r  # nothing lost
     summary = (results / "summary.md").read_text(encoding="utf-8")
     assert summary == SUMMARY_HEADER + summary_row(r)
-    assert summary.splitlines()[0] == "| model | setup | n | first-try | final | avg calls | field acc (norm) | cost |"
+    assert summary.splitlines()[0] == "| model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | cost |"
 
 
 def test_the_json_report_carries_the_documents_and_the_breakdown(tmp_path: Path) -> None:

@@ -173,10 +173,19 @@ doc invalid and the run continues; a doc whose calls all fail at the API level i
   coverage). title / company: case-insensitive exact; seniority, mode, salary_mentioned, min_years_experience, city,
   country: exact; skills: precision / recall / F1 on casefolded names, micro-averaged over docs. `overall` = mean of
   the eight fields and skills F1. Labels that fail validation or still contain `TODO` are skipped and listed.
+- **Coverage and end-to-end accuracy:** accuracy on valid outputs alone flatters a setup that fails often, so the
+  report carries three views of the same labels. **Coverage** (`coverage_pct`) = labelled docs with a valid output /
+  usable labelled docs (the labelled docs in this run; skipped labels are not usable), i.e.
+  `n_labelled_with_output / n_labelled`. **Accuracy on valid outputs** (`accuracy_raw`, `accuracy_normalized`) is
+  over the covered docs only. **End-to-end accuracy** (`end_to_end_raw`, `end_to_end_normalized`) is over ALL usable
+  labelled docs: a doc that is `invalid` or `api_error` scores 0 on every field, and its gold skills count as misses
+  (recall and F1 fall; precision is unchanged because nothing was predicted). If nothing at all was predicted,
+  skills precision is reported as 0.0. All are `None` when there are no usable labels. A not-supported run
+  (below) reports no numbers at all.
 - **Output:** `write_results(report)` saves `results/<date>_<model-slug>_<setup>.json` (the whole `EvalReport`,
   including every doc's raw and normalized posting, so a run can be re-scored without API calls; a name already taken
   gets `_2`, `_3`..., nothing is overwritten) and appends one row to `results/summary.md`:
-  `model | setup | n | first-try | final | avg calls | field acc (norm) | cost`. `n` reads `N (K scored)` when some
+  `model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | cost`. `n` reads `N (K scored)` when some
   docs got no model response; the percentages are over the scored ones. Stored values keep full precision; the table
   rounds to one decimal only for display.
 - **Failure breakdown:** every rejected attempt (not `APIError`), counted by `error_type` and by the location of its

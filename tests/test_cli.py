@@ -345,7 +345,7 @@ def test_eval_runs_after_a_yes_and_saves_results(monkeypatch: pytest.MonkeyPatch
     assert len(models) == 3
     summary = (isolated / "results" / "summary.md").read_text(encoding="utf-8").splitlines()
     assert summary[0].startswith("| model | setup | n |") and len(summary) == 3
-    assert summary[2].startswith("| m | B | 3 | 100.0% | 100.0% | 1.00 | n/a | $0.0027 |")
+    assert summary[2].startswith("| m | B | 3 | 100.0% | 100.0% | 1.00 | n/a | n/a | $0.0027 |")
     assert summary[2] in out(result)  # the same row is printed
     assert len(list((isolated / "results").glob("*_m_B.json"))) == 1
 

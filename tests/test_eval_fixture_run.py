@@ -142,6 +142,23 @@ def test_normalized_field_accuracy_is_better_where_the_tools_helped(
     assert (norm.title, norm.company, norm.seniority) == (raw.title, raw.company, raw.seniority)  # tools don't touch these
 
 
+def test_coverage_and_end_to_end_accuracy_count_the_failed_labelled_doc_as_wrong(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    r = fixture_run(tmp_path, monkeypatch)
+    assert r.coverage_pct == pytest.approx(75.0)  # 3 of the 4 usable labelled docs (jd_003 is invalid)
+    e2e, raw = r.end_to_end_raw, r.accuracy_raw
+    assert e2e is not None and raw is not None and e2e.n == 4  # jd_001, jd_002, jd_003, jd_006
+    assert (e2e.title, e2e.company, e2e.seniority) == (75.0, 50.0, 50.0)  # raw 3/3, 2/3, 2/3 over 3 docs, now over 4
+    assert (e2e.salary_mentioned, e2e.min_years_experience) == (75.0, 75.0)
+    # skills: tp 4, fp 2 as before; jd_003's two gold skills are misses too, so fn 2 -> 4
+    assert e2e.skills_precision == pytest.approx(200 / 3)
+    assert e2e.skills_recall == pytest.approx(50.0) and e2e.skills_f1 == pytest.approx(100 * 8 / 14)
+    assert e2e.overall < raw.overall
+    norm = r.end_to_end_normalized
+    assert norm is not None and norm.n == 4 and norm.mode == pytest.approx(75.0)  # raw mode 2/3 -> normalized 3/3, x 3/4
+
+
 def test_every_line_in_the_log_is_tagged_with_the_setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     fixture_run(tmp_path, monkeypatch)
     rows = [json.loads(x) for x in (tmp_path / "attempts.jsonl").read_text(encoding="utf-8").splitlines()]
@@ -156,7 +173,7 @@ def test_the_saved_report_round_trips_and_the_row_is_honest_about_n(
     r = fixture_run(tmp_path, monkeypatch)
     path = write_results(r, tmp_path / "results")
     assert EvalReport.model_validate_json(path.read_text(encoding="utf-8")) == r
-    assert summary_row(r) == "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | $0.0180 |\n"
+    assert summary_row(r) == "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | 75.0% | $0.0180 |\n"
 
 
 def test_the_same_run_through_the_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -166,6 +183,6 @@ def test_the_same_run_through_the_cli(tmp_path: Path, monkeypatch: pytest.Monkey
     result = CliRunner().invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
     assert result.exit_code == 0, result.output
     out = result.stdout_bytes.decode("utf-8").replace("\r\n", "\n")
-    assert "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | $0.0180 |" in out
+    assert "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | 75.0% | $0.0180 |" in out
     assert "estimated model calls: 6 to 18 (real API calls)" in out
     assert "labels skipped (invalid or still TODO): jd_005" in out

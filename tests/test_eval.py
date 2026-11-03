@@ -261,6 +261,27 @@ def test_no_labels_skips_accuracy() -> None:
     r = report()
     assert (r.n_labelled, r.n_labelled_with_output) == (0, 0)
     assert (r.accuracy_raw, r.accuracy_normalized) == (None, None)
+    assert (r.coverage_pct, r.end_to_end_raw, r.end_to_end_normalized) == (None, None, None)
+
+
+def test_a_missing_prediction_scores_zero_on_every_field() -> None:
+    acc = score_fields([(posting(), posting()), (posting(), None)])
+    assert (acc.n, acc.title, acc.seniority, acc.city, acc.salary_mentioned) == (2, 50.0, 50.0, 50.0, 50.0)
+    assert (acc.skills_precision, acc.skills_recall, acc.skills_f1) == (100.0, 50.0, pytest.approx(200 / 3))
+    nothing = score_fields([(posting(), None)])
+    assert (nothing.overall, nothing.skills_precision, nothing.skills_recall, nothing.skills_f1) == (0.0, 0.0, 0.0, 0.0)
+
+
+def test_coverage_is_labelled_docs_with_output_over_usable_labelled_docs() -> None:
+    labels = Labels(by_doc={"doc-r1": posting(), "doc-r3": posting(), "doc-r4": posting()}, skipped=["doc-r2"])
+    r = report(labels=labels)  # r1 valid; r3 invalid; r4 api_error; r2 has a skipped label so is not usable
+    assert r.coverage_pct == pytest.approx(100 / 3)
+    assert r.accuracy_raw is not None and r.accuracy_raw.overall == 100.0  # on valid outputs only
+    assert r.end_to_end_raw is not None and r.end_to_end_raw.n == 3
+    # r3 and r4 count as wrong: eight fields at 1/3; skills tp 2, fn 4 -> F1 = 4/(4+4) = 50%
+    assert r.end_to_end_raw.skills_f1 == pytest.approx(50.0)
+    assert r.end_to_end_raw.overall == pytest.approx((8 * 100 / 3 + 50) / 9)
+    assert r.end_to_end_normalized is not None and r.end_to_end_normalized.title == pytest.approx(100 / 3)
 
 
 def test_labels_without_any_valid_output_skip_accuracy_but_say_why() -> None:

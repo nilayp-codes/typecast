@@ -208,5 +208,19 @@ doc invalid and the run continues; a doc whose calls all fail at the API level i
   count covers every attempt of a retried doc, since each reply is logged. N > 0 means the constraint was dropped
   or not enforced by that provider/model; N = 0 only means it was not seen in this sample. This is the
   measurement behind the "dropped schema constraints" README finding.
+- **Pacing and resume:** the baseline hit 429s after about 25 unpaced calls, so `run_eval(..., pause=)` sleeps
+  `pause` seconds between documents that make model calls (not before the first; the CLI default is 2 s,
+  `SOA_EVAL_PAUSE` replaces it, `--pause` beats both). It paces documents, not the retries inside one `extract()`
+  (those already have their own API backoff). Each `soa eval` invocation has an `eval_id` (6 hex characters,
+  printed, stored in `EvalReport.eval_id`); a doc's run_id is `eval-<setup>-<eval_id>-<doc>`. `--resume <eval_id>`
+  calls `run_eval(..., eval_id=, resume=True)`, which reads the log and, per doc, looks at its latest run
+  (`finished_doc`): a valid run is rebuilt from the logged reply plus `tools.postprocess` (deterministic, no model
+  call), and a run that used all its attempts is `invalid`; both are skipped. A doc with no run, a run cut short
+  (fewer replies than attempts) or only API errors runs again under a new run_id `...-r2`, `-r3` (`next_run_id`),
+  so an earlier run's lines are never appended to; the superseded lines stay in the log but are not counted in the
+  report. The report is then built over all docs, and `write_results(..., resumed=True)` replaces the saved report of
+  the same `eval_id`, model and setup and its `summary.md` row (the one exception to "never overwritten"; a row
+  edited by hand is not touched, the new row is appended). `check_resume` refuses an id that is not in the log or was
+  run with another model. An invocation with `--setup all` shares one `eval_id` across its setups.
 - **Failure breakdown:** every rejected attempt (not `APIError`), counted by `error_type` and by the location of its
   first error line (numeric path parts become `*`: `skills.*.name`).

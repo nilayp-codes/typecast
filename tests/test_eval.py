@@ -12,9 +12,11 @@ from soa.eval import (
     DocRun,
     Labels,
     build_report,
+    check_resume,
     failure_breakdown,
     first_error_loc,
     load_labels,
+    next_run_id,
     parse_setups,
     plan_eval,
     report_notes,
@@ -27,7 +29,7 @@ from soa.eval import (
 )
 from soa.errors import format_validation_errors
 from soa.llm import LLMAPIError, LLMResponse, Message
-from soa.logger import AttemptLog, Setup, read_log
+from soa.logger import AttemptLog, Setup, append_log, read_log
 from soa.schemas import JobPosting
 
 VALID: dict[str, Any] = {
@@ -367,7 +369,7 @@ def make_world(
         name = next(n for n in scripts if f"MARKER-{n}" in messages[1].content)
         calls.append((name, response_model))
         item = scripts[name].pop(0)
-        if isinstance(item, LLMAPIError):
+        if isinstance(item, BaseException):  # an LLMAPIError, or a KeyboardInterrupt to cut a run short
             raise item
         return item
 
@@ -508,6 +510,106 @@ def test_the_not_supported_flag_is_only_for_schema_mode_setups(
     jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [UNSUPPORTED]})
     r = run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl")  # cannot happen for real; the flag stays off
     assert r.not_supported is False
+
+
+# --- pacing and resume ------------------------------------------------------------------
+
+
+def test_pause_is_slept_between_documents_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [GOOD], "jd_002": [GOOD], "jd_003": [GOOD]})
+    waits: list[float] = []
+    monkeypatch.setattr(agent.time, "sleep", waits.append)
+    run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl", pause=1.5)
+    assert waits == [1.5, 1.5]  # not before the first document, not after the last
+
+
+def test_no_pause_by_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [GOOD], "jd_002": [GOOD]})
+    waits: list[float] = []
+    monkeypatch.setattr(agent.time, "sleep", waits.append)
+    run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl")
+    assert waits == []
+
+
+def test_next_run_id_numbers_reruns_and_does_not_confuse_doc_ids_that_share_a_prefix() -> None:
+    base = "eval-B-abc123-jd_001"
+    lines = [
+        line(base), line(f"{base}-r2"), line("eval-B-abc123-jd_0011"), line("eval-B-abc123-jd_001-x"),
+        line("eval-D-abc123-jd_001"), line("eval-B-zzz999-jd_001"),
+    ]
+    assert next_run_id([], base) == base
+    assert next_run_id(lines[:1], base) == f"{base}-r2"
+    assert next_run_id(lines, base) == f"{base}-r3"
+
+
+def test_resume_skips_finished_docs_reruns_the_rest_and_reports_all_of_them(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scripts: dict[str, list[Any]] = {
+        "jd_001": [GOOD],
+        "jd_002": [BAD, BAD, BAD],  # ExtractionFailed: finished (invalid), not retried on resume
+        "jd_003": [LLMAPIError("AuthenticationError: bad key", model="m", retryable=False, status_code=401)],
+        "jd_004": [BAD, KeyboardInterrupt()],  # the run is cut short in the middle of this doc
+    }
+    jds, labels, calls = make_world(tmp_path, monkeypatch, scripts)
+    log = tmp_path / "attempts.jsonl"
+    with pytest.raises(KeyboardInterrupt):
+        run_eval("m", "B", jds, labels, log_path=log, eval_id="abc123")
+    assert len(calls) == 1 + 3 + 1 + 2
+
+    scripts["jd_003"].append(GOOD)  # jd_001 and jd_002 have empty scripts: a call for them would raise IndexError
+    scripts["jd_004"].append(GOOD)
+    waits: list[float] = []
+    monkeypatch.setattr(agent.time, "sleep", waits.append)
+    r = run_eval("m", "B", jds, labels, log_path=log, eval_id="abc123", resume=True, pause=0.5)
+
+    assert len(calls) == 7 + 2  # only jd_003 and jd_004 were sent again
+    assert waits == [0.5]  # between those two; nothing for the skipped docs
+    assert [d.status for d in r.docs] == ["valid", "invalid", "valid", "valid"]
+    assert [d.run_id for d in r.docs] == [
+        "eval-B-abc123-jd_001", "eval-B-abc123-jd_002", "eval-B-abc123-jd_003-r2", "eval-B-abc123-jd_004-r2",
+    ]
+    assert r.eval_id == "abc123" and (r.n, r.n_scored) == (4, 4)
+    assert r.docs[0].raw_posting == posting() and r.docs[0].posting == posting()  # rebuilt from the log
+    assert r.first_try_valid_pct == 75.0 and r.final_valid_pct == 75.0
+    assert r.avg_calls == pytest.approx((1 + 3 + 1 + 1) / 4)  # the superseded runs' lines are not counted
+    assert r.api_error_count == 0
+
+
+def test_resume_rebuilds_the_normalized_posting_and_disagreements(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    messy = reply({**VALID, "skills": [{"name": "postgres", "required": True}], "location": {"city": "Mumbai", "country": "India", "mode": "hybrid"}})
+    jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [messy]})
+    log = tmp_path / "attempts.jsonl"
+    first = run_eval("m", "B", jds, labels, log_path=log, eval_id="abc123")
+    again = run_eval("m", "B", jds, labels, log_path=log, eval_id="abc123", resume=True)  # nothing left to send
+    assert again.docs == first.docs
+    assert again.docs[0].posting is not None and again.docs[0].posting.skills[0].name == "PostgreSQL"
+    assert again.docs[0].disagreements == first.docs[0].disagreements == 1  # the header says Pune, the model Mumbai
+
+
+def test_resume_of_a_setup_that_never_ran_just_runs_it(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    jds, labels, calls = make_world(tmp_path, monkeypatch, {"jd_001": [GOOD]})
+    r = run_eval("m", "C", jds, labels, log_path=tmp_path / "a.jsonl", eval_id="abc123", resume=True)
+    assert len(calls) == 1 and r.docs[0].run_id == "eval-C-abc123-jd_001"
+
+
+def test_without_resume_the_same_eval_id_does_not_skip_anything(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    jds, labels, calls = make_world(tmp_path, monkeypatch, {"jd_001": [GOOD, GOOD]})
+    run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl", eval_id="abc123")
+    run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl", eval_id="abc123")
+    assert len(calls) == 2
+
+
+def test_check_resume_needs_the_run_in_the_log_and_the_same_model(tmp_path: Path) -> None:
+    log = tmp_path / "a.jsonl"
+    with pytest.raises(ValueError, match="no eval run with id 'abc123'"):
+        check_resume("abc123", "m", log)
+    append_log(line("eval-B-abc123-jd_001"), log)
+    check_resume("abc123", "m", log)
+    with pytest.raises(ValueError, match="was made with m, not other"):
+        check_resume("abc123", "other", log)
+    with pytest.raises(ValueError, match="no eval run with id 'abc12'"):
+        check_resume("abc12", "m", log)  # an id is matched whole, not as a prefix
 
 
 # --- constraint violations under schema mode ------------------------------------------

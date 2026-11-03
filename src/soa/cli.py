@@ -26,6 +26,7 @@ from soa.agent import (
 )
 from soa.errors import redact_keys
 from soa.llm import LLMAPIError
+from soa.logger import default_log_path
 from soa.tools import Disagreement, ToolResponseError
 
 EXIT_FAILED = 1
@@ -218,16 +219,47 @@ LabelsDirOpt = Annotated[
 ]
 
 
-def run_plan(plan: soa_eval.EvalPlan, results_dir: Path) -> None:
+PauseOpt = Annotated[
+    float | None,
+    typer.Option(
+        "--pause", min=0, help=f"Seconds to wait between documents. Default: SOA_EVAL_PAUSE, else {soa_eval.DEFAULT_PAUSE_SECONDS:g}."
+    ),
+]
+ResumeOpt = Annotated[
+    str | None,
+    typer.Option("--resume", help="Eval id of an earlier run: skip documents it already finished, add to its report."),
+]
+
+
+def resolve_pause(cli_value: float | None) -> float:
+    """--pause, else SOA_EVAL_PAUSE, else the default."""
+    if cli_value is not None:
+        return cli_value
+    raw = os.environ.get("SOA_EVAL_PAUSE", "").strip()
+    if not raw:
+        return soa_eval.DEFAULT_PAUSE_SECONDS
+    try:
+        seconds = float(raw)
+    except ValueError:
+        seconds = -1.0
+    if not seconds >= 0:  # also rejects nan
+        fail(f"SOA_EVAL_PAUSE must be a number of seconds >= 0, got {raw!r}")
+    return seconds
+
+
+def run_plan(plan: soa_eval.EvalPlan, results_dir: Path, eval_id: str) -> None:
     """Run each setup of the plan, save its results, then print the summary table and notes."""
     reports: list[soa_eval.EvalReport] = []
     for setup in plan.setups:
         typer.echo(f"running {soa_eval.setup_label(setup)} ...")
         try:
-            report = soa_eval.run_eval(plan.model, setup, plan.data_dir, plan.labels_dir, plan.limit)
+            report = soa_eval.run_eval(
+                plan.model, setup, plan.data_dir, plan.labels_dir, plan.limit,
+                pause=plan.pause, eval_id=eval_id, resume=plan.resume is not None,
+            )
         except ToolResponseError as exc:
             fail(f"post-processing failed (a bug in the tools): {exc}", EXIT_FAILED)
-        typer.echo(f"saved {soa_eval.write_results(report, results_dir)}")
+        typer.echo(f"saved {soa_eval.write_results(report, results_dir, resumed=plan.resume is not None)}")
         reports.append(report)
     typer.echo("")
     typer.echo(soa_eval.SUMMARY_HEADER + "".join(soa_eval.summary_row(r) for r in reports), nl=False)
@@ -248,17 +280,26 @@ def eval_cmd(
         soa_eval.RESULTS_DIR
     ),
     yes: Annotated[bool, typer.Option("--yes", help="Do not ask for confirmation before making model calls.")] = False,
+    pause: PauseOpt = None,
+    resume: ResumeOpt = None,
 ) -> None:
     """Run one or all eval setups over a folder of job descriptions. Makes REAL model calls."""
     load_env()
     pick_glyphs()
     chosen = resolve_model(model)
+    seconds = resolve_pause(pause)
     try:
-        plan = soa_eval.plan_eval(chosen, soa_eval.parse_setups(setup), data_dir, labels_dir, limit)
+        if resume:
+            soa_eval.check_resume(resume, chosen, default_log_path())
+        plan = soa_eval.plan_eval(
+            chosen, soa_eval.parse_setups(setup), data_dir, labels_dir, limit, pause=seconds, resume=resume
+        )
     except (ValueError, FileNotFoundError) as exc:
         fail(str(exc))
+    eval_id = resume or soa_eval.new_eval_id()
     for line in plan.describe():
         typer.echo(line)
+    typer.echo(f"eval id: {eval_id} (if the run stops, continue it with: soa eval --resume {eval_id} ...)")
     if not yes:
         typer.confirm("Make these model calls now?", abort=True)
-    run_plan(plan, results_dir)
+    run_plan(plan, results_dir, eval_id)

@@ -72,7 +72,12 @@ stdout:  { ...pretty JSON... }
 model         n   first-try  final   avg calls  cost
 <model>       50  82.0%      100%    1.20       $0.04
 ```
-`soa eval --model <m> [--setup A|B|C|D|all] [--limit N] [--data-dir PATH] [--labels-dir PATH] [--results-dir PATH] [--yes]`.
+`soa eval --model <m> [--setup A|B|C|D|all] [--limit N] [--data-dir PATH] [--labels-dir PATH] [--results-dir PATH] [--pause SECONDS] [--resume EVAL_ID] [--yes]`.
+`--pause` is the wait between documents (default 2; `SOA_EVAL_PAUSE` in the environment replaces the default, and the
+flag beats both). Every invocation prints an `eval id`; `--resume <eval id>` continues that run after it stopped: documents
+it already finished (valid, or all attempts used) are rebuilt from `logs/attempts.jsonl` and not sent again, documents
+that were cut short or only had API errors run again, and the report is completed in place (same `results/` file, same
+`summary.md` row) instead of a second one being added. It needs the same `--model`.
 `--setup` picks the setup (default B; `all` runs A, B, C, D in turn): A = plain prompt, no retry; B = plain prompt +
 retry; C = schema mode, no retry; D = schema mode + retry. (This replaces the earlier `--json-mode` / `--no-retry`
 pair on `eval`; `soa extract` keeps `--json-mode`.) `--data-dir` is the folder of JD `.txt` files (default

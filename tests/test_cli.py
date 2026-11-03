@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -433,6 +434,91 @@ def test_eval_labels_dir_missing_means_no_field_accuracy(isolated: Path) -> None
     jds = make_data(isolated, n_docs=2, n_labels=1)
     args = ["eval", "--model", "m", "--data-dir", str(jds), "--labels-dir", str(isolated / "nope")]
     assert "field accuracy: skipped (no labels in" in out(runner.invoke(app, args, input="n\n"))
+
+
+def pauses(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    """Record every sleep (backoff included; none happens in these runs) instead of waiting."""
+    waits: list[float] = []
+    monkeypatch.setattr(agent.time, "sleep", waits.append)
+    return waits
+
+
+def test_eval_pauses_two_seconds_between_documents_by_default(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=3, n_labels=0)
+    script(monkeypatch, [resp(GOOD)] * 3)
+    waits = pauses(monkeypatch)
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
+    assert result.exit_code == 0, result.output
+    assert waits == [2.0, 2.0]  # between the three calls, none before the first
+    assert "pause between documents: 2 s" in out(result)
+
+
+def test_eval_pause_flag_beats_the_env_which_beats_the_default(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=2, n_labels=0)
+    waits = pauses(monkeypatch)
+    monkeypatch.setenv("SOA_EVAL_PAUSE", "3")
+    script(monkeypatch, [resp(GOOD)] * 2)
+    runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
+    assert waits == [3.0]
+    waits.clear()
+    script(monkeypatch, [resp(GOOD)] * 2)
+    runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes", "--pause", "0.5"])
+    assert waits == [0.5]
+    waits.clear()
+    script(monkeypatch, [resp(GOOD)] * 2)
+    runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes", "--pause", "0"])
+    assert waits == []
+
+
+def test_eval_rejects_a_bad_pause_env(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=1, n_labels=0)
+    script(monkeypatch, [])
+    monkeypatch.setenv("SOA_EVAL_PAUSE", "soon")
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
+    assert result.exit_code == 2 and "SOA_EVAL_PAUSE" in result.stderr
+
+
+def test_eval_resume_with_an_unknown_id_exits_2_before_any_call(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=1, n_labels=0)
+    models = script(monkeypatch, [])
+    result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--resume", "abc123", "--yes"])
+    assert result.exit_code == 2 and "no eval run with id 'abc123'" in result.stderr and models == []
+
+
+def test_eval_resume_skips_finished_docs_and_completes_the_same_report(
+    monkeypatch: pytest.MonkeyPatch, isolated: Path
+) -> None:
+    jds = make_data(isolated, n_docs=2, n_labels=0)
+    err = LLMAPIError("AuthenticationError: bad key", model="m", retryable=False, status_code=401)
+    script(monkeypatch, [resp(GOOD), err])
+    first = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes", "--pause", "0"])
+    assert "| m | B | 2 (1 scored) |" in out(first)
+    match = re.search(r"eval id: ([0-9a-f]{6})", out(first))
+    assert match is not None
+    eval_id = match.group(1)
+
+    models = script(monkeypatch, [resp(GOOD)])  # only jd_001 may be sent again; a second call would IndexError
+    args = ["eval", "--model", "m", "--data-dir", str(jds), "--yes", "--pause", "0", "--resume", eval_id]
+    second = runner.invoke(app, args)
+    assert second.exit_code == 0, second.output
+    assert len(models) == 1
+    assert f"resuming eval {eval_id}" in out(second)
+    [report_file] = (isolated / "results").glob("*.json")  # the same report, completed: not a second file
+    data = json.loads(report_file.read_text(encoding="utf-8"))
+    assert (data["eval_id"], data["n"], data["n_scored"], data["final_valid_pct"]) == (eval_id, 2, 2, 100.0)
+    rows = (isolated / "results" / "summary.md").read_text(encoding="utf-8").splitlines()[2:]
+    assert len(rows) == 1 and rows[0].startswith("| m | B | 2 | 100.0% |")
+
+
+def test_eval_resume_refuses_a_different_model(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:
+    jds = make_data(isolated, n_docs=1, n_labels=0)
+    script(monkeypatch, [resp(GOOD)])
+    first = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes", "--pause", "0"])
+    eval_id = re.search(r"eval id: ([0-9a-f]{6})", out(first)).group(1)  # type: ignore[union-attr]
+    models = script(monkeypatch, [])
+    args = ["eval", "--model", "other", "--data-dir", str(jds), "--yes", "--resume", eval_id]
+    result = runner.invoke(app, args)
+    assert result.exit_code == 2 and "was made with m, not other" in result.stderr and models == []
 
 
 def test_eval_limit_is_shown_in_the_plan_and_caps_the_estimate(isolated: Path) -> None:

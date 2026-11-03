@@ -8,6 +8,7 @@ and postings in, report out), so it is tested without any model. The plan helper
 import itertools
 import logging
 import re
+import time
 import uuid
 from collections import Counter
 from collections.abc import Callable, Sequence
@@ -22,10 +23,12 @@ from soa.errors import redact_keys
 from soa.llm import LLMAPIError
 from soa.logger import API_ERROR_TYPE, AttemptLog, Setup, default_log_path, read_log
 from soa.schemas import JobPosting
+from soa.tools import postprocess
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_DATA_DIR = Path("data/jds")
+DEFAULT_PAUSE_SECONDS = 2.0  # between documents; the baseline hit 429s after about 25 unpaced calls
 LABEL_PLACEHOLDER = "TODO"  # scripts/make_label_templates.py; a label still containing it is not gold yet
 
 
@@ -114,6 +117,7 @@ class EvalReport(StrictModel):
     json_mode: bool
     max_attempts: int
     run_date: str
+    eval_id: str  # the `soa eval` invocation (in every run_id); `--resume` and write_results use it to find the run
     n: int
     n_scored: int
     n_api_failed: int
@@ -382,7 +386,7 @@ def _no_accuracy(docs: list[DocRun], labels: Labels) -> Accuracy:
 
 def build_report(
     *, model: str, setup: Setup, max_attempts: int, docs: list[DocRun], logs: list[AttemptLog], labels: Labels,
-    run_date: str,
+    run_date: str, eval_id: str = "adhoc",
 ) -> EvalReport:
     """Score a run. `logs` may hold other runs' lines too; only the docs' run_ids are read."""
     v = validity_stats(docs, logs)
@@ -392,7 +396,7 @@ def build_report(
     acc = _no_accuracy(docs, labels) if not_supported else _accuracy(docs, labels)
     doc_ids = {d.doc_id for d in docs}
     return EvalReport(
-        model=model, setup=setup, json_mode=json_mode, max_attempts=max_attempts, run_date=run_date,
+        model=model, setup=setup, json_mode=json_mode, max_attempts=max_attempts, run_date=run_date, eval_id=eval_id,
         n=len(docs), n_scored=v.n_scored, n_api_failed=len(docs) - v.n_scored,
         n_unsupported=n_unsupported, not_supported=not_supported,
         first_try_valid_pct=_pct(v.first_try, v.n_scored), final_valid_pct=_pct(v.final, v.n_scored),
@@ -424,12 +428,69 @@ def list_jds(data_dir: Path, limit: int | None = None) -> list[Path]:
     return paths[:limit] if limit else paths
 
 
+def new_eval_id() -> str:
+    """A short id for one `soa eval` invocation; it is in every run_id, so `--resume` can find the run in the log."""
+    return uuid.uuid4().hex[:6]
+
+
+def base_run_id(setup: Setup, eval_id: str, doc_id: str) -> str:
+    return f"eval-{setup}-{eval_id}-{doc_id}"
+
+
+def _revision(run_id: str, base: str) -> int | None:
+    """1 for `base`, N for `base-rN` (a doc re-run on resume), None for any other run_id."""
+    match = re.fullmatch(re.escape(base) + r"(?:-r(\d+))?", run_id)
+    if match is None:
+        return None
+    return int(match.group(1)) if match.group(1) else 1
+
+
+def _revisions(logs: list[AttemptLog], base: str) -> dict[int, list[AttemptLog]]:
+    found: dict[int, list[AttemptLog]] = {}
+    for line in logs:
+        revision = _revision(line.run_id, base)
+        if revision is not None:
+            found.setdefault(revision, []).append(line)
+    return found
+
+
+def next_run_id(logs: list[AttemptLog], base: str) -> str:
+    """`base` for a doc not run yet, else `base-r<N+1>`: a re-run never appends to an earlier run's log lines."""
+    revisions = _revisions(logs, base)
+    return base if not revisions else f"{base}-r{max(revisions) + 1}"
+
+
+def finished_doc(path: Path, setup: Setup, max_attempts: int, eval_id: str, logs: list[AttemptLog]) -> DocRun | None:
+    """The DocRun of a doc whose latest logged run already ended in a valid posting or in used-up attempts.
+
+    Rebuilt from the log (the model's reply, then the deterministic post-processing again), so no model call is made.
+    None for a doc with no run, or whose latest run was cut short or only had API errors: resume runs those again.
+    """
+    base = base_run_id(setup, eval_id, path.stem)
+    revisions = _revisions(logs, base)
+    if not revisions:
+        return None
+    latest = max(revisions)
+    run_id = base if latest == 1 else f"{base}-r{latest}"
+    responses = _responses(revisions[latest])
+    valid = next((x for x in responses if x.ok), None)
+    if valid is None:
+        if len(responses) < max_attempts:
+            return None
+        return DocRun(doc_id=path.stem, run_id=run_id, status="invalid")
+    raw = JobPosting.model_validate_json(valid.raw_output)
+    processed = postprocess(raw, path.read_text(encoding="utf-8-sig"), doc_id=path.stem)
+    return DocRun(
+        doc_id=path.stem, run_id=run_id, status="valid", raw_posting=raw, posting=processed.posting,
+        disagreements=len(processed.disagreements),
+    )
+
+
 def run_one(
-    path: Path, model: str, setup: Setup, max_attempts: int, json_mode: bool, eval_id: str, log_path: Path
+    path: Path, model: str, setup: Setup, max_attempts: int, json_mode: bool, run_id: str, log_path: Path
 ) -> DocRun:
-    """extract() on one document with a fresh run_id. ExtractionFailed and API errors become a DocRun, not a raise."""
+    """extract() on one document under `run_id`. ExtractionFailed and API errors become a DocRun, not a raise."""
     doc_id = path.stem
-    run_id = f"eval-{setup}-{eval_id}-{doc_id}"
     text = path.read_text(encoding="utf-8-sig")
     try:
         result = extract(
@@ -446,6 +507,26 @@ def run_one(
     )
 
 
+def _run_docs(
+    paths: list[Path], model: str, setup: Setup, attempts: int, json_mode: bool, eval_id: str, log: Path,
+    pause: float, resume: bool,
+) -> list[DocRun]:
+    """One DocRun per path: finished ones rebuilt from the log on resume, the rest run (with `pause` between them)."""
+    earlier = read_log(log) if resume else []
+    docs: list[DocRun] = []
+    called = False  # the first model call of this invocation is not preceded by a pause
+    for path in paths:
+        done = finished_doc(path, setup, attempts, eval_id, earlier) if resume else None
+        if done is None:
+            if called and pause > 0:
+                time.sleep(pause)
+            called = True
+            run_id = next_run_id(earlier, base_run_id(setup, eval_id, path.stem))
+            done = run_one(path, model, setup, attempts, json_mode, run_id, log)
+        docs.append(done)
+    return docs
+
+
 def run_eval(
     model: str,
     setup: Setup,
@@ -456,20 +537,27 @@ def run_eval(
     max_attempts: int = DEFAULT_MAX_ATTEMPTS,
     log_path: Path | None = None,
     run_date: str | None = None,
+    pause: float = 0.0,
+    eval_id: str | None = None,
+    resume: bool = False,
 ) -> EvalReport:
     """Run `setup` on every document (up to `limit`) and score it. REAL model calls unless llm.call is mocked.
 
-    Each document gets a fresh run_id; ExtractionFailed is counted as an invalid document and the run continues.
-    A document whose calls all fail at the API level is counted as `api_error`, not as invalid.
+    Each document gets its own run_id (`eval-<setup>-<eval_id>-<doc>`); ExtractionFailed is counted as an invalid
+    document and the run continues. A document whose calls all fail at the API level is counted as `api_error`.
+    `pause` seconds are slept between documents that make model calls (not before the first, not for skipped ones).
+    With `resume`, documents of run `eval_id` that already finished in the log (valid, or all attempts used) are
+    rebuilt from it without a model call; the rest, including docs that only had API errors, run again under a new
+    run_id (`-r2`, ...), and the report covers all of them.
     """
     paths = list_jds(data_dir, limit)
     attempts, json_mode = setup_args(setup, max_attempts)
     log = log_path or default_log_path()
-    eval_id = uuid.uuid4().hex[:6]
-    docs = [run_one(p, model, setup, attempts, json_mode, eval_id, log) for p in paths]
+    eval_id = eval_id or new_eval_id()
+    docs = _run_docs(paths, model, setup, attempts, json_mode, eval_id, log, pause, resume)
     return build_report(
         model=model, setup=setup, max_attempts=attempts, docs=docs, logs=read_log(log), labels=load_labels(labels_dir),
-        run_date=run_date or date.today().isoformat(),
+        run_date=run_date or date.today().isoformat(), eval_id=eval_id,
     )
 
 
@@ -532,11 +620,44 @@ def _append_summary(path: Path, row: str) -> None:
         handle.write(prefix + row)
 
 
-def write_results(report: EvalReport, results_dir: Path = RESULTS_DIR) -> Path:
-    """Save `<date>_<model-slug>_<setup>.json` (the full report) and append a row to summary.md. Returns the JSON path."""
+def _earlier_report(results_dir: Path, report: EvalReport) -> tuple[Path, EvalReport] | None:
+    """The saved report of the same invocation (eval_id), model and setup, if there is one: a resumed run's first part."""
+    for path in sorted(results_dir.glob("*.json")):
+        try:
+            old = EvalReport.model_validate_json(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):  # not a report, or one written before eval_id existed
+            continue
+        if (old.eval_id, old.model, old.setup) == (report.eval_id, report.model, report.setup):
+            return path, old
+    return None
+
+
+def _replace_summary_row(path: Path, old_row: str, new_row: str) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True) if path.is_file() else []
+    if old_row not in lines:  # the row was edited or removed by hand: add the new one instead of guessing
+        _append_summary(path, new_row)
+        return
+    lines[lines.index(old_row)] = new_row
+    path.write_text("".join(lines), encoding="utf-8", newline="\n")
+
+
+def write_results(report: EvalReport, results_dir: Path = RESULTS_DIR, *, resumed: bool = False) -> Path:
+    """Save `<date>_<model-slug>_<setup>.json` (the full report) and append a row to summary.md. Returns the JSON path.
+
+    A name already taken gets `_2`, `_3`... and an earlier result is never overwritten, with one exception: when
+    `resumed`, the saved report of the SAME invocation (same eval_id, model and setup), i.e. the first part of the
+    run, is replaced by the complete report and its summary row is replaced too. Without one, it is saved as new.
+    """
     results_dir.mkdir(parents=True, exist_ok=True)
+    text = report.model_dump_json(indent=2) + "\n"
+    earlier = _earlier_report(results_dir, report) if resumed else None
+    if earlier is not None:
+        path, old = earlier
+        path.write_text(text, encoding="utf-8", newline="\n")
+        _replace_summary_row(results_dir / SUMMARY_FILE, summary_row(old), summary_row(report))
+        return path
     stem = f"{report.run_date}_{model_slug(report.model)}_{report.setup}"
-    json_path = _write_new(results_dir, stem, ".json", report.model_dump_json(indent=2) + "\n")
+    json_path = _write_new(results_dir, stem, ".json", text)
     _append_summary(results_dir / SUMMARY_FILE, summary_row(report))
     return json_path
 
@@ -562,6 +683,16 @@ def setup_label(setup: Setup) -> str:
     return f"setup {setup} (retry {'on' if attempts > 1 else 'off'}, native {'on' if native else 'off'})"
 
 
+def check_resume(eval_id: str, model: str, log_path: Path) -> None:
+    """Raise ValueError unless the log holds lines of eval run `eval_id`, all made with `model`."""
+    mine = [x for x in read_log(log_path) if re.match(rf"eval-[ABCD]-{re.escape(eval_id)}-", x.run_id)]
+    if not mine:
+        raise ValueError(f"no eval run with id {eval_id!r} in {log_path}")
+    others = sorted({x.model for x in mine} - {model})
+    if others:
+        raise ValueError(f"eval run {eval_id} was made with {', '.join(others)}, not {model}")
+
+
 class EvalPlan(StrictModel):
     """What a run would cover and how many model calls it can make, shown before anything is sent."""
 
@@ -573,6 +704,8 @@ class EvalPlan(StrictModel):
     n_docs: int
     n_labels: int
     max_attempts: int = DEFAULT_MAX_ATTEMPTS
+    pause: float = 0.0
+    resume: str | None = None
 
     def call_range(self) -> tuple[int, int]:
         """(fewest, most) model calls: every doc valid at once vs every doc using all its attempts.
@@ -596,7 +729,11 @@ class EvalPlan(StrictModel):
         ]
         lines += [f"{setup_label(s)}: {self.n_docs} to {self.n_docs * setup_args(s, self.max_attempts)[0]} calls"
                   for s in self.setups]
-        return lines + [f"estimated model calls: {calls} (real API calls)"]
+        if self.pause > 0:
+            lines.append(f"pause between documents: {self.pause:g} s")
+        if self.resume:
+            lines.append(f"resuming eval {self.resume}: documents that already finished in the log are not sent again")
+        return lines + [f"estimated model calls: {calls} (real API calls{', upper bound when resuming' if self.resume else ''})"]
 
 
 def labels_dir_for(data_dir: Path) -> Path:
@@ -605,14 +742,22 @@ def labels_dir_for(data_dir: Path) -> Path:
 
 
 def plan_eval(
-    model: str, setups: list[Setup], data_dir: Path, labels_dir: Path | None = None, limit: int | None = None
+    model: str,
+    setups: list[Setup],
+    data_dir: Path,
+    labels_dir: Path | None = None,
+    limit: int | None = None,
+    *,
+    pause: float = 0.0,
+    resume: str | None = None,
 ) -> EvalPlan:
     """Count the documents and label files. Raises FileNotFoundError if the folder is missing or has no .txt files."""
     n_docs = len(list_jds(data_dir, limit))
     labels = labels_dir or labels_dir_for(data_dir)
     n_labels = len(list(labels.glob("*.json"))) if labels.is_dir() else 0
     return EvalPlan(
-        model=model, setups=setups, data_dir=data_dir, labels_dir=labels, limit=limit, n_docs=n_docs, n_labels=n_labels
+        model=model, setups=setups, data_dir=data_dir, labels_dir=labels, limit=limit, n_docs=n_docs,
+        n_labels=n_labels, pause=pause, resume=resume,
     )
 
 

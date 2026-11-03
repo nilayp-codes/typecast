@@ -89,6 +89,38 @@ def test_a_second_run_appends_a_row_and_never_overwrites_the_first_file(tmp_path
     assert rows[:2] == SUMMARY_HEADER.splitlines() and len(rows) == 2 + 3  # one header, three rows
 
 
+def test_a_resumed_run_replaces_its_own_earlier_report_and_row(tmp_path: Path) -> None:
+    other = write_results(report().model_copy(update={"setup": "D", "eval_id": "zzz999"}), tmp_path)
+    first = report().model_copy(update={"eval_id": "abc123", "first_try_valid_pct": 10.0})
+    path = write_results(first, tmp_path)
+    complete = first.model_copy(update={"first_try_valid_pct": 90.0, "n_scored": 5, "n_api_failed": 0})
+    again = write_results(complete, tmp_path, resumed=True)
+    assert again == path and other != path
+    assert EvalReport.model_validate_json(path.read_text(encoding="utf-8")) == complete
+    assert sorted(p.name for p in tmp_path.glob("*.json")) == ["2026-10-17_m_B.json", "2026-10-17_m_D.json"]
+    rows = (tmp_path / "summary.md").read_text(encoding="utf-8").splitlines()[2:]
+    assert len(rows) == 2 and "| 90.0% |" in rows[1] and "| 10.0% |" not in "".join(rows)
+    assert rows[0] == summary_row(report().model_copy(update={"setup": "D"})).rstrip("\n")  # the other row is untouched
+
+
+def test_resumed_without_an_earlier_report_or_with_another_eval_id_saves_a_new_file(tmp_path: Path) -> None:
+    mine = report().model_copy(update={"eval_id": "abc123"})
+    first = write_results(mine, tmp_path, resumed=True)  # nothing to replace yet
+    second = write_results(mine.model_copy(update={"eval_id": "other1"}), tmp_path, resumed=True)
+    assert (first.name, second.name) == ("2026-10-17_m_B.json", "2026-10-17_m_B_2.json")
+    assert len((tmp_path / "summary.md").read_text(encoding="utf-8").splitlines()) == 2 + 2
+
+
+def test_a_resumed_run_whose_summary_row_was_edited_by_hand_appends_instead_of_guessing(tmp_path: Path) -> None:
+    mine = report().model_copy(update={"eval_id": "abc123"})
+    write_results(mine, tmp_path)
+    summary = tmp_path / "summary.md"
+    summary.write_text(SUMMARY_HEADER + "| my own note |\n", encoding="utf-8")
+    write_results(mine, tmp_path, resumed=True)
+    lines = summary.read_text(encoding="utf-8").splitlines()
+    assert lines[2] == "| my own note |" and lines[3] == summary_row(mine).rstrip("\n") and len(lines) == 4
+
+
 def test_different_setups_and_models_get_their_own_files(tmp_path: Path) -> None:
     base = report()
     other_setup = base.model_copy(update={"setup": "D"})

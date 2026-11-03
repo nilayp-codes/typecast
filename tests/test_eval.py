@@ -19,11 +19,13 @@ from soa.eval import (
     plan_eval,
     report_notes,
     run_eval,
+    schema_constraint,
     score_fields,
     summary_row,
     setup_args,
     validity_stats,
 )
+from soa.errors import format_validation_errors
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, Setup, read_log
 from soa.schemas import JobPosting
@@ -506,6 +508,78 @@ def test_the_not_supported_flag_is_only_for_schema_mode_setups(
     jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [UNSUPPORTED]})
     r = run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl")  # cannot happen for real; the flag stays off
     assert r.not_supported is False
+
+
+# --- constraint violations under schema mode ------------------------------------------
+
+
+def error_text(**overrides: Any) -> str:
+    """The real retry-feedback text for a payload that breaks the schema (no model involved)."""
+    with pytest.raises(ValidationError) as exc:
+        JobPosting.model_validate_json(json.dumps({**VALID, **overrides}))
+    return format_validation_errors(exc.value)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "kind"),
+    [
+        ({"title": "x"}, "string_length"),
+        ({"title": "x" * 101}, "string_length"),
+        ({"skills": []}, "list_size"),
+        ({"seniority": "wizard"}, "enum"),
+        ({"salary_mentioned": "yes"}, "type"),
+        ({"min_years_experience": "3"}, "type"),
+        ({"min_years_experience": 31}, "number_bound"),
+        ({"min_years_experience": -1}, "number_bound"),
+        ({"bogus": 1}, "extra_field"),
+        ({"skills": [{"name": "A", "required": True}, {"name": "a", "required": True}]}, None),  # custom rule
+        ({"seniority": "intern", "min_years_experience": 2}, None),  # custom rule
+    ],
+)
+def test_schema_constraint_names_the_violated_schema_rule(overrides: dict[str, Any], kind: str | None) -> None:
+    kinds = {schema_constraint(e) for e in error_text(**overrides).splitlines()}
+    assert kinds == {kind}
+
+
+def test_schema_constraint_ignores_invalid_json_and_a_missing_key() -> None:
+    assert schema_constraint("(root): Invalid JSON: expected value at line 1 column 1 (got: '```json')") is None
+    assert schema_constraint("company: Field required (got: {'title': 'x'})") == "required_field"
+    assert schema_constraint("no separator here") is None
+
+
+def test_constraint_violations_are_counted_per_rejected_reply_in_schema_mode_runs() -> None:
+    dupes = [{"name": "A", "required": True}, {"name": "a", "required": True}]
+    logs = [
+        line("r1", 1, ok=False, error=error_text(title="x", seniority="wizard", skills=[]), setup="D"),
+        line("r1", 2, ok=False, error=error_text(min_years_experience=31, bogus=1), setup="D"),
+        line("r1", 3, setup="D"),
+        line("r2", 1, ok=False, error=error_text(skills=dupes), setup="D"),  # custom rule: not a schema constraint
+        line("r2", 2, ok=False, error_type="JSONDecodeError", error="(root): Invalid JSON: expected value (got: 'x')", setup="D"),
+        line("r3", 1, ok=False, error=error_text(title="x"), setup="D"),
+    ]
+    docs = [doc("r1"), doc("r2", "invalid"), doc("r3", "invalid")]
+    r = build_report(
+        model="m", setup="D", max_attempts=3, docs=docs, logs=logs, labels=Labels(by_doc={}, skipped=[]), run_date="d"
+    )
+    assert r.constraint_violations is not None
+    assert r.constraint_violations.n_outputs == 3  # r1 attempt 1, r1 attempt 2, r3 attempt 1
+    assert r.constraint_violations.by_constraint == {
+        "string_length": 2, "enum": 1, "list_size": 1, "number_bound": 1, "extra_field": 1,
+    }
+    # most frequent first, ties alphabetical
+    detail = "string_length 2, enum 1, extra_field 1, list_size 1, number_bound 1"
+    assert f"setup D: constraint violations under schema mode: 3 ({detail})" in report_notes(r)
+
+
+def test_constraint_violations_are_reported_even_when_zero_and_never_outside_schema_mode() -> None:
+    clean = build_report(
+        model="m", setup="C", max_attempts=1, docs=[doc("r1")], logs=[line("r1", setup="C")],
+        labels=Labels(by_doc={}, skipped=[]), run_date="d",
+    )
+    assert clean.constraint_violations is not None and clean.constraint_violations.n_outputs == 0
+    assert "setup C: constraint violations under schema mode: 0" in report_notes(clean)
+    assert report().constraint_violations is None  # setup B
+    assert not any("constraint violations" in note for note in report_notes(report()))
 
 
 # --- plan and notes -------------------------------------------------------------

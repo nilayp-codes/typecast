@@ -135,6 +135,7 @@ class EvalReport(StrictModel):
     end_to_end_raw: FieldAccuracy | None  # over all usable labelled docs; no valid output scores 0 on every field
     end_to_end_normalized: FieldAccuracy | None
     failures: FailureBreakdown
+    constraint_violations: ConstraintViolations | None  # setups C and D only (schema mode requested)
     docs: list[DocRun]
 
 
@@ -208,6 +209,57 @@ def failure_breakdown(docs: list[DocRun], logs: list[AttemptLog]) -> FailureBrea
                 by_type[line.error_type or "(none)"] += 1
                 by_loc[first_error_loc(line.error or "")] += 1
     return FailureBreakdown(by_error_type=_most_frequent_first(by_type), by_first_loc=_most_frequent_first(by_loc))
+
+
+# Constraints a JSON Schema can express, which the provider's schema mode was asked to enforce. Matched on the start
+# of the validator's message (the same pydantic wording for every field); the names are the breakdown keys.
+SCHEMA_CONSTRAINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("string_length", ("String should have at least", "String should have at most")),
+    ("list_size", ("List should have at least", "List should have at most")),
+    ("enum", ("Input should be '",)),
+    ("type", ("Input should be a valid",)),
+    ("number_bound", ("Input should be greater than", "Input should be less than")),
+    ("required_field", ("Field required",)),
+    ("extra_field", ("Extra inputs are not permitted",)),
+)
+
+
+def schema_constraint(error_line: str) -> str | None:
+    """Which schema constraint a `loc: msg (got: ...)` line violates, or None.
+
+    None for rules no schema carries (the duplicate-skills and intern rules: `Value error, ...`) and for
+    `Invalid JSON`: those are not something the provider's schema mode could have enforced.
+    """
+    _, sep, rest = error_line.partition(": ")
+    if not sep:
+        return None
+    for name, prefixes in SCHEMA_CONSTRAINTS:
+        if rest.startswith(prefixes):
+            return name
+    return None
+
+
+class ConstraintViolations(StrictModel):
+    """Replies that came back in schema mode and still broke a constraint the schema carries (setups C and D).
+
+    n_outputs = rejected model replies with at least one such violation (a retried doc can contribute several);
+    by_constraint = replies containing at least one violation of that kind (so it can sum to more than n_outputs).
+    A non-zero count means the provider dropped or does not enforce that constraint.
+    """
+
+    n_outputs: int
+    by_constraint: dict[str, int]
+
+
+def constraint_violations(docs: list[DocRun], logs: list[AttemptLog]) -> ConstraintViolations:
+    n_outputs = 0
+    by_constraint: Counter[str] = Counter()
+    for lines in _lines_by_run(docs, logs).values():
+        for line in (x for x in _responses(lines) if not x.ok):
+            kinds = {kind for e in (line.error or "").splitlines() if (kind := schema_constraint(e))}
+            n_outputs += bool(kinds)
+            by_constraint.update(kinds)
+    return ConstraintViolations(n_outputs=n_outputs, by_constraint=_most_frequent_first(by_constraint))
 
 
 def _pct(part: int, whole: int) -> float | None:
@@ -335,11 +387,12 @@ def build_report(
     """Score a run. `logs` may hold other runs' lines too; only the docs' run_ids are read."""
     v = validity_stats(docs, logs)
     n_unsupported = sum(d.status == "unsupported" for d in docs)
-    not_supported = setup_args(setup)[1] and n_unsupported == len(docs) > 0
+    json_mode = setup_args(setup)[1]
+    not_supported = json_mode and n_unsupported == len(docs) > 0
     acc = _no_accuracy(docs, labels) if not_supported else _accuracy(docs, labels)
     doc_ids = {d.doc_id for d in docs}
     return EvalReport(
-        model=model, setup=setup, json_mode=setup_args(setup)[1], max_attempts=max_attempts, run_date=run_date,
+        model=model, setup=setup, json_mode=json_mode, max_attempts=max_attempts, run_date=run_date,
         n=len(docs), n_scored=v.n_scored, n_api_failed=len(docs) - v.n_scored,
         n_unsupported=n_unsupported, not_supported=not_supported,
         first_try_valid_pct=_pct(v.first_try, v.n_scored), final_valid_pct=_pct(v.final, v.n_scored),
@@ -352,7 +405,9 @@ def build_report(
         labels_skipped=[s for s in labels.skipped if s in doc_ids],
         accuracy_raw=acc.raw, accuracy_normalized=acc.normalized,
         end_to_end_raw=acc.end_to_end_raw, end_to_end_normalized=acc.end_to_end_normalized,
-        failures=failure_breakdown(docs, logs), docs=docs,
+        failures=failure_breakdown(docs, logs),
+        constraint_violations=constraint_violations(docs, logs) if json_mode and not not_supported else None,
+        docs=docs,
     )
 
 
@@ -568,6 +623,10 @@ def report_notes(report: EvalReport) -> list[str]:
         return [f"setup {report.setup}: schema mode is not supported by {report.model} (all {report.n} doc(s) rejected)"]
     if report.n_unsupported:
         notes.append(f"{report.n_unsupported} doc(s) were rejected because schema mode is unsupported")
+    if report.constraint_violations is not None:
+        violations = report.constraint_violations
+        detail = ", ".join(f"{name} {count}" for name, count in violations.by_constraint.items())
+        notes.append(f"constraint violations under schema mode: {violations.n_outputs}" + (f" ({detail})" if detail else ""))
     if report.api_error_count:
         notes.append(f"{report.api_error_count} API error line(s) in the log (not counted as validation attempts)")
     if report.n_api_failed:

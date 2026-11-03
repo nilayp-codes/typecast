@@ -196,5 +196,17 @@ doc invalid and the run continues; a doc whose calls all fail at the API level i
   `model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | cost`. `n` reads `N (K scored)` when some
   docs got no model response; the percentages are over the scored ones. Stored values keep full precision; the table
   rounds to one decimal only for display.
+- **Constraint violations under schema mode (setups C and D only):** a provider's strict mode may drop schema
+  constraints, and a provider that ignores `response_format` raises nothing. So the report counts rejected model
+  replies whose error lines break a constraint the schema carries, as `constraint_violations: {n_outputs,
+  by_constraint}` (`None` for A and B and for a not-supported run) and `report_notes` prints
+  `constraint violations under schema mode: N (<constraint> <count>, ...)`, also when N is 0. A reply counts once in
+  `n_outputs` however many violations it has; `by_constraint` counts replies containing that kind (so it can sum to
+  more than `n_outputs`). The kinds, read from the validator's message (`schema_constraint`): `string_length`,
+  `list_size`, `enum`, `type`, `number_bound` (min/max), `required_field`, `extra_field`. Not counted: the
+  duplicate-skills and intern rules (no schema carries them, see the Eval setups section) and `Invalid JSON`. The
+  count covers every attempt of a retried doc, since each reply is logged. N > 0 means the constraint was dropped
+  or not enforced by that provider/model; N = 0 only means it was not seen in this sample. This is the
+  measurement behind the "dropped schema constraints" README finding.
 - **Failure breakdown:** every rejected attempt (not `APIError`), counted by `error_type` and by the location of its
   first error line (numeric path parts become `*`: `skills.*.name`).

@@ -36,7 +36,7 @@ Validators:
 - if seniority == intern → min_years_experience must be None or 0
 
 **Seniority mapping (also the labelling rule for `data/labels/`; gold labels must follow it):**
-1. Title first: Intern -> intern; Junior/Associate -> junior; Senior -> senior; Lead, Staff or Principal -> lead.
+1. Title first: Intern -> intern; Junior/Associate -> junior; Senior -> senior; Lead, Staff, Principal or Architect -> lead.
 2. If the title gives no level, use minimum years required: 0-1 -> junior, 2-4 -> mid, 5+ -> senior.
 3. If neither is stated -> mid.
 

@@ -207,3 +207,12 @@ def test_nullable_fields_must_be_present(path: tuple[str, ...], field: str) -> N
 def test_strings_are_stripped() -> None:
     jp = validate(posting(title="  Backend Engineer  ", skills=skills(" Go ")))
     assert (jp.title, jp.skills[0].name) == ("Backend Engineer", "Go")
+
+
+# --- schema text ----------------------------------------------------------
+
+
+def test_seniority_description_maps_architect_to_lead() -> None:
+    description = JobPosting.model_json_schema()["properties"]["seniority"]["description"]
+    assert "Lead, Staff, Principal or Architect -> lead" in description
+    assert description.isascii()

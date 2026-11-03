@@ -18,7 +18,9 @@ import os
 import re
 import subprocess
 import sys
+import json
 import time
+import urllib.request
 import uuid
 from collections import defaultdict
 from datetime import date
@@ -34,6 +36,7 @@ from soa.schemas import JobPosting
 
 JD_DIR = Path("data/jds")
 RESULTS_DIR = Path("results")
+MODELS_URL = "https://openrouter.ai/api/v1/models"  # public list with per-token prices; no key needed
 PROBE_DOC = "jd_007"
 PAUSE_SECONDS = 5
 RETRY_WAITS = (20, 40, 60)  # seconds before API-error retry 1, 2, 3
@@ -61,6 +64,9 @@ class Row(BaseModel):
     cost_usd: float = 0.0
     cost_known: bool = True
     api_retries: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    cost_estimated: bool = False  # cost_usd was computed from OpenRouter list prices because LiteLLM has none
 
 
 class Outcome(BaseModel):
@@ -246,17 +252,47 @@ def classify_one(kind: str, msg: str, loc: str) -> str:
 def row_from_log(log: AttemptLog) -> Row:
     first = (log.error or "").splitlines()[0] if log.error else ""
     total = log.prompt_tokens + log.completion_tokens
+    tokens = {"prompt_tokens": log.prompt_tokens, "completion_tokens": log.completion_tokens}
     if log.ok:
         return Row(doc_id=log.doc_id, ok=True, error_type="-", first_loc="-", total_tokens=total,
                    latency_ms=log.latency_ms, kinds=[], example="",
-                   cost_usd=log.cost_usd, cost_known=log.cost_known)
+                   cost_usd=log.cost_usd, cost_known=log.cost_known, **tokens)
     if log.error_type == "JSONDecodeError":
         kinds = [classify_json_error(log.raw_output)]
     else:
         kinds = classify_validation(log.raw_output)
     return Row(doc_id=log.doc_id, ok=False, error_type=log.error_type or "?", first_loc=first.split(":", 1)[0],
                total_tokens=total, latency_ms=log.latency_ms, kinds=kinds, example=first,
-               cost_usd=log.cost_usd, cost_known=log.cost_known)
+               cost_usd=log.cost_usd, cost_known=log.cost_known, **tokens)
+
+
+def fetch_prices(model: str) -> tuple[float, float] | None:
+    """(USD per prompt token, USD per completion token) from OpenRouter's public model list, or None."""
+    slug = model.removeprefix("openrouter/")
+    try:
+        with urllib.request.urlopen(MODELS_URL, timeout=30) as response:
+            listed = json.load(response)["data"]
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"note: could not fetch OpenRouter prices ({type(exc).__name__}); costs stay unknown")
+        return None
+    for entry in listed:
+        if entry.get("id") == slug:
+            return float(entry["pricing"]["prompt"]), float(entry["pricing"]["completion"])
+    return None
+
+
+def apply_price_estimates(rows: list[Row], model: str) -> None:
+    """LiteLLM has no price for these models (cost_known=False, cost 0). Fill in an estimate from list prices."""
+    if all(r.cost_known for r in rows if r.total_tokens is not None):
+        return
+    prices = fetch_prices(model)
+    if prices is None:
+        return
+    per_prompt, per_completion = prices
+    for r in rows:
+        if r.total_tokens is not None and not r.cost_known:
+            r.cost_usd = r.prompt_tokens * per_prompt + r.completion_tokens * per_completion
+            r.cost_estimated = True
 
 
 def build_rows(run_id: str, state: RunState) -> list[Row]:
@@ -271,6 +307,10 @@ def build_rows(run_id: str, state: RunState) -> list[Row]:
     return [rows[k] for k in sorted(rows)]
 
 
+def cost_flag(r: Row) -> str:
+    return "False (cost estimated from list price)" if r.cost_estimated else str(r.cost_known)
+
+
 def render_table(rows: list[Row]) -> str:
     out = ["| doc_id | ok | error_type | first error loc | total tokens | latency (ms) | cost (USD) | cost_known "
            "| api retries |", "|---|---|---|---|---|---|---|---|---|"]
@@ -279,7 +319,7 @@ def render_table(rows: list[Row]) -> str:
         tokens = f"{r.total_tokens:,}" if got and r.total_tokens is not None else "-"
         latency = f"{r.latency_ms:,}" if r.latency_ms is not None else "-"
         out.append(f"| {r.doc_id} | {'yes' if r.ok else 'no'} | {r.error_type} | {r.first_loc} | {tokens} | {latency} "
-                   f"| {f'{r.cost_usd:.6f}' if got else '-'} | {r.cost_known if got else '-'} | {r.api_retries} |")
+                   f"| {f'{r.cost_usd:.6f}' if got else '-'} | {cost_flag(r) if got else '-'} | {r.api_retries} |")
     return "\n".join(out)
 
 
@@ -308,7 +348,11 @@ def render_report(rows: list[Row], state: RunState, model: str, run_id: str, pla
     tokens = sum(r.total_tokens or 0 for r in rows)
     cost = sum(r.cost_usd for r in reached)
     unknown = [r.doc_id for r in reached if not r.cost_known]
-    cost_note = f" (cost_known=False on {', '.join(unknown)}; counted as 0)" if unknown else " (cost_known=True on every call)"
+    if any(r.cost_estimated for r in reached):
+        cost_note = (" (ESTIMATE: LiteLLM has no price for this model, so cost_known=False on every call; computed from "
+                     "OpenRouter's list prices for the tokens used. The billed amount may differ by provider)")
+    else:
+        cost_note = f" (cost_known=False on {', '.join(unknown)}; counted as 0)" if unknown else " (cost_known=True on every call)"
     failures = "\n".join(f"- {r.doc_id}: {r.example}" for r in rows if not r.ok)
     status = f"**INCOMPLETE, {state.stopped}**" if state.stopped else "complete"
     waits = "/".join(str(w) for w in RETRY_WAITS)
@@ -319,7 +363,8 @@ def render_report(rows: list[Row], state: RunState, model: str, run_id: str, pla
 - model: `{model}` (results are tied to this exact string)
 - run_id: `{run_id}`
 - API errors: the script waits {waits} s and re-sends the same doc (503, per-minute 429); pause between docs {PAUSE_SECONDS}s
-- code at run time: commit `{git_head()}` (prompt frozen at `619be12`)
+- code at run time: commit `{git_head()}` (prompt frozen at `d90d70a`: the seniority text there added "Architect -> lead")
+- JD set: {planned} docs planned (run on jd_001-jd_011 only). The JD set will grow to 30 for Phase 6, so this is a baseline on a small sample, not the final set
 - run status: {status}
 - docs attempted: {len(state.attempted)} of {planned} planned
 - reached validation (got a model response): {len(reached)}; API errors with no response: {len(rows) - len(reached)}
@@ -370,6 +415,7 @@ def main() -> None:
     run_id = f"baseline-{SETUP}-{date.today().isoformat()}-{uuid.uuid4().hex[:6]}"
     state = run_all(model, run_id, docs)
     rows = build_rows(run_id, state)
+    apply_price_estimates(rows, model)
     report = render_report(rows, state, model, run_id, len(docs))
     RESULTS_DIR.mkdir(exist_ok=True)
     path = report_path(model, run_id)

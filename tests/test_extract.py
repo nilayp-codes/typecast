@@ -33,7 +33,7 @@ def resp(
 ) -> LLMResponse:
     return LLMResponse(
         text=text, prompt_tokens=prompt, completion_tokens=completion, cost_usd=cost,
-        cost_known=known, latency_ms=latency, model="m",
+        cost_known=known, cost_source="provider" if known else "none", latency_ms=latency, model="m",
     )
 
 

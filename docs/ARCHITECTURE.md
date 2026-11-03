@@ -15,7 +15,7 @@ structured-output-agent/
 │   ├── schemas.py      # JobPosting, Skill, Location, enums
 │   ├── tools.py        # normalize_skill, classify_location (deterministic post-processing) + arg/response models
 │   ├── errors.py       # format_validation_errors (rule 11) and redact_keys, shared by agent.py, tools.py, cli.py
-│   ├── llm.py          # thin LiteLLM wrapper: call(), token/cost capture
+│   ├── llm.py          # thin LiteLLM wrapper: call(), token/cost capture (cost_source: provider > estimate > none)
 │   ├── agent.py        # extract(): prompt → call → validate → retry
 │   ├── logger.py       # AttemptLog model + JSONL writer
 │   ├── eval.py         # run dataset, compute metrics, write table
@@ -150,9 +150,11 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   Pydantic model. Dropped constraints are reported as a finding in the README.
 - **Models** come from config/env (`SOA_MODEL_PRIMARY`, `SOA_MODEL_SECONDARY`) and are passed in as the `model`
   argument; nothing in the logic names a model (rule 6).
-- **Model pair (2026-10-15):** both models are Qwen models served through OpenRouter. `SOA_MODEL_PRIMARY` is the weak
-  one (`qwen-2.5-7b-instruct`), `SOA_MODEL_SECONDARY` the strong one (`qwen3-235b-a22b-2507`). One provider key
-  (`OPENROUTER_API_KEY`) covers both. Which one is actually weaker is measured by the Phase 2 baseline, not assumed.
+- **Model pair (2026-10-15):** both models are Qwen models served through OpenRouter. `SOA_MODEL_PRIMARY` is the small
+  one (`qwen-2.5-7b-instruct`, fast and cheap, the development default), `SOA_MODEL_SECONDARY` the large one
+  (`qwen3-235b-a22b-2507`). The roles are named by size, not by quality. One provider key (`OPENROUTER_API_KEY`)
+  covers both. Which one is better is decided by field accuracy on the gold labels (the setup-A baseline showed the
+  large model validating LESS often on the first try, so size does not predict quality here).
 - **Unsupported setups:** a doc whose schema-mode call fails with `LLMAPIError.schema_unsupported` gets
   `DocRun.status = "unsupported"` (it also has no model response, so it counts in `n_api_failed`). If EVERY doc of a
   C or D run is unsupported, `EvalReport.not_supported` is true and the report carries no numbers: coverage and all
@@ -224,5 +226,14 @@ doc invalid and the run continues; a doc whose calls all fail at the API level i
   the same `eval_id`, model and setup and its `summary.md` row (the one exception to "never overwritten"; a row
   edited by hand is not touched, the new row is appended). `check_resume` refuses an id that is not in the log or was
   run with another model. An invocation with `--setup all` shares one `eval_id` across its setups.
+- **Where a cost comes from (`llm.call`, 2026-11-03):** `LLMResponse.cost_source` is `"provider"` when the response's
+  `usage.cost` is a number >= 0 (OpenRouter returns the actual cost of the request there, in credits = USD, with no
+  request flag needed; LiteLLM keeps the field), else `"estimate"` from LiteLLM's price map, else (OpenRouter models
+  only) from OpenRouter's public model list (`fetch_openrouter_prices`, fetched once per process, per-token prices),
+  else `"none"` (cost 0.0, `cost_known` false). The same value goes into `AttemptLog.cost_source`, and the report's
+  `cost_source` is `provider` only when every counted response was `provider`. The Qwen models are not in LiteLLM's
+  map, so before this their cost was always n/a. Unverified on a real response: that OpenRouter's non-streaming
+  reply really carries `usage.cost` for these two models (the docs say it does; LiteLLM keeping the field was
+  checked offline).
 - **Failure breakdown:** every rejected attempt (not `APIError`), counted by `error_type` and by the location of its
   first error line (numeric path parts become `*`: `skills.*.name`).

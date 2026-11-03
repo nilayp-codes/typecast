@@ -28,7 +28,7 @@ VALID: dict[str, Any] = {
 def response(text: str) -> LLMResponse:
     return LLMResponse(
         text=text, prompt_tokens=100, completion_tokens=40, cost_usd=0.002,
-        cost_known=True, latency_ms=850, model="gemini/x",
+        cost_known=True, cost_source="provider", latency_ms=850, model="gemini/x",
     )
 
 

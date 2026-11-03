@@ -34,7 +34,7 @@ BAD = json.dumps({**VALID, "seniority": "wizard"})
 def resp(text: str, *, known: bool = True) -> LLMResponse:
     return LLMResponse(
         text=text, prompt_tokens=1000, completion_tokens=240, cost_usd=0.0009,
-        cost_known=known, latency_ms=2100, model="m",
+        cost_known=known, cost_source="provider" if known else "none", latency_ms=2100, model="m",
     )
 
 

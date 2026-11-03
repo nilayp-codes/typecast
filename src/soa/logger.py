@@ -7,6 +7,8 @@ from typing import Literal, Self
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
+from soa.llm import CostSource
+
 DEFAULT_LOG_PATH = "logs/attempts.jsonl"
 API_ERROR_TYPE = "APIError"  # error_type of a line for a failed provider call; not a validation attempt
 
@@ -38,6 +40,7 @@ class AttemptLog(BaseModel):
     completion_tokens: int
     cost_usd: float
     cost_known: bool
+    cost_source: CostSource | None = None  # None only on lines written before the source was recorded
     ts: AwareDatetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @model_validator(mode="after")

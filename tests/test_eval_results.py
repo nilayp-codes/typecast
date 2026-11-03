@@ -44,6 +44,25 @@ def test_row_uses_n_a_for_unknown_cost_and_for_unscored_runs() -> None:
     assert summary_row(nothing) == "| m | B | 1 (0 scored) | n/a | n/a | n/a | n/a | n/a | n/a | $0.0000 |\n"
 
 
+def test_report_cost_source_is_provider_only_when_every_response_has_the_providers_figure() -> None:
+    both = [doc("r1"), doc("r2")]
+    provider = report(both, [line("r1"), line("r2")])
+    assert (provider.cost_source, summary_row(provider).split(" | ")[-1]) == ("provider", "$0.0020 |\n")
+    mixed = report(both, [line("r1"), line("r2", source="estimate")])
+    assert mixed.cost_source == "estimate"
+    assert summary_row(mixed).endswith("| ~$0.0020 |\n")  # a list-price estimate is marked with ~
+    legacy = report(both, [line("r1"), line("r2", source=None)])  # logged before sources were recorded
+    assert legacy.cost_source == "estimate"
+
+
+def test_report_cost_source_is_none_when_any_cost_is_unknown_or_nothing_was_scored() -> None:
+    unknown = report([doc("r1"), doc("r2")], [line("r1"), line("r2", known=False)])
+    assert (unknown.total_cost_usd, unknown.cost_source) == (None, None)
+    assert summary_row(unknown).endswith("| n/a |\n")
+    nothing = report([doc("r4", "api_error")], [])
+    assert nothing.cost_source is None
+
+
 def test_a_pipe_in_the_model_name_does_not_break_the_table() -> None:
     r = report([doc("r1")], [line("r1")]).model_copy(update={"model": "a|b"})
     assert summary_row(r).startswith("| a\\|b | B |")

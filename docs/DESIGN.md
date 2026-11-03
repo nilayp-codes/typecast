@@ -106,8 +106,14 @@ model    setup  retry  native  first-try  final  avg calls  field acc  cost
  "setup":"B","json_mode":false,
  "ok":false,"error_type":"ValidationError","error":"skills.3.name: …",
  "raw_output":"…","latency_ms":1840,"prompt_tokens":910,
- "completion_tokens":330,"cost_usd":0.0006,"ts":"…"}
+ "completion_tokens":330,"cost_usd":0.0006,"cost_known":true,"cost_source":"provider","ts":"…"}
 ```
+`cost_source` says where `cost_usd` came from: `"provider"` = the cost the provider reported for that request
+(OpenRouter's `usage.cost`, in USD), `"estimate"` = list price (LiteLLM's price map, else OpenRouter's public model
+list) times the token counts, `"none"` = no cost available (`cost_usd` is 0.0 and `cost_known` is false), `null` =
+the line was written before the field existed. Eval reports carry `cost_source` too: `provider` only if every
+response had the provider's own figure, otherwise `estimate`, or n/a if any cost is unknown; `summary.md` marks an
+estimate with `~`.
 `setup` is `"A"`, `"B"`, `"C"` or `"D"` (see ARCHITECTURE.md "Eval setups"), or `null` for non-eval runs.
 `json_mode` is a bool (true = schema mode was requested). Both fields are on `AttemptLog` and written on every line,
 including `APIError` lines. They default to `null` / `false`, so lines written before Phase 6 still parse.

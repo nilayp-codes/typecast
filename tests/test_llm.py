@@ -1,5 +1,6 @@
 """llm.call() with litellm.completion stubbed. No real provider is ever contacted."""
 
+import json
 from typing import Any
 
 import litellm
@@ -17,16 +18,19 @@ from pydantic import ValidationError
 
 from soa import llm
 from soa.llm import LLMAPIError, LLMResponse, Message
+from soa.llm import fetch_openrouter_prices as real_fetch  # the autouse fixture replaces llm.fetch_openrouter_prices
 from soa.schemas import JobPosting
 
 MESSAGES = [Message(role="system", content="be brief"), Message(role="user", content="hi")]
 
 
-def fake_response(content: str | None = '{"ok": true}', model: str = "gpt-4o-mini") -> litellm.ModelResponse:
+def fake_response(
+    content: str | None = '{"ok": true}', model: str = "gpt-4o-mini", **usage_extra: Any
+) -> litellm.ModelResponse:
     return litellm.ModelResponse(
         model=model,
         choices=[{"message": {"role": "assistant", "content": content}, "finish_reason": "stop", "index": 0}],
-        usage={"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        usage={"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, **usage_extra},
     )
 
 
@@ -174,8 +178,120 @@ def test_other_errors_in_schema_mode_keep_their_retry_class(monkeypatch: pytest.
 def test_unknown_model_costs_zero_and_is_flagged(monkeypatch: pytest.MonkeyPatch) -> None:
     stub_completion(monkeypatch, fake_response(model="gemini/not-a-real-model"))
     resp = llm.call(MESSAGES, "gemini/not-a-real-model")
-    assert (resp.cost_usd, resp.cost_known) == (0.0, False)
+    assert (resp.cost_usd, resp.cost_known, resp.cost_source) == (0.0, False, "none")
     assert resp.text == '{"ok": true}'
+
+
+# --- cost source: provider figure, then list price, then none ----------------------------
+
+
+def test_the_provider_reported_cost_is_used_as_is(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, fake_response(model="qwen/q", cost=0.000123, cost_details={"upstream_inference_cost": 0.0001}))
+    resp = llm.call(MESSAGES, "openrouter/qwen/q")
+    assert (resp.cost_usd, resp.cost_known, resp.cost_source) == (0.000123, True, "provider")
+
+
+def test_the_provider_cost_beats_a_list_price(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, fake_response(cost=0.5))  # gpt-4o-mini is in LiteLLM's map, but the provider said 0.5
+    resp = llm.call(MESSAGES, "gpt-4o-mini")
+    assert (resp.cost_usd, resp.cost_source) == (0.5, "provider")
+
+
+def test_a_zero_provider_cost_is_a_real_cost(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, fake_response(cost=0))  # e.g. a free model
+    resp = llm.call(MESSAGES, "gpt-4o-mini")
+    assert (resp.cost_usd, resp.cost_known, resp.cost_source) == (0.0, True, "provider")
+
+
+@pytest.mark.parametrize("bad", [-1.0, "0.1", None, True])
+def test_a_nonsense_provider_cost_is_ignored(monkeypatch: pytest.MonkeyPatch, bad: object) -> None:
+    stub_completion(monkeypatch, fake_response(cost=bad))
+    assert llm.call(MESSAGES, "gpt-4o-mini").cost_source == "estimate"  # falls through to LiteLLM's list price
+
+
+def test_a_model_in_litellms_map_is_an_estimate(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, fake_response())
+    resp = llm.call(MESSAGES, "gpt-4o-mini")
+    assert (resp.cost_known, resp.cost_source) == (True, "estimate") and resp.cost_usd > 0
+
+
+def test_an_unmapped_openrouter_model_is_estimated_from_openrouter_list_prices(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, fake_response(model="qwen/q"))
+    monkeypatch.setattr(llm, "fetch_openrouter_prices", lambda: {"qwen/q": (0.0000001, 0.0000002)})
+    resp = llm.call(MESSAGES, "openrouter/qwen/q")
+    assert resp.cost_usd == pytest.approx(10 * 0.0000001 + 5 * 0.0000002)  # 10 prompt + 5 completion tokens
+    assert (resp.cost_known, resp.cost_source) == (True, "estimate")
+
+
+def test_no_provider_cost_and_no_list_price_means_none(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, fake_response(model="qwen/q"))
+    monkeypatch.setattr(llm, "fetch_openrouter_prices", lambda: {"other/model": (1.0, 1.0)})
+    resp = llm.call(MESSAGES, "openrouter/qwen/q")
+    assert (resp.cost_usd, resp.cost_known, resp.cost_source) == (0.0, False, "none")
+
+
+def test_openrouter_prices_are_not_fetched_for_other_providers_or_when_a_cost_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def boom() -> dict[str, tuple[float, float]]:
+        raise AssertionError("the price list must not be fetched here")
+
+    monkeypatch.setattr(llm, "fetch_openrouter_prices", boom)
+    stub_completion(monkeypatch, fake_response(model="gemini/not-a-real-model"))
+    assert llm.call(MESSAGES, "gemini/not-a-real-model").cost_source == "none"
+    stub_completion(monkeypatch, fake_response(model="qwen/q", cost=0.01))
+    assert llm.call(MESSAGES, "openrouter/qwen/q").cost_source == "provider"
+
+
+def test_llm_response_cost_known_must_match_its_source() -> None:
+    base: dict[str, Any] = {"text": "", "prompt_tokens": 1, "completion_tokens": 1, "cost_usd": 0.0, "latency_ms": 1, "model": "m"}
+    with pytest.raises(ValidationError):
+        LLMResponse(**base, cost_known=True, cost_source="none")
+    with pytest.raises(ValidationError):
+        LLMResponse(**base, cost_known=False, cost_source="provider")
+
+
+# --- fetching OpenRouter's list prices -------------------------------------------------
+
+
+class FakeHttp:
+    def __init__(self, body: str) -> None:
+        self.body = body
+
+    def __enter__(self) -> "FakeHttp":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return self.body.encode()
+
+
+def test_fetch_openrouter_prices_parses_the_public_model_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = json.dumps({"data": [
+        {"id": "qwen/a", "pricing": {"prompt": "0.0000001", "completion": "0.0000002"}},
+        {"id": "router/auto", "pricing": {"prompt": "-1", "completion": "-1"}},
+        {"id": "no/pricing"},
+    ]})
+    monkeypatch.setattr(llm.urllib.request, "urlopen", lambda url, timeout: FakeHttp(body))
+    real_fetch.cache_clear()
+    try:
+        assert real_fetch() == {"qwen/a": (1e-07, 2e-07), "router/auto": (-1.0, -1.0)}
+    finally:
+        real_fetch.cache_clear()
+
+
+def test_a_failed_price_fetch_gives_no_prices(monkeypatch: pytest.MonkeyPatch) -> None:
+    def down(url: str, timeout: int) -> FakeHttp:
+        raise OSError("offline")
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", down)
+    real_fetch.cache_clear()
+    try:
+        assert real_fetch() == {}
+    finally:
+        real_fetch.cache_clear()
 
 
 def test_empty_content_becomes_empty_text(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,8 +1,11 @@
 """Thin LiteLLM wrapper: call(), with token, cost and latency capture. The only module that imports litellm."""
 
+import functools
+import json
 import logging
 import time
-from typing import Literal
+import urllib.request
+from typing import Literal, Self
 
 import litellm
 from litellm.exceptions import (
@@ -16,7 +19,7 @@ from litellm.exceptions import (
     Timeout,
 )
 from openai import APIError
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +43,10 @@ SCHEMA_REJECTION_MARKERS = ("response_format", "json_schema", "unsupported")
 # "No endpoints found that can handle the requested parameters". The wording is not documented, so a 404 counts as
 # "no provider supports schema mode" only when its message says "no endpoints" or names the provider.
 NO_PROVIDER_MARKERS = ("no endpoints", "provider")
+# OpenRouter returns the actual cost of a request in `usage.cost` (credits = USD) with no request flag needed, and
+# publishes per-token list prices. https://openrouter.ai/docs/use-cases/usage-accounting
+OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+PRICE_FETCH_TIMEOUT_SECONDS = 10
 
 
 class Message(BaseModel):
@@ -51,8 +58,16 @@ class Message(BaseModel):
     content: str
 
 
+CostSource = Literal["provider", "estimate", "none"]
+
+
 class LLMResponse(BaseModel):
-    """What one LLM call returned, plus what it cost."""
+    """What one LLM call returned, plus what it cost and where that number came from.
+
+    cost_source: "provider" = the cost the provider reported for this request (OpenRouter `usage.cost`);
+    "estimate" = computed from list prices (LiteLLM's price map, else OpenRouter's public model list) and the token
+    counts; "none" = no cost available (cost_usd is 0.0 and means nothing). cost_known is True unless "none".
+    """
 
     model_config = ConfigDict(extra="forbid", strict=True)
 
@@ -61,8 +76,15 @@ class LLMResponse(BaseModel):
     completion_tokens: int
     cost_usd: float
     cost_known: bool
+    cost_source: CostSource
     latency_ms: int
     model: str
+
+    @model_validator(mode="after")
+    def cost_known_matches_source(self) -> Self:
+        if self.cost_known != (self.cost_source != "none"):
+            raise ValueError("cost_known must be True exactly when cost_source is 'provider' or 'estimate'")
+        return self
 
 
 class LLMAPIError(Exception):
@@ -154,22 +176,61 @@ def _build_response(raw: object, model: str, latency_ms: int) -> LLMResponse:
     if not isinstance(choice, litellm.Choices):
         raise TypeError(f"expected a non-streaming Choices, got {type(choice).__name__}")
     usage = getattr(raw, "usage", None)
-    cost_usd, cost_known = _cost(raw, model)
+    prompt_tokens = getattr(usage, "prompt_tokens", 0)
+    completion_tokens = getattr(usage, "completion_tokens", 0)
+    cost_usd, cost_source = _cost(raw, model, prompt_tokens, completion_tokens)
     return LLMResponse(
         text=choice.message.content or "",
-        prompt_tokens=getattr(usage, "prompt_tokens", 0),
-        completion_tokens=getattr(usage, "completion_tokens", 0),
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
         cost_usd=cost_usd,
-        cost_known=cost_known,
+        cost_known=cost_source != "none",
+        cost_source=cost_source,
         latency_ms=latency_ms,
         model=model,
     )
 
 
-def _cost(raw: litellm.ModelResponse, model: str) -> tuple[float, bool]:
-    """Cost in USD and whether it is known. Models missing from LiteLLM's price map cost 0.0."""
+def _cost(raw: litellm.ModelResponse, model: str, prompt_tokens: int, completion_tokens: int) -> tuple[float, CostSource]:
+    """Cost in USD and where it came from: the provider's own figure, else a list-price estimate, else none (0.0)."""
+    reported = getattr(getattr(raw, "usage", None), "cost", None)
+    if isinstance(reported, int | float) and not isinstance(reported, bool) and reported >= 0:
+        return float(reported), "provider"
+    listed = _list_price_cost(raw, model, prompt_tokens, completion_tokens)
+    if listed is not None:
+        return listed, "estimate"
+    logger.warning("cost unknown for model %r: the provider reported none and no list price was found", model)
+    return 0.0, "none"
+
+
+def _list_price_cost(raw: litellm.ModelResponse, model: str, prompt_tokens: int, completion_tokens: int) -> float | None:
+    """LiteLLM's price map first; for an OpenRouter model missing from it, OpenRouter's public list price."""
     try:
-        return float(litellm.completion_cost(completion_response=raw)), True
-    except Exception as exc:  # LiteLLM raises a bare Exception for unmapped models
-        logger.warning("cost unknown for model %r: %s", model, exc)
-        return 0.0, False
+        return float(litellm.completion_cost(completion_response=raw))
+    except Exception:  # LiteLLM raises a bare Exception for unmapped models
+        pass
+    if not model.startswith(OPENROUTER_PREFIX):
+        return None
+    price = fetch_openrouter_prices().get(model.removeprefix(OPENROUTER_PREFIX))
+    return None if price is None else prompt_tokens * price[0] + completion_tokens * price[1]
+
+
+@functools.cache
+def fetch_openrouter_prices() -> dict[str, tuple[float, float]]:
+    """model slug -> (USD per prompt token, USD per completion token), from OpenRouter's public model list.
+
+    Fetched at most once per process. A failed fetch gives {} (and a warning), so costs fall back to "none".
+    """
+    try:
+        with urllib.request.urlopen(OPENROUTER_MODELS_URL, timeout=PRICE_FETCH_TIMEOUT_SECONDS) as response:
+            listed = json.load(response)["data"]
+    except (OSError, ValueError, KeyError) as exc:
+        logger.warning("could not fetch OpenRouter list prices (%s: %s)", type(exc).__name__, exc)
+        return {}
+    prices: dict[str, tuple[float, float]] = {}
+    for entry in listed:
+        try:
+            prices[entry["id"]] = (float(entry["pricing"]["prompt"]), float(entry["pricing"]["completion"]))
+        except (KeyError, TypeError, ValueError):
+            continue  # an entry without usable prices (e.g. a variable-price router)
+    return prices

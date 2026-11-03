@@ -38,7 +38,8 @@ def posting(**overrides: Any) -> dict[str, Any]:
 def reply(obj: dict[str, Any] | str) -> LLMResponse:
     text = obj if isinstance(obj, str) else json.dumps(obj)
     return LLMResponse(
-        text=text, prompt_tokens=400, completion_tokens=100, cost_usd=0.002, cost_known=True, latency_ms=500, model="m"
+        text=text, prompt_tokens=400, completion_tokens=100, cost_usd=0.002, cost_known=True, cost_source="provider",
+        latency_ms=500, model="m",
     )
 
 

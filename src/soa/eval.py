@@ -130,6 +130,9 @@ class EvalReport(StrictModel):
     final_valid_pct: float | None
     avg_calls: float | None
     total_cost_usd: float | None
+    # where total_cost_usd comes from: "provider" = every response carried the provider's own cost; "estimate" = at
+    # least one was computed from list prices (or logged before sources were recorded); None = n/a
+    cost_source: Literal["provider", "estimate"] | None
     avg_latency_ms: float | None
     api_error_count: int
     disagreement_count: int
@@ -155,6 +158,7 @@ class Validity(StrictModel):
     final: int
     calls: int
     cost_usd: float | None
+    cost_source: Literal["provider", "estimate"] | None
     latency_ms: int
     api_errors: int
 
@@ -175,12 +179,13 @@ def _responses(lines: list[AttemptLog]) -> list[AttemptLog]:
 def validity_stats(docs: list[DocRun], logs: list[AttemptLog]) -> Validity:
     """Validity, calls, cost and latency from the log lines of these docs' runs. APIError lines only count as such."""
     scored = first_try = final = calls = latency = api_errors = 0
-    cost, cost_known = 0.0, True
+    cost, cost_known, all_provider = 0.0, True, True
     for lines in _lines_by_run(docs, logs).values():
         api_errors += sum(1 for x in lines if x.error_type == API_ERROR_TYPE)
         responses = _responses(lines)
         if not responses:
             continue
+        all_provider = all_provider and all(x.cost_source == "provider" for x in responses)
         scored += 1
         calls += len(responses)
         first_try += responses[0].attempt == 1 and responses[0].ok
@@ -188,9 +193,12 @@ def validity_stats(docs: list[DocRun], logs: list[AttemptLog]) -> Validity:
         cost += sum(x.cost_usd for x in responses)
         cost_known = cost_known and all(x.cost_known for x in responses)
         latency += sum(x.latency_ms for x in responses)
+    source: Literal["provider", "estimate"] | None = None
+    if cost_known and scored:
+        source = "provider" if all_provider else "estimate"
     return Validity(
         n_scored=scored, first_try=first_try, final=final, calls=calls,
-        cost_usd=cost if cost_known else None, latency_ms=latency, api_errors=api_errors,
+        cost_usd=cost if cost_known else None, cost_source=source, latency_ms=latency, api_errors=api_errors,
     )
 
 
@@ -404,7 +412,7 @@ def build_report(
         n_unsupported=n_unsupported, not_supported=not_supported,
         first_try_valid_pct=_pct(v.first_try, v.n_scored), final_valid_pct=_pct(v.final, v.n_scored),
         avg_calls=v.calls / v.n_scored if v.n_scored else None,
-        total_cost_usd=v.cost_usd,
+        total_cost_usd=v.cost_usd, cost_source=v.cost_source,
         avg_latency_ms=v.latency_ms / v.n_scored if v.n_scored else None,
         api_error_count=v.api_errors, disagreement_count=sum(d.disagreements for d in docs),
         n_labelled=acc.n_labelled, n_labelled_with_output=acc.n_with_output,
@@ -609,6 +617,8 @@ def summary_row(report: EvalReport) -> str:
     e2e = report.end_to_end_normalized.overall if report.end_to_end_normalized else None
     calls = "n/a" if report.avg_calls is None else f"{report.avg_calls:.2f}"
     cost = "n/a" if report.total_cost_usd is None else f"${report.total_cost_usd:.4f}"
+    if report.cost_source == "estimate" and report.total_cost_usd is not None:
+        cost = "~" + cost  # a list-price estimate, not the provider's figure
     cells = [
         model, report.setup, n, _fmt_pct(report.first_try_valid_pct),
         _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), _fmt_pct(report.coverage_pct), _fmt_pct(e2e),

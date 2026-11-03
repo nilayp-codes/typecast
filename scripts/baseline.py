@@ -18,9 +18,7 @@ import os
 import re
 import subprocess
 import sys
-import json
 import time
-import urllib.request
 import uuid
 from collections import defaultdict
 from datetime import date
@@ -36,7 +34,6 @@ from soa.schemas import JobPosting
 
 JD_DIR = Path("data/jds")
 RESULTS_DIR = Path("results")
-MODELS_URL = "https://openrouter.ai/api/v1/models"  # public list with per-token prices; no key needed
 PROBE_DOC = "jd_007"
 PAUSE_SECONDS = 5
 RETRY_WAITS = (20, 40, 60)  # seconds before API-error retry 1, 2, 3
@@ -66,7 +63,7 @@ class Row(BaseModel):
     api_retries: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
-    cost_estimated: bool = False  # cost_usd was computed from OpenRouter list prices because LiteLLM has none
+    cost_source: str = "-"  # "provider", "estimate" (list price), "none" or "unrecorded", as logged by llm.call
 
 
 class Outcome(BaseModel):
@@ -256,43 +253,15 @@ def row_from_log(log: AttemptLog) -> Row:
     if log.ok:
         return Row(doc_id=log.doc_id, ok=True, error_type="-", first_loc="-", total_tokens=total,
                    latency_ms=log.latency_ms, kinds=[], example="",
-                   cost_usd=log.cost_usd, cost_known=log.cost_known, **tokens)
+                   cost_usd=log.cost_usd, cost_known=log.cost_known, cost_source=log.cost_source or "unrecorded",
+                   **tokens)
     if log.error_type == "JSONDecodeError":
         kinds = [classify_json_error(log.raw_output)]
     else:
         kinds = classify_validation(log.raw_output)
     return Row(doc_id=log.doc_id, ok=False, error_type=log.error_type or "?", first_loc=first.split(":", 1)[0],
                total_tokens=total, latency_ms=log.latency_ms, kinds=kinds, example=first,
-               cost_usd=log.cost_usd, cost_known=log.cost_known, **tokens)
-
-
-def fetch_prices(model: str) -> tuple[float, float] | None:
-    """(USD per prompt token, USD per completion token) from OpenRouter's public model list, or None."""
-    slug = model.removeprefix("openrouter/")
-    try:
-        with urllib.request.urlopen(MODELS_URL, timeout=30) as response:
-            listed = json.load(response)["data"]
-    except (OSError, ValueError, KeyError) as exc:
-        print(f"note: could not fetch OpenRouter prices ({type(exc).__name__}); costs stay unknown")
-        return None
-    for entry in listed:
-        if entry.get("id") == slug:
-            return float(entry["pricing"]["prompt"]), float(entry["pricing"]["completion"])
-    return None
-
-
-def apply_price_estimates(rows: list[Row], model: str) -> None:
-    """LiteLLM has no price for these models (cost_known=False, cost 0). Fill in an estimate from list prices."""
-    if all(r.cost_known for r in rows if r.total_tokens is not None):
-        return
-    prices = fetch_prices(model)
-    if prices is None:
-        return
-    per_prompt, per_completion = prices
-    for r in rows:
-        if r.total_tokens is not None and not r.cost_known:
-            r.cost_usd = r.prompt_tokens * per_prompt + r.completion_tokens * per_completion
-            r.cost_estimated = True
+               cost_usd=log.cost_usd, cost_known=log.cost_known, cost_source=log.cost_source or "unrecorded", **tokens)
 
 
 def build_rows(run_id: str, state: RunState) -> list[Row]:
@@ -308,7 +277,7 @@ def build_rows(run_id: str, state: RunState) -> list[Row]:
 
 
 def cost_flag(r: Row) -> str:
-    return "False (cost estimated from list price)" if r.cost_estimated else str(r.cost_known)
+    return f"{r.cost_known} ({r.cost_source})"
 
 
 def render_table(rows: list[Row]) -> str:
@@ -348,11 +317,9 @@ def render_report(rows: list[Row], state: RunState, model: str, run_id: str, pla
     tokens = sum(r.total_tokens or 0 for r in rows)
     cost = sum(r.cost_usd for r in reached)
     unknown = [r.doc_id for r in reached if not r.cost_known]
-    if any(r.cost_estimated for r in reached):
-        cost_note = (" (ESTIMATE: LiteLLM has no price for this model, so cost_known=False on every call; computed from "
-                     "OpenRouter's list prices for the tokens used. The billed amount may differ by provider)")
-    else:
-        cost_note = f" (cost_known=False on {', '.join(unknown)}; counted as 0)" if unknown else " (cost_known=True on every call)"
+    sources = sorted({r.cost_source for r in reached})
+    cost_note = f" (cost source per call: {', '.join(sources) or 'n/a'}; provider = the cost OpenRouter reported for the request, estimate = list price x tokens"
+    cost_note += f"; counted as 0 where unknown: {', '.join(unknown)})" if unknown else ")"
     failures = "\n".join(f"- {r.doc_id}: {r.example}" for r in rows if not r.ok)
     status = f"**INCOMPLETE, {state.stopped}**" if state.stopped else "complete"
     waits = "/".join(str(w) for w in RETRY_WAITS)
@@ -415,7 +382,6 @@ def main() -> None:
     run_id = f"baseline-{SETUP}-{date.today().isoformat()}-{uuid.uuid4().hex[:6]}"
     state = run_all(model, run_id, docs)
     rows = build_rows(run_id, state)
-    apply_price_estimates(rows, model)
     report = render_report(rows, state, model, run_id, len(docs))
     RESULTS_DIR.mkdir(exist_ok=True)
     path = report_path(model, run_id)

@@ -28,7 +28,7 @@ from soa.eval import (
     validity_stats,
 )
 from soa.errors import format_validation_errors
-from soa.llm import LLMAPIError, LLMResponse, Message
+from soa.llm import CostSource, LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, Setup, append_log, read_log
 from soa.schemas import JobPosting
 
@@ -57,6 +57,7 @@ def skills(*names: str) -> dict[str, Any]:
 def line(
     run_id: str, attempt: int = 1, *, ok: bool = True, error_type: str | None = None, error: str | None = None,
     cost: float = 0.001, known: bool = True, latency: int = 1000, setup: Setup | None = "B",
+    source: CostSource | None = "provider",
 ) -> AttemptLog:
     if not ok:
         error_type = error_type or "ValidationError"
@@ -64,7 +65,7 @@ def line(
     return AttemptLog(
         run_id=run_id, doc_id=f"doc-{run_id}", attempt=attempt, model="m", setup=setup, json_mode=False, ok=ok,
         error_type=error_type, error=error, raw_output="{}", latency_ms=latency, prompt_tokens=100,
-        completion_tokens=20, cost_usd=cost, cost_known=known,
+        completion_tokens=20, cost_usd=cost, cost_known=known, cost_source=source if known else "none",
     )
 
 
@@ -73,7 +74,7 @@ def api_line(run_id: str, attempt: int = 1) -> AttemptLog:
     return AttemptLog(
         run_id=run_id, doc_id=f"doc-{run_id}", attempt=attempt, model="m", setup="B", json_mode=False, ok=False,
         error_type="APIError", error="RateLimitError: slow down", raw_output="", latency_ms=50, prompt_tokens=0,
-        completion_tokens=0, cost_usd=0.0, cost_known=False,
+        completion_tokens=0, cost_usd=0.0, cost_known=False, cost_source="none",
     )
 
 
@@ -346,7 +347,7 @@ def test_setup_args(setup: Setup, expected: tuple[int, bool]) -> None:
 def reply(obj: dict[str, Any]) -> LLMResponse:
     return LLMResponse(
         text=json.dumps(obj), prompt_tokens=100, completion_tokens=50, cost_usd=0.002, cost_known=True,
-        latency_ms=500, model="m",
+        cost_source="provider", latency_ms=500, model="m",
     )
 
 

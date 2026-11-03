@@ -1,0 +1,49 @@
+Lead Software Engineer - (Web Platform)
+Bitwarden
+Open source password management solutions for individuals, teams, and businesses
+$75k – $75k
+|
+Delhi • Noida
+|Full Time
+Job Location
+Delhi • Noida
+Visa Sponsorship
+Not Available
+
+Relocation
+Not Allowed
+About the job
+Bitwarden promotes better internet security and safety with the leading open source password management solution for individuals, teams, and business organizations. Our philosophy on security is that “we are all in this together” – we continue to offer a full-featured free version of Bitwarden so that everyone can be protected with strong password management. We also provide enterprise-grade solutions to some of the largest companies in the world, and will continue to innovate in the identity and authentication market as the world starts to grow beyond passwords. Read more on the Bitwarden blog.
+
+As a Tech Lead for our Web Platform team, you will be responsible for leading the technical direction and supporting the engineering effort of a team focused on building and maintaining the core web application tooling and client services that support all of our web-based clients. This includes our web application, Electron-based desktop client, browser extension, and CLI, as well as other clients and additional Products in the future. You will be expected to own and understand the entirety of the team’s domain, and be able to support the other engineers on the team as well as engage in well-reasoned discussions with other technical leaders in the organization.
+
+RESPONSIBILITIES
+
+Update and maintain Bitwarden's web monorepo tooling, including our nx monorepo packaging infrastructure, our webpack build pipelines, and our npm package management systems.
+Drive repo-wide modernization initiatives, such as migrating to Vite and pnpm or adopting nx, including any coordination with other teams within the organization.
+Work closely with your manager to maintain the technical roadmap for the team, ensuring that core platform dependencies are up to date and emerging technologies are considered for potential adoption.
+Unblock and support other engineers on the team.
+Collaborate with other Tech Leads to ensure that cross-team technical direction is aligned when initiatives span team boundaries.
+Serve as a representative of the team in technical discussions and be able to speak authoritatively about your domain.
+Set the example for thorough code reviews, using them to spread knowledge on the team and ensure high standards for code quality.
+Occasionally review & approve bug fixes submitted by the user community
+WHAT YOU BRING TO BITWARDEN
+
+8-10 years of expertise in modern web application build and packaging pipelines, including strong demonstrated experience with managing and updating nx, webpack, Vite, npm, and pnpm.
+Extensive experience with cross-platform web application development - understanding how to work within and support Electron environments and browser extensions and the limitations and nuances of their APIs.
+A bias for long-horizon thinking, ensuring that decisions made today build stable and maintainable tooling for the future.
+Experience on a Platform team, where other teams are your customers, and you are responsible for ensuring that their feature development can be done with tooling as a support and not a hindrance.
+Experience using AI tooling in your development and testing workflow (Anthropic Claude preferred)
+Collaborative and adaptable mindset
+Openness and authenticity combined with excellent communication skills
+Excitement and enthusiasm for open source and for better internet security
+Excellent problem-solving skills – you might not know all the answers, but you know how to find and communicate the solution
+WHY WORK WITH US
+
+Our user community loves us and we love them. Come to work each day with a sense of purpose as we bring a more secure internet experience to everyone from our friends and family to the world’s largest organizations.
+Become an expert. You’ll get immersed in the prominent technology markets of security and open source software.
+We are dedicated to building a diverse and talented team. Work remotely with motivated and supportive team members across the world.
+Learn and grow. Take on new challenges with the support of your team, and join our #growth-club to continue personal and professional development.
+At Bitwarden, we are passionate about what we do, but not necessarily everything we do. Our engineering team makes it a policy to carve out some time for personal growth, learning, skill building and pursuing personal passions that positively impact the team and company. To ensure that everyone has time to reaffirm their purpose and grow, you are encouraged to self-direct up to 15% of your week to what you feel is important for the company and for yourself.
+Equal Opportunity Employer
+We are committed to fostering an inclusive workplace where everyone can do their best work. We welcome applicants from all backgrounds and make employment decisions based on skills, experience, qualifications, and business needs

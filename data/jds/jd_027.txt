@@ -1,0 +1,63 @@
+Technical Lead – Visual C++ & SQL Server
+Navtech
+We design and develop the most innovative solutions for your users!
+
+* ₹25L – ₹30L • No equity
+* | Remote (India) • Hyderabad
+* | 10 years of exp
+* | Full Time
+
+Job Location
+Hyderabad
+Remote Work Policy
+In office
+Visa Sponsorship
+Not Available
+Relocation
+Allowed
+Skills
+C++
+Software Architecture
+SQL Server
+Leadership
+Debugging
+Performance Tuning
+WinDbg
+Microsoft Visual Studio
+Stored procedures
+Code Review
+QUERY OPTIMIZATION
+Legacy Modernization
+MSVC
+
+About the job
+Navtech is a premier IT software and services provider. Our mission is to increase public cloud adoption and build cloud-first solutions that become trendsetting platforms of the future.
+We have been recognized as the Best Cloud Service Provider by GoodFirms for delivering quality services and results. We strive to innovate and push technology and service boundaries to provide best-in-class technology solutions to our clients globally.
+We are a fast-growing company serving clients across the United States, UK and Europe. You will work with a team of talented developers, quality engineers and product managers who are passionate about building impactful technology solutions.
+
+About the role
+You will lead the team taking over a large rights and licensing rules engine that has been inproduction for many years. It is written in Visual C++ on Windows Server, with heavybusiness logic in SQL Server. You will shadow the client's current technical lead, then ownthe architecture, code quality and release decisions for the system.
+
+Responsibilities
+
+* Lead knowledge transfer from the client's engineers and turn it into architecturedocuments, runbooks and code walkthroughs.
+* Own technical design, code reviews and production releases for the rules engine.
+* Lead a pod of 3 senior C++ developers and 1 Rails developer.
+* Diagnose and resolve production issues, including performance problems in SQLServer.
+* Plan the modernisation of legacy components (including MS Access dependencies)without disrupting live operations.
+* Act as the main technical contact for the client's engineering leadership in the US andCyprus.
+
+Must have
+
+* 12+ years in software development, with at least 7 years in C++ on Windows (VisualC++ / MSVC).
+* Deep SQL Server experience: complex stored procedures, query tuning, executionplans, indexing. SQL Server 2016/2017 preferred.
+* Has led a team that took over and maintained a large existing codebase built by otherpeople over many years.
+* Strong debugging skills on Windows: Visual Studio debugger, WinDbg or crash-dumpanalysis.
+* Has led teams of 4 or more engineers.
+
+Nice to have
+
+* Rules engines, workflow engines or business rules systems.
+* Kafka or other message queues.
+* MS Access, VBA or Ruby on Rails.
+* Rights management, licensing, royalties or contract systems in media, telecom billingor financial services.

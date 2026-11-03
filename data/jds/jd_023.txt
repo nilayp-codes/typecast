@@ -1,0 +1,91 @@
+Data Engineer
+Saturn
+Compliance and back office workflows for Wealth Managers.
+
+Location
+London, England, GB
+Job type
+Full-time
+Salary
+£80K - £130K GBP
+Experience
+3+ years
+Visa sponsorship
+US citizenship/visa not required
+About Saturn
+About Saturn
+
+Saturn is a Series A-backed fintech transforming how financial advice is delivered.
+
+We operate in one of the world's largest industries. Wealth and asset managers oversee more than $100 trillion and generate over $1 trillion in annual revenue, yet much of the infrastructure used to manage that wealth remains fragmented, manual and institution-specific.
+
+Saturn is starting with the productivity and compliance systems used by financial advisers.
+
+Our story
+
+Saturn joined Y Combinator in 2024 and became one of the fastest-growing B2B companies in its batch.
+
+We grew organically to a meaningful share of the UK financial advice market before acquiring the legacy leader, one of the industry's most established compliance rule engine and suitability businesses, in 2025.
+
+That acquisition combined AI-native product engineering with more than two decades of regulatory expertise, proprietary compliance logic and deep industry distribution.
+
+Within two years of launch, Saturn became the leading provider of AI transformation to UK financial advice firms, supporting more than 9,000 regulated advice professionals who manage about $500bn in assets.
+
+We have proved distribution, trust and demand. The most important infrastructure is still
+
+About the role
+Your role
+
+As a Data Engineer, you will build the data foundations that Saturn’s products, AI systems, operations and decision-making depend on.
+
+Saturn is a Series A, Y Combinator-backed company building the AI-native operating system for financial advice. Our platform combines a living data model of the client, AI agents that complete complex advice and operational workflows, and compliance logic embedded directly into how work is produced. All of that rests on data drawn from CRMs, platforms, providers and product systems, which arrives inconsistent, incomplete and rarely defined the same way twice.
+
+You will not treat a pipeline as finished because the data reached its destination. You are expected to understand what the data means, how it changes, where quality is lost and how consumers can tell whether to trust it. A pipeline that runs cleanly and produces misleading data has failed. Your work determines whether Saturn can use its growing volume of financial and operational data consistently across product, reporting and AI.
+
+The Team
+
+Our engineers care deeply about craft, speed and quality. They include early and founding team members from companies including Rippling, Postman, Gojek, CRED and Slice.
+
+You will work alongside product designers, backend engineers, AI engineers and domain experts with decades of experience in financial advice and compliance.
+
+We are building a small, high calibre engineering organisation for people who want genuine ownership, difficult product problems and the opportunity to shape an important company while its foundations are still being formed.
+
+What You’ll Work On
+
+Ingestion from financial platforms, CRMs, providers and internal services, across Kafka-based streams, event-driven movement and batch pipelines for large or scheduled imports
+Core data models covering clients, households, firms, assets, products, advice and evidence, turning raw source data into clear, reusable datasets rather than another copy
+Data contracts and schema evolution between producers and consumers, so schema changes do not silently break downstream systems
+Validation, reconciliation and quality monitoring at the boundaries that matter, including freshness and completeness checks that catch problems before consumers do
+Lineage, provenance and auditability for regulated and evidence-heavy workflows, keeping material transformations visible, testable and explainable
+Pipelines built for reality: retries, replay, backfills, late-arriving data and partial failure treated as expected operating conditions rather than exceptions
+Datasets for Saturn’s AI and retrieval systems, alongside trusted data for product reporting, operations and business analysis
+Access control, retention and handling of personal and financial data, plus the query performance, storage efficiency and cost of the platform as volume grows
+What We’re Looking For
+
+Production data engineering experience. 3+ years building and operating production data pipelines or data platforms, including ownership of them once they are live
+Strong SQL and modelling judgement. You model data for real consumers, and you find the source of truth before creating another copy of it
+Strong command of Python, or comparable depth in another language used for data processing
+Batch and event-driven processing. Experience with Kafka or an equivalent streaming system, a workflow orchestrator such as Airflow, Dagster or Prefect, and transformation tooling such as dbt or equivalent SQL-based workflows
+Cloud warehouse, lake or lakehouse experience, and integrating data from external APIs, databases and files
+Correctness under failure. Understanding of schema design, data contracts, idempotency, replay, backfills and late-arriving data, with automated validation and quality checks as standard practice
+Operational ownership. You monitor production pipelines, investigate failures and turn incidents into better contracts, checks and design. You know when to improve the platform and when a simple pipeline is enough
+Clear communication. You explain data models and technical decisions plainly, work directly with product, engineering and domain stakeholders, and challenge unclear definitions rather than encoding them
+Preferred
+
+Data engineering in financial services or another regulated domain
+Financial advice, wealth management or investment data, including portfolios, transactions, holdings, valuations or reconciliation
+Building data systems with strong lineage and audit requirements, or supporting operational reporting and regulated submissions
+AWS data services, infrastructure as code, and change data capture
+Data catalogues, metadata systems or lineage tooling
+Preparing governed data for machine learning, retrieval or evaluation, including large-scale document and unstructured data processing
+Multi-tenant data platforms with firm-level access controls
+Taking an early data platform into reliable production use
+What We Offer
+
+Competitive salary with regular appraisals
+Competitive equity package at an early stage company with high growth potential
+Our beautiful new five-floor office, “The Dome”, equipped with an onsite gym and roof terrace
+Best-in-class dental and medical insurance
+A dedicated budget for learning and professional development
+Access to an additional world-class gym and wellness centre two minutes from the office
+A tight-knit, ambitious team that cares deeply about quality and each other

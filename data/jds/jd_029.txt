@@ -1,0 +1,76 @@
+Firmware Engineer (Wearables) -
+LUNA
+Health, Made Yours
+Delhi • Gurgaon
+|4 years of exp
+|Full Time
+Job Location
+Delhi • Gurgaon • Noida • Gurugram
+Remote Work Policy
+In office
+
+Visa Sponsorship
+Not Available
+
+Relocation
+Allowed
+Skills
+Embedded Systems
+Bluetooth
+Firmware
+RTOS
+Embedded Firmware Development
+Bluetooth Low Energy
+Wearable Technology
+About the job
+About the Role:
+We are looking for a highly motivated Firmware Engineer with experience in embedded systems and wearable devices to develop next-generation smartwatches, smart rings, smart bands, and connected wearable products. The ideal candidate will be responsible for designing, developing, optimizing, and maintaining firmware across multiple wearable platforms while working closely with hardware, mobile app, cloud, algorithm, and product teams.
+
+Key Responsibilities:
+• Design, develop, and maintain embedded firmware for wearable devices based on RTOS platforms.
+• Implement and optimize drivers, middleware, and application-layer firmware for sensors, connectivity, power management, and user interfaces.
+• Develop firmware for health monitoring features including heart rate, SpO₂, sleep tracking, activity tracking, and workout modes.
+• Integrate and optimize communication protocols such as BLE, UART, SPI, I2C, GPIO, PWM, and ADC.
+• Work with sensor vendors and chipset partners to integrate PPG, IMU, temperature, ECG, and other wearable sensors.
+• Optimize power consumption, memory usage, and overall system performance to achieve battery life targets.
+• Support firmware bring-up, debugging, validation, and production readiness activities.
+• Collaborate with hardware teams during board bring-up, schematic reviews, and hardware debugging.
+• Analyze field issues, identify root causes, and implement robust fixes.
+• Participate in architecture discussions and contribute to firmware design reviews.
+• Develop test tools, automation scripts, and diagnostic utilities to improve development efficiency.
+• Support OTA (Over-the-Air) firmware upgrade mechanisms and firmware release management.
+
+Required Qualifications:
+• Bachelor's or Master's degree in Electronics, Embedded Systems, Computer Engineering, or related field.
+• 4–8 years of experience in embedded firmware development.
+• Strong proficiency in C programming and embedded software design.
+• Experience working with RTOS-based systems (FreeRTOS, RT-Thread, Zephyr, ThreadX, or similar).
+• Strong understanding of microcontroller architectures (ARM Cortex-M preferred).
+• Experience with communication interfaces: BLE, UART, SPI, I2C, GPIO, PWM
+• Experience with debugging tools such as JTAG, SWD, Logic Analyzer, Oscilloscope, and Protocol Analyzers.
+• Good understanding of low-power embedded system design.
+• Familiarity with Git and software development lifecycle practices.
+
+Preferred Qualifications:
+• Experience developing firmware for smartwatches, smart bands, smart rings, TWS, or IoT products.
+• Experience with Nordic, Realtek, SiFli, Ambiq, Dialog, Telink, or similar wearable chipsets.
+• Experience integrating health and fitness sensors.
+• Knowledge of BLE profiles and wearable communication architectures.
+• Understanding of bootloaders, OTA update mechanisms, and secure firmware development.
+• Familiarity with LVGL or embedded UI frameworks.
+• Experience working with manufacturing test firmware and factory tools.
+• Basic understanding of signal processing and wearable algorithms.
+
+Desired Skills:
+• Strong debugging and problem-solving capabilities.
+• Ability to work independently and drive feature ownership.
+• Excellent collaboration and communication skills.
+• Ability to balance performance, memory, and power constraints.
+• Product-oriented mindset with focus on user experience and reliability.
+
+Nice to Have:
+• Experience with smartwatch watchface engines and graphics rendering.
+• Experience integrating AI or voice-assistant features on embedded devices.
+• Knowledge of sensor fusion, motion processing, or health-monitoring algorithms.
+• Experience working with cloud-connected wearable ecosystems.
+Experience: 4–8 Years

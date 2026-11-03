@@ -1,0 +1,72 @@
+Codingal
+Performance Marketing Specialist
+Leading online after-school for kids & teens to learn AI & coding
+
+Apply
+Save
+Location
+Bengaluru, KA, IN / Bengaluru, Karnataka, IN
+Job type
+Full-time
+Salary
+₹600K - ₹900K INR
+Experience
+1+ years
+Visa sponsorship
+US citizenship/visa not required
+About Codingal
+Codingal (www.codingal.com) is the global leader in online AI and coding education for kids and teens (Grades 1-12). Our mission is to help students fall in love with AI & coding and become creators of the future - entrepreneurs, engineers, and scientists by providing high-quality, accessible, and personalized computer science education.
+
+In many countries, top technical universities exist, but there’s a significant gap in K-12 programming education. Parents want their kids to start learning programming early, and that’s why they choose Codingal. We offer live, interactive classes with expert instructors from Computer Science backgrounds. All our instructors are rigorously vetted and trained to ensure a high-quality learning experience.
+
+Every student receives a personalized learning path tailored to their age and skill level. Our curriculum is STEM.org-accredited, aligned with the K–12 Computer Science Framework, and delivered in 1:1 and small-group formats, ensuring individual attention and engagement.
+
+Students learn by building real-world projects using popular tools and technologies like Scratch, Python, Roblox, Minecraft, MIT App Inventor, Thunkable, Pygame, HTML/CSS, JavaScript, website development, Java, Data Science, AP Computer Science content, and AI tools like ChatGPT and Machine Learning frameworks. Through this hands-on approach, students create apps, games, animations, and websites in a fun, engaging way that fosters problem-solving and creative skills.
+
+Beyond classes, students participate in global coding competitions, hackathons like HPE CodeWars, and online coding camps, further nurturing their creativity, confidence, and innovative spirit. With a 4.9/5 student rating and NPS of 86, Codingal is trusted by over 1 million registered students in 70+ countries.
+
+Codingal combines the best of human instruction and AI-driven learning to inspire the next generation of tech leaders. We are poised to lead the next generation of coding education and make a significant impact in this rapidly growing market.
+
+About the role
+Codingal (www.codingal.com) is a global leader in online AI and coding education for kids and teens (Grades 1-12). Our mission is to help students fall in love with AI & coding and become creators of the future - entrepreneurs, engineers, and scientists by providing high-quality, accessible, and personalized computer science education.
+
+Students across 135+ countries learn Coding, AI, and other subjects through Codingal's structured curriculum and expert teachers. We are building toward becoming one of the world's largest and most loved online learning platforms for children.
+
+About the Role
+
+We are looking for a performance marketing specialist with a proven track record of driving high-velocity user acquisition and revenue growth. This role requires hands-on expertise in managing paid channels at scale, combined with a growth hacker mindset and strong analytical rigor. You'll own the full paid marketing funnel and directly contribute to our most critical charter: scaling aggressively across India, the US, and international markets.
+
+What You'll Do
+
+Manage and own all paid channels to generate a continuous flow of leads
+Execute campaigns across Google Ads, Facebook Ads, YouTube Ads, LinkedIn, remarketing, video marketing, and other performance channels
+Manage monthly marketing budgets of at least INR 50 lakhs with disciplined ROI tracking
+Strategize and execute lead generation campaigns tailored for India, the US, and select international markets ● Own monthly acquisition targets for MQLs and SQLs, driving consistent pipeline growth
+Optimize landing pages for both mobile and desktop users to maximize conversion rates
+Collaborate closely with the business development team to ensure marketing objectives are met
+Plan, monitor, maintain, and report on monthly marketing budgets, performance data, and campaign insights
+Ensure all marketing communications adhere to business and brand guidelines
+Monitor competition and share industry best practices with the team
+What We're Looking For
+
+Hands-on paid marketing expertise: Deep knowledge of Google Ads and Facebook Ads Manager is a must
+Experience: At least 2 years of experience in performance marketing, with proven success running large-scale paid campaigns
+Growth hacker mindset: Strong analytical bent with the ability to find insights, test hypotheses, and optimize relentlessly
+Data fluency: Comfortable using tools like Excel, Google Sheets, and analytics platforms to drive decision-making
+Unmatched enthusiasm: Ability to keep up with the pace of the business and the team
+Bonus if you have
+
+Experience working in or with global edtech or consumer brands
+Knowledge of marketing automation and CRM tools like LeadSquared, HubSpot, or Salesforce
+What's in it for you?
+
+Work closely with top leadership in a high-impact role
+Shape marketing strategy for priority geographies
+High ownership + fast growth environment
+Competitive compensation + performance-based incentives
+Please note that this is an in-person role, with no remote option available. You get to work with a young & smart team, including directly with the founders, who are on a mission to inspire school kids to fall in love with coding. Join us on the journey to provide coding and AI education to every K-12 student and prepare them for the future.
+
+Apply now!
+
+Technology
+Our tech stack is Python/Django in the backend and React & Next.js in the frontend. We are small team of 3 engineers right now, building products for kids & teens to learn AI and Coding with live classes and online tools. Live classes, calendar management for teachers, gamified product for students, and a community where students can participate in Competitions are the key components of the product. If you believe in the mission, you would have an amazing time building products for K-12 students.

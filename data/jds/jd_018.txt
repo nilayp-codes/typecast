@@ -1,0 +1,79 @@
+Codingal
+Business Development Associate (Renewals)
+Leading online after-school for kids & teens to learn AI & coding
+
+Apply
+Save
+Location
+Bengaluru, KA, IN / Bengaluru, Karnataka, IN
+Job type
+Full-time
+Salary
+₹400K - ₹600K INR
+Experience
+1+ years
+Visa sponsorship
+US citizenship/visa not required
+About Codingal
+Codingal (www.codingal.com) is the global leader in online AI and coding education for kids and teens (Grades 1-12). Our mission is to help students fall in love with AI & coding and become creators of the future - entrepreneurs, engineers, and scientists by providing high-quality, accessible, and personalized computer science education.
+
+In many countries, top technical universities exist, but there’s a significant gap in K-12 programming education. Parents want their kids to start learning programming early, and that’s why they choose Codingal. We offer live, interactive classes with expert instructors from Computer Science backgrounds. All our instructors are rigorously vetted and trained to ensure a high-quality learning experience.
+
+Every student receives a personalized learning path tailored to their age and skill level. Our curriculum is STEM.org-accredited, aligned with the K–12 Computer Science Framework, and delivered in 1:1 and small-group formats, ensuring individual attention and engagement.
+
+Students learn by building real-world projects using popular tools and technologies like Scratch, Python, Roblox, Minecraft, MIT App Inventor, Thunkable, Pygame, HTML/CSS, JavaScript, website development, Java, Data Science, AP Computer Science content, and AI tools like ChatGPT and Machine Learning frameworks. Through this hands-on approach, students create apps, games, animations, and websites in a fun, engaging way that fosters problem-solving and creative skills.
+
+Beyond classes, students participate in global coding competitions, hackathons like HPE CodeWars, and online coding camps, further nurturing their creativity, confidence, and innovative spirit. With a 4.9/5 student rating and NPS of 86, Codingal is trusted by over 1 million registered students in 70+ countries.
+
+Codingal combines the best of human instruction and AI-driven learning to inspire the next generation of tech leaders. We are poised to lead the next generation of coding education and make a significant impact in this rapidly growing market.
+
+About the role
+Codingal (www.codingal.com) is the global leader in online AI & coding education for kids and teens. We offer live, interactive classes led by expert Computer Science instructors, empowering students to build apps, games, websites, and AI-powered projects.
+
+Our mission is to help kids fall in love with coding and prepare them to become future-ready creators, entrepreneurs, engineers, and scientists. With a curriculum accredited by STEM.org and aligned with the K-12 Computer Science Framework, we offer personalized learning through 1:1 and small-group classes.
+
+As AI reshapes the world, Codingal integrates real-world AI tools like ChatGPT, machine learning, and data science into the learning journey, helping kids not just use AI but build with it.
+
+Trusted by over 1 million students worldwide and backed by Y Combinator, Rebright Partners, and top angels, Codingal is rated 4.9/5 by students and has an NPS of 86, making it the most loved platform for coding and AI education.
+
+We are looking for a full-time Business Development Associate in our Renewals team to join the passionate Codingal team.
+
+Key Responsibilities
+
+Follow-up and Conversion: Intensively follow up with prospects and close sales within the sales cycle.
+Multi-Channel Communication: Engage leads through email, WhatsApp, SMS, and calls to build trust and encourage enrollment.
+Achieve Targets: Meet and exceed monthly sales goals in a high-performance, competitive environment.
+Performance Monitoring: Track key metrics such as conversion rates, average revenue per lead, and average revenue per sale.
+Team Collaboration: Contribute to team success while achieving individual targets.
+Required skills
+
+Proficiency in English communication and written skills is mandatory
+Computer Science or technical background preferred, but not mandatory
+Prior experience in Edtech B2C sales is preferred (min 6 months)
+Exceptional communicator and influencer who can deliver a sales pitch like a charm and maintain healthy customer relationships
+Result-driven with experience in an extremely target-centric job
+Self-learner with a high grasping ability and can learn about the product & services within 2 days
+Education:
+
+• Bachelors in IT field is preferred but not mandatory
+
+Perks:
+
+Free Lunch & Dinner
+Exposure to a fast-paced Ed-Tech startup
+Health Insurance
+PF Contribution
+What we offer:
+
+A collaborative, mission-driven team culture
+Career growth opportunities
+Location: HSR Layout, Bangalore, India
+
+Please note that this is an in-person role, with no remote option available.
+
+You get to work with a young & smart team, including directly with the founders, who are on a mission to inspire school kids to fall in love with coding. Join us on the journey to provide coding education to every K-12 student and prepare them for the future.
+
+Apply now!
+
+Technology
+Our tech stack is Python/Django in the backend and React & Next.js in the frontend. We are small team of 3 engineers right now, building products for kids & teens to learn AI and Coding with live classes and online tools. Live classes, calendar management for teachers, gamified product for students, and a community where students can participate in Competitions are the key components of the product. If you believe in the mission, you would have an amazing time building products for K-12 students.

@@ -1,0 +1,80 @@
+Lead Product Manager
+Saturn
+Compliance and back office workflows for Wealth Managers.
+
+Location
+London, England, GB
+Job type
+Full-time
+Salary
+£120K - £150K GBP
+Experience
+6+ years
+Visa sponsorship
+US citizenship/visa not required
+About Saturn
+About Saturn
+
+Saturn is a Series A-backed fintech transforming how financial advice is delivered.
+
+We operate in one of the world's largest industries. Wealth and asset managers oversee more than $100 trillion and generate over $1 trillion in annual revenue, yet much of the infrastructure used to manage that wealth remains fragmented, manual and institution-specific.
+
+Saturn is starting with the productivity and compliance systems used by financial advisers.
+
+Our story
+
+Saturn joined Y Combinator in 2024 and became one of the fastest-growing B2B companies in its batch.
+
+We grew organically to a meaningful share of the UK financial advice market before acquiring the legacy leader, one of the industry's most established compliance rule engine and suitability businesses, in 2025.
+
+That acquisition combined AI-native product engineering with more than two decades of regulatory expertise, proprietary compliance logic and deep industry distribution.
+
+Within two years of launch, Saturn became the leading provider of AI transformation to UK financial advice firms, supporting more than 9,000 regulated advice professionals who manage about $500bn in assets.
+
+We have proved distribution, trust and demand. The most important infrastructure is still
+
+About the role
+Your role
+
+As Lead Product Manager, you will own a set of Saturn's product areas in their entirety: strategy, roadmap, commercial outcomes, and the product managers who build them.a
+
+Saturn is a Series A, Y Combinator-backed company building the AI-native operating system for financial advice. Our platform combines a living data model of the client, AI agents that complete complex advice and operational workflows, and compliance logic embedded directly into how work is produced. The initial wedge is adviser productivity. The larger opportunity is rebuilding the operating model of the advice firm around connected data, intelligent workflows and continuous regulatory control.
+
+This is a lead role with founder-level scope. You work directly with the CEO, engineers, partnerships, and associate product managers. You define the what and why with enough clarity that one engineer ships the whole feature. No handoff chain, no ambiguity, no hand-waving. Your work will determine whether Saturn becomes the intelligence layer through which advice is created, governed and delivered.
+
+The Team
+
+You will work in a cross-functional squad alongside Product Engineers who own features end-to-end across frontend, backend, and AI, plus Design and Saturn’s domain experts: chartered compliance officers and paraplanners. Product management at Saturn moves fast, and we protect that pace deliberately. The best PMs do their best work when they can see the impact of what they ship.
+
+What You'll Work On
+
+Owning the product strategy and a rolling 3-6 month roadmap for AI agents that automate advice workflows
+Translating agentic and LLM capabilities into experiences advisers trust with regulated work, where evidence and auditability sit behind every material output
+Running independent discovery with advisers and paraplanners, distinguishing signal from noise, and turning adviser pain into product direction
+Prioritising ruthlessly across features, bugs, and quality, and writing specs with zero ambiguity — clear enough for one engineer to ship the whole feature
+Balancing enterprise partner demands with product coherence, and sequencing releases against the go-to-market calendar
+Treating go-to-market as part of the build. You ship features that land, not features that launch
+Coaching and multiplying the PMs around you, and building the frameworks the product function adopts as it grows
+What We're Looking For
+
+Product management experience at fast-paced, product-led B2B SaaS companies, including ownership of a product that shipped and won in market
+AI-native product experience. You've shipped products where AI is the core, not a bolt-on. You understand the difference between deterministic and probabilistic systems, and what it takes to put agentic workflows in front of users in a regulated environment
+Technical fluency. You can discuss AI architecture trade-offs, know why prompts break, and challenge engineering assumptions
+Discovery discipline and sharp prioritisation. You have run research that changed what got built, and you can explain why you said no — not just what you said yes to
+Commercial instinct. You connect product decisions to retention, expansion, and the revenue model
+Self-sufficiency with data. You define your own metrics and design your own experiments
+Strong written communication. Your decision docs and PRDs reduce meetings rather than create them
+Preferred
+
+Fintech or regulated industry experience
+Experience deploying AI into enterprise or compliance-sensitive environments
+Understanding of adviser workflows and compliance context
+What We Offer
+
+Competitive salary with regular appraisals
+Competitive equity package at an early stage company with high growth potential
+Our beautiful new five-floor office, “The Dome”, equipped with an onsite gym and roof terrace
+Best-in-class dental and medical insurance
+A dedicated budget for learning and professional development
+Access to an additional world-class gym and wellness centre two minutes from the office
+A tight-knit, ambitious team that cares deeply about quality and each other

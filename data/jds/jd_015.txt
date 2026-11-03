@@ -1,0 +1,43 @@
+Sr Machine Learning Engineer
+Finku
+AI powered personal finance app for Indonesia
+
+Location
+Jakarta, Indonesia / Remote (Jakarta, Jakarta, ID)
+Job type
+Full-time
+Experience
+3+ years
+Visa sponsorship
+US citizenship/visa not required
+Skills
+MySQL, Data Analytics
+
+About Finku
+Finku is democratizing access to financial services in Indonesia! Helping users manage their finances through integration with all users financial accounts, and personal finance tools.
+Join a talented team who bring experience from Bukalapak, BCG, Tokopedia, OJK, Shipper and more!
+
+About the role
+Role Description:
+
+* Analyze large volumes of data, identify patterns and find insights that are useful for consumers.
+* Lead the design, development, and maintenance of scalable machine learning architectures and pipelines.
+* Explore new models and improve existing ML models.
+* Mentor and guide junior machine learning engineers, promoting best practices and technical excellence.
+* Bring the best practice in ML with a scalable tech stack.
+* Push to improve Status Quo by researching and adopting cutting-edge AI technology and techniques.
+* Collaborate closely with cross-functional teams to align machine learning solutions with business goals.
+
+Role Requirements:
+
+* Strong academic background (background in STEM is preferred).
+* Prior experience in machine learning engineering or data science for 3-6 years.
+* Proven track record of bringing machine learning models to production.
+* Excellent problem-solving skills and the ability to work independently.
+* Comfortable to take ownership over building new data & AI project.
+* Strong communication and teamwork within team and other project stakeholders.
+* Experience in leading and mentoring engineering teams.
+* Proficiency in Finance and GenAI related projects with proven experience.
+
+Technology
+We use React Native front-end and NodeJS back-end, with AWS servers! More details to be shared later in the interview process

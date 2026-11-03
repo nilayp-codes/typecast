@@ -1,0 +1,48 @@
+Lead Backend Engineer
+Aurora AI
+
+* ₹40L – ₹60L • 0.2% – 0.8%
+* | Bengaluru
+* | 6 years of exp
+* | Full Time
+
+Job Location
+Bengaluru
+Remote Work Policy
+In office
+Visa Sponsorship
+Not Available
+Relocation
+Allowed
+Skills
+Python
+Java
+noSQL
+Python Flask
+Spring Boot
+Go
+
+About the job
+workloads reliable under load. As Founding Backend Lead in Bangalore, you will set technical direction for that layer during the company's zero-to-one chapter.
+You will own system design choices that let a consumer startup move fast without painting itself into a corner as traffic grows.
+
+What you'll do
+Lead backend architecture and delivery for Aurora's core services during the zero-to-one phase.
+Design systems for AI-heavy workloads — queues, orchestration, storage, and APIs that stay fast as volume grows.
+Drive production scale and operational excellence: observability, failure modes, and performance under real traffic.
+Mentor engineers and partner with product, mobile, and AI teams to ship end-to-end outcomes.
+
+What we're looking for
+4–10 years of backend engineering experience, including leadership during a consumer startup's zero-to-one phase.
+Strong system design skills with production ownership of services at meaningful scale.
+Experience building AI-heavy backend systems or integrating model-powered workflows into reliable services.
+Operational rigor: you care about dashboards, alerts, and the path from incident to permanent fix.
+
+Nice to have
+Mobile-startup or consumer-app backend experience around the 0→100k active-user ride.
+Familiarity with distributed systems, queues, and event-driven architectures.
+Prior tech-lead or engineering-manager experience in a lean team.
+IIT/BITS/NIT graduate preferred.
+
+Compensation
+Competitive cash plus a meaningful founding-team ESOP grant. Final band depends on experience and evaluation

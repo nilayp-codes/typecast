@@ -1,0 +1,68 @@
+Front-End Software Engineer (React/Typescript)
+ReactWise
+AI Co-Pilot for Chemical Process Optimization
+
+Location
+Cambridge, England, GB / Remote (GB)
+Job type
+Full-time
+Salary
+£45K - £60K GBP
+Experience
+Any (new grads ok)
+Visa sponsorship
+US citizenship/visa not required
+Skills
+CSS, HTML, Python, React, TypeScript
+
+About ReactWise
+ReactWise is a seed-stage start-up located in San Francisco (USA) that offers powerful no-code software for optimizing chemical reactions. Using machine learning algorithms developed by the founders during their PhDs at the University of Cambridge, their software can significantly reduce process development time, bringing novel drugs to clinical trials much faster. Several chemical and pharmaceutical companies currently use our software. As an early-stage start-up, we offer the opportunity to build software at the cutting edge of machine learning and chemistry, with short iteration cycles and autonomy to shape the software development process.
+
+About the role
+Front-End Engineer (Junior/Mid-Level)
+Location: Cambridge, UK (hybrid) Salary: £45k–£60k + equity Start date: ASAP
+
+About ReactWise
+ReactWise is a software start-up based in Cambridge, UK, offering powerful no-code software for optimising chemical reactions. Using machine learning algorithms developed by the founders during their PhDs at the University of Cambridge, our software significantly reduces process development time, bringing novel drugs to clinical trials much faster.
+Founded in 2024, we now have dozens of pharma clients across the globe, including On Demand Pharmaceuticals and Pfizer. As an early-stage start-up, we offer the opportunity to build software at the cutting edge of machine learning and chemistry, with short iteration cycles and the autonomy to shape the software development process.
+
+The Role
+We're looking for a junior/mid-level front-end engineer to join our small, fast-moving team in Cambridge, with hybrid arrangements available. You'll work closely with our founders and engineers to build beautiful, intuitive user interfaces that help scientists run complex experiments more easily.
+This is a great opportunity to grow your skills in a supportive, high-impact environment, with lots of ownership and mentorship. No knowledge of chemistry is expected.
+
+Key Responsibilities
+
+* Build responsive, user-friendly front-end components using React and TypeScript
+* Collaborate with engineers and chemists to translate ideas and wireframes into functional UI
+* Contribute to design discussions and give input on improving user experience
+* Write clean, well-documented code and participate in code review
+* Test and debug front-end features across different browsers and screen sizes
+
+Requirements
+
+* Right to work in the UK (unfortunately, we cannot sponsor visas)
+* Bachelor's degree in CS, Engineering, or a related field, or equivalent practical experience
+* Experience building web applications with React and TypeScript (through work, projects, or coursework). Please link your GitHub and/or portfolio on your CV
+* Understanding of HTML, CSS, modern JavaScript/TypeScript, and collaborative Git workflows
+* Eagerness to learn and contribute in a fast-paced start-up environment
+* Excellent communication skills and the ability to work well in a team
+
+Desirable Skills
+
+* Flair and intuition for good UI/UX design, and experience with Figma
+* A basic understanding of relational databases
+
+How to Apply
+Apply via the form on the company careers page. We will not review applications received through Work at a Startup (WaaS). Applications are reviewed on a rolling basis. No cover letter needed.
+
+Technology
+Typescript, React, Next.js, Python, AWS, PostgreSQL
+
+Interview process
+The full application process will consist of:
+
+1. Initial application (this form)
+2. Online coding assessment
+3. First interview with Founder
+4. 1 hour technical interview
+5. Final right to work checks

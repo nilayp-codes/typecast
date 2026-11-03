@@ -1,0 +1,138 @@
+Front End JavaScript / TypeScript Engineer
+GoGoGrandparent
+A concierge service for seniors’ rides, meals, meds, home and more.
+
+Location
+Remote
+Job type
+Full-time
+Salary
+$80K - $120K
+Experience
+6+ years
+Visa sponsorship
+US citizenship/visa not required
+Skills
+JavaScript, TypeScript
+About GoGoGrandparent
+We built GoGo for our own grandparents and were amazed to see it grow to touch the lives of hundreds of thousands of seniors across the United States and Canada. What shocked us then and it still does now, is that between 30 - 40% of our new signups have smartphones. We didn’t understand why. When we called and asked a few, they told us that Uber and Lyft had 'stopped working' for them.
+
+After puzzling over that for months, we realized what the problem was.
+
+Managing transportation - on Lyft, Uber, cab companies, etc is not easy. It’s a ‘self-serve’ experience. The ride requester has to be aware of things like the driver cancelling, getting lost, the driver arriving, the driver not-quite-being-lost-just-down-the-street-a-couple-houses.
+
+Then add the complexities of smartphones: the user has to be on top of updating their own credit card - making sure the pickup pin is in the correct spot - typing in both where they are and where they’re going. All in all, there are about a dozen online and offline "micro steps" ride requesters have to take to get a ride. And god help anyone who needs to remember their Apple iCloud password to update an app.
+
+We didn't know this when we started, but it turns out that ordering and managing a ride gets more difficult the older you get, almost in the same way that driving a car gets more difficult the older you get.
+
+What gets us excited now (and what we’re hiring for) is that technically this ‘self-management problem’ doesn’t just stop at rides. There are lots of things that get harder to do as you age. People have known this for a long time and that’s inspired a lot of the solutions that older adults currently have.
+
+Based a lot on the experiences we’ve had so far, we believe that by becoming the ‘management layer’ for the things that older adults struggle with as they age we have a better chance to offer older citizens independence without having to ask them to move out of their homes.
+
+Within the next ten years the number of people over the age of 65 will be larger than the number of people under 18 for the first time in history. 11,000,000 people over the age of 75 will stop driving due to age related cognitive or physical decline. When they stop driving, they’ll be forced to rely on friends and family, live in a community, or have caregivers. GoGo is working to make sure that losing your youth doesn’t mean losing your independence.
+
+Joining us at this time is a really exciting opportunity for folks looking to make meaningful impact on people’s lives. We’re a small team that’s built a profitable and fast-growing business over the last three years. Now we’re looking for partners to join us as we make GoGo a household name.
+
+Anyone joining GoGo at this phase of the company will have a huge and life changing level of impact on a size-able and growing user base. We want people to have rich and meaningful lives at any age. We’re bringing people freedom and hope, one life at a time.
+
+About the role
+About the Company
+GoGoGrandparent’s (GoGo’s) mission is to help older adults live independently in their home for as long as possible. We do that by tailoring existing on demand apps to the needs of people living with mobility, visual, cognitive and dexterity impairments and letting older adults use them by making a phone call. After ordering, our service becomes a virtual caregiver that monitors the instrumental activities of daily living (mobility, meals, groceries, medication delivery & home management) for tens of thousands of older adults around the United States. We’re profitable, have been around since 2016 & haven’t raised any venture capital financing to date. The company was inspired by the cofounder’s grandmother, who still uses us to this day (she’s turning 95 in March)!
+
+Our engineering team is fully remote, tight-knit, and moves fast. You’ll work closely with founders, ship meaningful features weekly, and have real ownership over architecture, reliability, and product direction.
+
+* This is a fully remote position
+* Must be able to work US timezones or 4+ hours overlap with mainland US
+
+Job Summary
+We have a Webflow designer who owns layout and CMS. He does not write JavaScript.
+
+You will own everything that makes our Webflow pages work: registration, payments, service checks, analytics, cookies, and talking to our APIs.
+
+You will also take the code from concatenated ES5/jQuery to TypeScript with a real build pipeline, without breaking production landing pages.
+
+You are not a backend hire. You are expected to read our Node/TypeScript/GraphQL/REST API well enough to decide which endpoint to call, what to send, what comes back, and what happens when it fails. We do not have complete, trustworthy API documentation for this. The source, and its tests, is the documentation.
+
+You need to be comfortable communicating and working directly with our marketing team and other company stakeholders.
+
+What you will actually do
+Product / integration
+
+Wire Webflow forms and pages to existing REST and GraphQL endpoints: callers, loved ones, membership, Stripe payment, service-area checks, grocery/home-services leads, error logging.
+Own multi-step registration: validation, session persistence, step navigation, auth tokens, 401 handling, partner vs consumer flows.
+Keep Stripe Elements, phone inputs, cookies, and tracking working across many landing-page variants.
+Coordinate with the Webflow person on DOM IDs, required attributes, and page structure. Our form reader is DOM-driven; a wrong ID on a Webflow page is a production bug.
+Take responsibility for our Playwright test coverage and add more tests as needed.
+Reading the backend (required, not optional)
+
+Open the relevant route/controller in our backend (TypeScript, Express-style routes, controllers, some GraphQL) and extract: HTTP method, path, auth, request body/query, success payload, error codes and shapes.
+Use existing route tests as a second source of truth when the handler is messy.
+Choose the right endpoint for the page (create vs patch, REST vs GraphQL, payment intent vs caller update). Calling the wrong one, or omitting a field the controller actually requires, is a failed task.
+When the API cannot do what the page needs, write a clear request for backend (expected input/output, current behavior, what's missing). You will not be expected to own large backend changes.
+Engineering
+
+Over time, migrate the codebase from JS IIFE modules to TypeScript.
+Replace concat + Terser with a real bundler (esbuild/Vite/Rollup).
+Untangle globals, jQuery, and implicit script order without a rewrite that takes the site down.
+What the systems look like
+Client
+
+We use Webflow: a visual web design and development platform that lets you create, build, and host custom websites without writing manual production code, while also supporting custom HTML, CSS, and JavaScript for advanced functionality and customization.
+Vanilla JS + jQuery, IIFEs, concatenated in a fixed file order.
+Playwright tests already use TypeScript. App code does not.
+API
+
+Large TypeScript Node service. Registration and billing are not a tiny CRUD layer; controllers have real business rules.
+Auth is typically bearer tokens; some flows differ (partner vs consumer).
+Error responses are not always uniform. You have to read the handler.
+You Should Be Strong At
+JavaScript and TypeScript in the browser (DOM, events, fetch/XHR, cookies, localStorage, CORS).
+Reading other people's TypeScript: routes, controllers, types, tests. You do not need to write production backend, but you cannot treat the API as a black box or wait for a spec.
+Mapping a form to a real endpoint: required vs optional fields, nested payloads, auth headers, 4xx handling.
+Incremental migration: JS → TS, globals → modules, without freezing feature work.
+Build tooling: bundlers, source maps, minify, watch, CI.
+Working with a designer who does not write JS: explicit contracts (element IDs, data attributes).
+Playwright or similar for user flows.
+Nice to Have: Stripe.js, Webflow custom code, analytics pixels, GraphQL, having changed a small backend endpoint yourself.
+Seniority
+Mid to Senior level. You should be able to:
+
+Take a new landing flow, find the right backend endpoints, wire the page, test it, ship it — without someone translating the API for you.
+Propose a TS + bundler plan and execute it in slices.
+Push back when Webflow structure will break the JS, or when the API cannot support the page as designed.
+How We Will Measure Success (first 6–12 months)
+You own our Webflow flows end-to-end: page contract, JS, correct API usage (from reading backend code), Playwright, ship.
+You can explain, from the backend source, why a given page calls the endpoints it calls.
+App source is being migrated to TypeScript (or a clear majority, with a path for the rest).
+Build is a real pipeline: typed, module-aware, minified, source maps, documented deploy.
+Benefits
+Fully remote position
+$80k – $120k (based on location, experience and seniority)
+Paid holidays
+Personal Time-off of 15 days at start
+Engineering team retreat
+US Employees
+Healthcare Insurance (Medical, Dental, Vision)
+401k Plan
+Why Work at GoGo
+
+Meaningful work: Build technology that helps older adults and people with disabilities live more independently.
+Real-world impact: Your work directly affects customers’ daily lives, from arranging transportation to accessing meals, groceries, and other essential services.
+Strong ownership: Engineers are trusted to influence solutions from initial design through deployment and production monitoring.
+Visible contribution: GoGo has a relatively small engineering team, so individual contributions have a meaningful impact on the product and company.
+Build across multiple domains: Engineers have opportunities to work across different products, services, and technical challenges rather than being confined to a single feature area.
+Direct collaboration: Work closely with product, operations, customer support, and company leadership rather than being separated by layers of management.
+Technical influence: Engineers can help shape architecture, development processes, reliability practices, and engineering standards.
+Remote-first environment: Work with an international team while maintaining meaningful collaboration and ownership.
+Growing Startup: GoGo is profitable, generates significant revenue, and continues to expand its products and customer base.
+Continuous improvement: The company invests in better testing, observability, infrastructure, security, compliance, and engineering processes.
+Experienced teammates: Work alongside senior engineers who can provide thoughtful code reviews, technical discussions, and mentorship.
+Yearly engineering retreats: The engineering team meets in person each year to strengthen relationships, collaborate, plan, and spend time together outside the usual remote environment.
+Learning budget: Receive reimbursement for any courses (Udemy, Pluralsight, etc), books, or other resources related to engineering or your work at GoGo
+If you're passionate about improving the lives of older adults and people with disabilities, we would love for you to apply!
+
+Technology
+Today we're mainly a Javascript shop with Typescript Node.js on the backend and Vue.js on the frontend. We use MySQL as our database and everything is hosted in Docker on Google + AWS. We do a lot of work with various API's and in some cases we have to build our own API for third party services. We're exploring GraphQL, Kubernetes, Jenkins and more. We care very much about building things correctly, because one mishap can really impact a lot of people - so we take our time and do it right.
+
+Interview process
+2-stage interview process

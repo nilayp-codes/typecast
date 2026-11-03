@@ -1,0 +1,47 @@
+Growth & Content Marketing
+Finku
+AI powered personal finance app for Indonesia
+
+Location
+Jakarta, Jakarta, ID
+Job type
+Full-time
+Experience
+3+ years
+Visa sponsorship
+US citizenship/visa not required
+
+About Finku
+Finku is democratizing access to financial services in Indonesia! Helping users manage their finances through integration with all users financial accounts, and personal finance tools.
+Join a talented team who bring experience from Bukalapak, BCG, Tokopedia, OJK, Shipper and more!
+
+About the role
+What You'll Do
+You'll primarily own Finku's organic growth and content strategy across Indonesia and global markets, with some exposure to paid marketing. We're looking for someone who loves creating content, understands what makes people engage, and is constantly curious about what could work better.
+
+Role Responsibilities:
+Organic Growth & Content
+
+* Develop and execute Finku's organic social media strategy.
+* Create and scale short-form content designed to maximize reach, engagement, and shareability.
+* Research trends, audience insights, and viral content frameworks to generate high-performing content ideas.
+* Collaborate with designers, creators, and internal teams to produce compelling content.
+* Analyze content performance and continuously test new hooks, formats, and storytelling approaches.
+
+Paid Marketing
+
+* Support the management and optimization of Meta, TikTok, and Google Ads campaigns.
+* Monitor campaign performance and identify opportunities for improvement.
+* Report on key marketing metrics and provide actionable insights.
+
+Role Requirements:
+
+* 2-4 years of experience in Social Media, Content, Growth, or Digital Marketing.
+* Proven track record of creating high-performing or viral content (portfolio required).
+* Strong understanding of content frameworks, storytelling, and social media algorithms.
+* Deep understanding of Gen Z and Millennial audiences and digital culture.
+* Hands-on experience with Meta Ads, TikTok Ads, and Google Ads.
+* Creative, analytical, and highly experimental.
+
+Technology
+We use React Native front-end and NodeJS back-end, with AWS servers! More details to be shared later in the interview process

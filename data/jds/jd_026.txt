@@ -1,0 +1,72 @@
+Software Engineer Intern
+SonicAI
+
+* ₹20,000 – ₹25,000
+* | Remote (Everywhere)
+* | No experience required
+* | Internship
+
+Hires remotely in
+Everywhere
+Remote Work Policy
+Remote only
+Company Location
+Bangalore Urban
+Visa Sponsorship
+Not Available
+Preferred Timezones
+Maldives Time
+Relocation
+Allowed
+Skills
+Python
+Coding
+MongoDB
+AI
+AWS/EC2/ELB/S3/DynamoDB
+Clickhouse
+LLMs
+LLMs, Langchain, Llama-Index, Huggingface
+RAGs, ChatGPT, Hugging Face, LangChain, LlamaIndex, Transformers, VectorDB
+
+About the job
+About SonicAI
+SonicAI is building an AI-native revenue automation platform for B2B finance teams. We use AI agents to automate the entire contract-to-cash lifecycle—from understanding complex customer contracts and generating invoices to usage-based billing, collections, bank reconciliation, and revenue recognition.
+Our goal is to help finance teams eliminate manual workflows and operate with intelligent, autonomous AI systems.
+We're an early-stage startup, which means you'll work directly with the founding team, take ownership of real product features, and help build systems that solve real-world business problems.
+
+The Role
+We're looking for a Software Engineer Intern who enjoys building products, solving challenging engineering problems, and experimenting with new technologies. You'll work across our backend, APIs, databases, and AI-powered workflows to build and ship production features.
+This is an opportunity to go beyond writing code for assignments. You'll contribute directly to the product, interact with real customer requirements, and see your work make an impact.
+
+What You'll Do
+
+* Design, develop, and ship product features across our backend and application stack.
+* Build scalable APIs and backend services using Python and frameworks such as FastAPI or Flask.
+* Work with databases, data pipelines, and third-party integrations.
+* Develop AI-powered workflows and agentic systems for finance automation.
+* Integrate with external platforms, process business data, and build reliable automation workflows.
+* Debug production issues, improve system performance, and write maintainable code.
+* Collaborate closely with the founder to understand customer problems and translate them into technical solutions.
+
+What We're Looking For
+
+* Strong programming fundamentals and problem-solving skills.
+* Proficiency in Python and a good understanding of data structures and algorithms.
+* Familiarity with REST APIs, databases, and backend development.
+* Experience with Git and an interest in building real-world software.
+* A strong bias toward execution—you enjoy taking ideas from concept to implementation.
+* Curiosity about AI, LLMs, AI agents, and automation.
+* Ownership, willingness to learn, and comfort working in a fast-paced startup environment.
+
+Bonus points if you have:
+Experience with FastAPI, Flask, MongoDB, PostgreSQL, or cloud infrastructure.
+Built personal projects, contributed to open source, or deployed applications used by real users.
+Experimented with LLM APIs, AI agents, or workflow automation.
+
+Why Join SonicAI?
+Real product ownership: Build features that reach actual customers.
+Work directly with the founder: Learn how product, engineering, and customer requirements come together.
+Solve meaningful problems: Work on complex billing, financial workflows, and AI automation.
+Learn by building: Get hands-on experience with backend engineering, integrations, databases, and AI systems.
+Startup experience: Be part of a small team where your ideas and contributions have a direct impact.

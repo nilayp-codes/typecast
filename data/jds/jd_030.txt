@@ -1,0 +1,68 @@
+Senior Full-Stack Engineer, Server-Side Tracking (Founding Engineer)
+Scoreify
+We optimize Meta ad accounts and turn them into high-converting machines
+
+* $90k – $130k • 2.0% – 5.0%
+* | Remote (Everywhere)
+* | 3 years of exp
+* | Full Time
+
+Hires remotely in
+Everywhere
+Remote Work Policy
+Remote only
+Company Location
+Dubai
+Visa Sponsorship
+Not Available
+Relocation
+Not Allowed
+Skills
+Node.js
+Facebook API
+PostgreSQL
+Data Privacy
+REST
+TypeScript
+Webhooks
+Next.Js
+Supabase
+
+About the job
+Scoreify helps health and wellness brands (telehealth, GLP-1, med spa, mental health) advertise on Meta without losing their tracking. We're building RixelAI: a server-side tracking product that captures every conversion, links each sale back to the ad that started it, removes health details before anything reaches Meta, and shows clients exactly what was sent and blocked.
+The product is designed, the market is proven, and clients are waiting. We need the founding engineer who builds it and owns the technical side.
+
+What you'll build
+
+* Per-client server-side tracking on Stape (hosted server-side GTM), fully automated through Stape's API
+* A detection layer that finds and removes health information hidden in URLs, product names, search terms and form answers before events reach Meta
+* Identity resolution that links a visitor's ad click, browsing, booking and payment into one customer journey, so sales days later are attributed to the right ad
+* A standard event pipeline with integrations for Shopify, WooCommerce, GoHighLevel, Stripe, Calendly, Typeform and WordPress
+* Reliable delivery: deduplication with the browser pixel, retries, and replay of missed events within Meta's 7-day window
+* CRM funnel events (lead, booked, showed, paid) sent back to Meta as conversions
+* Monitoring and alerts when tracking breaks or match quality drops
+* The client dashboard and onboarding (Next.js and Supabase)
+
+You'll be a fit if you have
+
+* 4+ years of full-stack experience with TypeScript and Node.js
+* Deep hands-on experience with server-side GTM (ideally on Stape) and Meta's Conversions API
+* A strong grasp of Meta matching and attribution: click IDs (fbclid, fbc, fbp), event deduplication, customer data hashing and normalisation, and Event Match Quality
+* Experience building identity resolution across sessions, devices and platforms using deterministic matching
+* An understanding of first-party cookie strategy, Safari ITP and ad-blocker impact
+* Experience designing event pipelines: schemas, queues, retries, idempotency and replay
+* Experience with webhook and API integrations across e-commerce, payments, booking and CRM tools
+* Experience with sensitive data: encryption, multi-tenant isolation, access controls and data minimisation
+* Familiarity with consent management and US privacy laws (CCPA, Washington's My Health My Data Act)
+* The ability to make architecture decisions independently and explain them in plain English to a non-technical founder
+
+Nice to have
+
+* HIPAA or health-tech experience
+* Using AI or NLP to classify sensitive text
+* Google Tag Manager API, Meta Marketing API, Cloudflare Workers
+* TikTok Events API or Google Enhanced Conversions
+* Experience at an attribution or tracking company (Elevar, Triple Whale, Hyros, Freshpaint, Blotout or similar)
+
+How we work
+Fully remote, small team, fast decisions. You'll work directly with the founder, who brings deep Meta advertising and compliance expertise, while you own the architecture and the build. This is a founding role with real ownership and equity.

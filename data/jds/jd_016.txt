@@ -1,0 +1,44 @@
+Senior Software Engineer
+FleetWorks
+AI enabled marketplace matching trucks with jobs
+
+Location
+San Francisco, CA, US / Chicago, IL, US
+Job type
+Full-time
+Salary
+$160K - $240K
+Experience
+3+ years
+Visa sponsorship
+Will sponsor
+Skills
+Python, TypeScript
+
+About the role
+Every year, companies spend over a trillion dollars moving freight across the U.S. — but the system for matching trucks with jobs is still slow, manual, and fragmented. FleetWorks is fixing that.
+We're building voice agents that transform the chaotic freight booking process into a modern, intelligent marketplace. Our agents replace the endless phone calls, texts, and emails and match truckers who want to get paid with loads that need to be moved.
+We have a small, high-agency team working out of our office in SOMA. As an early engineer, you will be a true owner of your work, developing features end to end, interacting directly with our customers, and shaping our culture.
+Learn about our series A here!
+
+What you'll do
+
+* Own end-to-end feature development, working directly with a high-ownership team including our founders, customers, and other engineers
+* Make product and technical decisions that will shape the future of FleetWorks
+* Ship new work every day
+* Learn from others and teach those around you
+
+What we look for
+
+* Professional experience owning end-to-end feature development on customer-facing products
+* At least 4 years of professional full-time software development, including at least one 2 years or more at one company (or a company and its acquirer)
+* Comfort working in our stack or picking it up quickly—we use TypeScript across the stack
+* A healthy appreciation for hard problems—we already handle tens of thousands of phone calls and emails per day and we're just getting started
+* Empathy for your users and your colleagues
+
+What we offer
+
+* Top tier cash and equity compensation—we aim to be above 75th %ile for companies in San Francisco who have raised a similar amount of cash
+* Competitive medical, dental, and vision benefits
+* Fully covered lunches and dinners
+* The opportunity to learn quickly, grow fast, and be rewarded for your contributions

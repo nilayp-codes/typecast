@@ -1,0 +1,76 @@
+Software Engineer - AI Platform
+InferEdge
+Agentic AI for buy-side firms
+
+Location
+Mumbai, MH, IN
+Job type
+Full-time
+Salary
+₹3.5M - ₹4.5M INR
+Equity
+0.50%
+Experience
+2+ years
+Visa sponsorship
+US citizenship/visa not required
+Skills
+Kubernetes, PostgreSQL, Python, SQL, Airflow
+
+About InferEdge
+We are building agentic AI for fixed income research, portfolio optimization, and credit analysis. We not only make financial analysis faster and cost-effective but also unlock things that could not be done manually before.
+Our 20-person team is mainly comprised of engineers and sales, and we work together to figure out user problems in the financial analysis space that can be solved using AI.
+
+About the role
+About InferEdge
+InferEdge builds AI agents that do the work of research analysts, portfolio managers, risk managers and product analysts at investment firms. Funds managing billions of dollars run them in production and pay us for the results.
+
+* Founded in 2025, with 15 customers in India and Singapore, including Temasek and Mahindra Manulife Mutual Fund
+* Backed by Y Combinator, with a $5 mn round raised
+* Founders with finance and tech backgrounds (Goldman Sachs, Tata Capital, a US hedge fund); engineers from Amazon Alexa, Wells Fargo, Deutsche Bank and SAP
+
+How we deliver
+A client gives us work their team does by hand today. We build an AI agent that does it, and the client pays for the result. The agent has to be right on their real data, every month.
+Everything we deliver runs on four foundational capabilities: agents, plugins, data pipelines and an evaluation framework. You will be responsible for building foundational capabilities and strengthening existing ones.
+
+What you'll build
+You'll go deep on at least one of these systems and work across the rest.
+
+* Agents. They do analyst work on financial data. Making them reliable is the hard part.
+* Plugins. MCP tools and specialised skills that give an LLM access to market data and knowledge.
+* Data pipelines. 100+ sources, 1M new data points a day and 5M+ documents.
+* Evaluation framework. Finds agent failures, tracks performance and uses past failures to improve the agent.
+
+Stack: Python, Postgres, Airflow, AWS and Kubernetes.
+
+Why this role
+
+* You take a system from design to production. There are no handoffs.
+* You work on large systems early: 100+ data sources, millions of documents, and agents used by funds that manage billions of dollars.
+* What you build goes live in days and is used by real clients.
+* We are AI-first in how we build. Coding agents are part of everyday work here, and you'll be expected to use them well.
+
+What we're looking for
+
+* 2+ years building backend systems, ideally at a startup
+* Strong system design: you can plan data models, think through what can fail, and explain your trade-offs
+* Ownership: you take a vague problem to production and keep it running
+* Comfort with large codebases and many moving parts
+* Python, SQL, and experience with AI-first development, or a strong interest in it
+
+Location and compensation
+
+* Location: Mumbai, work from the office
+* Compensation: cash and ESOPs, based on experience
+
+Technology
+
+* Google ADK for our agentic AI with continuous changes/improvements/additions
+* Airflow and Kafka for datafeeds (we can sometimes add a new datasource in a day!)
+* Evals using Langfuse or Arize Phoenix
+
+Everyone in the team uses Claude Code, Codex, or other tools. The team helps each other extract the maximum from AI - we love talking about work that is 90% AI developed and 100% human reviewed.
+
+Interview process
+The interview process is designed to evaluate your ability and cultural fit at InferEdge. We prefer hiring engineers who can execute their work independently and have strong problem-solving skills.
+We have one phone screener followed by 2-3 technical rounds of interviews. The phone screener typically lasts 15 minutes and will give you an overview of InferEdge and ensure that your career goals are aligned with what we are looking for.

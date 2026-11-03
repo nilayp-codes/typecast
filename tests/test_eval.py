@@ -481,8 +481,37 @@ def test_a_schema_mode_run_rejected_everywhere_is_reported_as_not_supported_with
     assert [d.status for d in r.docs] == ["unsupported", "unsupported"]
     assert (r.not_supported, r.n_unsupported, r.n_scored) == (True, 2, 0)
     assert (r.coverage_pct, r.accuracy_raw, r.end_to_end_raw, r.end_to_end_normalized) == (None, None, None, None)
-    assert summary_row(r) == "| m | C | 2 (0 scored) | not supported by m | - | - | - | - | - |\n"
+    assert summary_row(r) == "| m | C | 2 (0 scored) | not supported by m | - | - | - | - | - | - |\n"
     assert report_notes(r) == ["setup C: schema mode is not supported by m (all 2 doc(s) rejected)"]
+
+
+def test_a_schema_mode_run_stops_after_two_unsupported_docs_in_a_row(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scripts: dict[str, list[Any]] = {n: [UNSUPPORTED] for n in ("jd_001", "jd_002", "jd_003", "jd_004")}
+    jds, labels, calls = make_world(tmp_path, monkeypatch, scripts)
+    r = run_eval("m", "D", jds, labels, log_path=tmp_path / "a.jsonl")
+    assert [name for name, _ in calls] == ["jd_001", "jd_002"]  # jd_003 and jd_004 were never sent
+    assert (r.n, r.not_supported, r.n_unsupported) == (2, True, 2)
+    assert summary_row(r).startswith("| m | D | 2 (0 scored) | not supported by m |")
+
+
+def test_one_unsupported_doc_between_good_ones_does_not_stop_the_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scripts: dict[str, list[Any]] = {
+        "jd_001": [UNSUPPORTED], "jd_002": [GOOD], "jd_003": [UNSUPPORTED], "jd_004": [GOOD],
+    }
+    jds, labels, calls = make_world(tmp_path, monkeypatch, scripts)
+    r = run_eval("m", "C", jds, labels, log_path=tmp_path / "a.jsonl")
+    assert len(calls) == 4 and (r.not_supported, r.n_unsupported, r.n) == (False, 2, 4)
+
+
+def test_plain_setups_never_stop_early_on_unsupported_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    scripts: dict[str, list[Any]] = {n: [UNSUPPORTED] for n in ("jd_001", "jd_002", "jd_003")}
+    jds, labels, calls = make_world(tmp_path, monkeypatch, scripts)
+    r = run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl")
+    assert len(calls) == 3 and r.not_supported is False
 
 
 def test_a_partly_rejected_run_keeps_its_numbers_and_says_how_many_were_rejected(

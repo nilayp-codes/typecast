@@ -173,7 +173,9 @@ def test_the_saved_report_round_trips_and_the_row_is_honest_about_n(
     r = fixture_run(tmp_path, monkeypatch)
     path = write_results(r, tmp_path / "results")
     assert EvalReport.model_validate_json(path.read_text(encoding="utf-8")) == r
-    assert summary_row(r) == "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | 75.0% | $0.0180 |\n"
+    # e2e (normalized), by hand over 4 labelled docs: eight fields 75, 50, 50, 75, 75, 75, 50, 75 = 525;
+    # skills tp 5, fp 1, fn 3 -> F1 = 10/14 = 71.43; overall = (525 + 71.43) / 9 = 66.27
+    assert summary_row(r) == "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | 75.0% | 66.3% | $0.0180 |\n"
 
 
 def test_the_same_run_through_the_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -183,6 +185,6 @@ def test_the_same_run_through_the_cli(tmp_path: Path, monkeypatch: pytest.Monkey
     result = CliRunner().invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
     assert result.exit_code == 0, result.output
     out = result.stdout_bytes.decode("utf-8").replace("\r\n", "\n")
-    assert "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | 75.0% | $0.0180 |" in out
+    assert "| m | B | 6 (5 scored) | 40.0% | 80.0% | 1.80 | 87.0% | 75.0% | 66.3% | $0.0180 |" in out
     assert "estimated model calls: 6 to 18 (real API calls)" in out
     assert "labels skipped (invalid or still TODO): jd_005" in out

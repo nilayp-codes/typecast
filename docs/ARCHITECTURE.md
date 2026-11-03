@@ -157,7 +157,9 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   `DocRun.status = "unsupported"` (it also has no model response, so it counts in `n_api_failed`). If EVERY doc of a
   C or D run is unsupported, `EvalReport.not_supported` is true and the report carries no numbers: coverage and all
   accuracy fields are `None`, and the `summary.md` row reads `not supported by <model>` with `-` in the other
-  columns. A partly rejected run keeps its numbers and `report_notes` says how many docs were rejected
+  columns. A C or D run also STOPS after 2 docs in a row were rejected as unsupported (`UNSUPPORTED_STOP_AFTER`;
+  the remaining docs are not sent) and is then marked not supported, with `n` counting only the docs run. A single
+  rejection between good docs does not stop it. A partly rejected run keeps its numbers and `report_notes` says how many docs were rejected
   (`n_unsupported`). Detection is therefore by the provider's explicit rejection only; a provider that silently
   ignores `response_format` is not detected here (see the constraint-violation count).
 - **Which documents:** the 4-setup comparison (A-D) runs on the gold set (25-30 JDs) for both models. Setup B
@@ -193,7 +195,7 @@ doc invalid and the run continues; a doc whose calls all fail at the API level i
 - **Output:** `write_results(report)` saves `results/<date>_<model-slug>_<setup>.json` (the whole `EvalReport`,
   including every doc's raw and normalized posting, so a run can be re-scored without API calls; a name already taken
   gets `_2`, `_3`..., nothing is overwritten) and appends one row to `results/summary.md`:
-  `model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | cost`. `n` reads `N (K scored)` when some
+  `model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | e2e acc (norm) | cost`. `n` reads `N (K scored)` when some
   docs got no model response; the percentages are over the scored ones. Stored values keep full precision; the table
   rounds to one decimal only for display.
 - **Constraint violations under schema mode (setups C and D only):** a provider's strict mode may drop schema

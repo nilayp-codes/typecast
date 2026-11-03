@@ -28,6 +28,7 @@ from soa.tools import postprocess
 logger = logging.getLogger(__name__)
 
 DEFAULT_DATA_DIR = Path("data/jds")
+UNSUPPORTED_STOP_AFTER = 2  # consecutive "schema mode unsupported" docs after which a C/D run stops
 DEFAULT_PAUSE_SECONDS = 2.0  # between documents; the baseline hit 429s after about 25 unpaced calls
 LABEL_PLACEHOLDER = "TODO"  # scripts/make_label_templates.py; a label still containing it is not gold yet
 
@@ -122,7 +123,9 @@ class EvalReport(StrictModel):
     n_scored: int
     n_api_failed: int
     n_unsupported: int  # docs whose schema-mode request was rejected as unsupported (a subset of n_api_failed)
-    not_supported: bool  # setup C/D and EVERY doc was rejected as unsupported: the report carries no numbers
+    # setup C/D and EVERY doc was rejected as unsupported, or the run stopped after UNSUPPORTED_STOP_AFTER in a row
+    # (then n counts only the docs run): the report carries no numbers
+    not_supported: bool
     first_try_valid_pct: float | None
     final_valid_pct: float | None
     avg_calls: float | None
@@ -386,13 +389,13 @@ def _no_accuracy(docs: list[DocRun], labels: Labels) -> Accuracy:
 
 def build_report(
     *, model: str, setup: Setup, max_attempts: int, docs: list[DocRun], logs: list[AttemptLog], labels: Labels,
-    run_date: str, eval_id: str = "adhoc",
+    run_date: str, eval_id: str = "adhoc", stopped_unsupported: bool = False,
 ) -> EvalReport:
     """Score a run. `logs` may hold other runs' lines too; only the docs' run_ids are read."""
     v = validity_stats(docs, logs)
     n_unsupported = sum(d.status == "unsupported" for d in docs)
     json_mode = setup_args(setup)[1]
-    not_supported = json_mode and n_unsupported == len(docs) > 0
+    not_supported = json_mode and (stopped_unsupported or n_unsupported == len(docs) > 0)
     acc = _no_accuracy(docs, labels) if not_supported else _accuracy(docs, labels)
     doc_ids = {d.doc_id for d in docs}
     return EvalReport(
@@ -510,12 +513,18 @@ def run_one(
 def _run_docs(
     paths: list[Path], model: str, setup: Setup, attempts: int, json_mode: bool, eval_id: str, log: Path,
     pause: float, resume: bool,
-) -> list[DocRun]:
-    """One DocRun per path: finished ones rebuilt from the log on resume, the rest run (with `pause` between them)."""
+) -> tuple[list[DocRun], bool]:
+    """(DocRuns, stopped): finished docs rebuilt from the log on resume, the rest run with `pause` between them.
+
+    A schema-mode run stops (`stopped` True, the remaining docs are not run) after UNSUPPORTED_STOP_AFTER docs in a
+    row were rejected as unsupported: the provider will not change its answer, so more calls only cost time.
+    """
     earlier = read_log(log) if resume else []
     docs: list[DocRun] = []
     called = False  # the first model call of this invocation is not preceded by a pause
     for path in paths:
+        if json_mode and _trailing_unsupported(docs) >= UNSUPPORTED_STOP_AFTER:
+            return docs, True
         done = finished_doc(path, setup, attempts, eval_id, earlier) if resume else None
         if done is None:
             if called and pause > 0:
@@ -524,7 +533,16 @@ def _run_docs(
             run_id = next_run_id(earlier, base_run_id(setup, eval_id, path.stem))
             done = run_one(path, model, setup, attempts, json_mode, run_id, log)
         docs.append(done)
-    return docs
+    return docs, False
+
+
+def _trailing_unsupported(docs: list[DocRun]) -> int:
+    count = 0
+    for doc in reversed(docs):
+        if doc.status != "unsupported":
+            break
+        count += 1
+    return count
 
 
 def run_eval(
@@ -554,10 +572,10 @@ def run_eval(
     attempts, json_mode = setup_args(setup, max_attempts)
     log = log_path or default_log_path()
     eval_id = eval_id or new_eval_id()
-    docs = _run_docs(paths, model, setup, attempts, json_mode, eval_id, log, pause, resume)
+    docs, stopped = _run_docs(paths, model, setup, attempts, json_mode, eval_id, log, pause, resume)
     return build_report(
         model=model, setup=setup, max_attempts=attempts, docs=docs, logs=read_log(log), labels=load_labels(labels_dir),
-        run_date=run_date or date.today().isoformat(), eval_id=eval_id,
+        run_date=run_date or date.today().isoformat(), eval_id=eval_id, stopped_unsupported=stopped,
     )
 
 
@@ -566,8 +584,8 @@ def run_eval(
 RESULTS_DIR = Path("results")
 SUMMARY_FILE = "summary.md"
 SUMMARY_HEADER = (
-    "| model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | cost |\n"
-    "|---|---|---|---|---|---|---|---|---|\n"
+    "| model | setup | n | first-try | final | avg calls | field acc (norm) | coverage | e2e acc (norm) | cost |\n"
+    "|---|---|---|---|---|---|---|---|---|---|\n"
 )
 
 
@@ -585,14 +603,16 @@ def summary_row(report: EvalReport) -> str:
     n = str(report.n) if report.n_scored == report.n else f"{report.n} ({report.n_scored} scored)"
     model = report.model.replace("|", "\\|")
     if report.not_supported:  # no numbers at all, not even zeros
-        cells = [model, report.setup, n, f"not supported by {model}", "-", "-", "-", "-", "-"]
+        cells = [model, report.setup, n, f"not supported by {model}", "-", "-", "-", "-", "-", "-"]
         return "| " + " | ".join(cells) + " |\n"
     accuracy = report.accuracy_normalized.overall if report.accuracy_normalized else None
+    e2e = report.end_to_end_normalized.overall if report.end_to_end_normalized else None
     calls = "n/a" if report.avg_calls is None else f"{report.avg_calls:.2f}"
     cost = "n/a" if report.total_cost_usd is None else f"${report.total_cost_usd:.4f}"
     cells = [
         model, report.setup, n, _fmt_pct(report.first_try_valid_pct),
-        _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), _fmt_pct(report.coverage_pct), cost,
+        _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), _fmt_pct(report.coverage_pct), _fmt_pct(e2e),
+        cost,
     ]
     return "| " + " | ".join(cells) + " |\n"
 

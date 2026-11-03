@@ -10,6 +10,7 @@ from litellm.exceptions import (
     BadGatewayError,
     BadRequestError,
     InternalServerError,
+    NotFoundError,
     RateLimitError,
     ServiceUnavailableError,
     Timeout,
@@ -35,6 +36,10 @@ OPENROUTER_PREFIX = "openrouter/"
 # so schema mode is never quietly downgraded to plain text. https://openrouter.ai/docs/features/provider-routing
 OPENROUTER_REQUIRE_PARAMETERS: dict[str, object] = {"provider": {"require_parameters": True}}
 SCHEMA_REJECTION_MARKERS = ("response_format", "json_schema", "unsupported")
+# With require_parameters and no provider able to serve the request, OpenRouter answers 404 with a message such as
+# "No endpoints found that can handle the requested parameters". The wording is not documented, so a 404 counts as
+# "no provider supports schema mode" only when its message says "no endpoints" or names the provider.
+NO_PROVIDER_MARKERS = ("no endpoints", "provider")
 
 
 class Message(BaseModel):
@@ -61,13 +66,20 @@ class LLMResponse(BaseModel):
 
 
 class LLMAPIError(Exception):
-    """The provider call failed (rate limit, timeout, 5xx, auth...). Not a validation failure."""
+    """The provider call failed (rate limit, timeout, 5xx, auth...). Not a validation failure.
 
-    def __init__(self, message: str, *, model: str, retryable: bool, status_code: int | None) -> None:
+    `schema_unsupported` is True when the failure means "this model/provider cannot do schema mode" (eval setups
+    C and D report that as "not supported", never as a number).
+    """
+
+    def __init__(
+        self, message: str, *, model: str, retryable: bool, status_code: int | None, schema_unsupported: bool = False
+    ) -> None:
         super().__init__(message)
         self.model = model
         self.retryable = retryable
         self.status_code = status_code
+        self.schema_unsupported = schema_unsupported
 
 
 def call(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
@@ -105,12 +117,14 @@ def _to_api_error(exc: APIError, model: str, *, schema_mode: bool = False) -> LL
     # A 400 on a schema-mode request is labelled "unsupported" only when the provider's message says so (it names
     # response_format / json_schema or says unsupported). Any other 400 (e.g. a prompt that is too long) stays a
     # generic non-retryable error with the provider's text. The class name counts: UnsupportedParamsError.
-    if schema_mode and isinstance(exc, BadRequestError) and _mentions_schema_rejection(f"{type(exc).__name__} {exc}"):
+    # A 404 counts too when its message says no endpoints / no provider (see NO_PROVIDER_MARKERS).
+    if schema_mode and _is_schema_rejection(exc):
         return LLMAPIError(
             f"schema mode unsupported by {model}: {type(exc).__name__}: {exc}",
             model=model,
             retryable=False,
             status_code=getattr(exc, "status_code", None),
+            schema_unsupported=True,
         )
     return LLMAPIError(
         f"{type(exc).__name__}: {exc}",
@@ -120,9 +134,17 @@ def _to_api_error(exc: APIError, model: str, *, schema_mode: bool = False) -> LL
     )
 
 
-def _mentions_schema_rejection(text: str) -> bool:
+def _is_schema_rejection(exc: APIError) -> bool:
+    if isinstance(exc, BadRequestError):
+        return _mentions(f"{type(exc).__name__} {exc}", SCHEMA_REJECTION_MARKERS)
+    if isinstance(exc, NotFoundError):
+        return _mentions(str(exc), NO_PROVIDER_MARKERS)
+    return False
+
+
+def _mentions(text: str, markers: tuple[str, ...]) -> bool:
     lowered = text.lower()
-    return any(marker in lowered for marker in SCHEMA_REJECTION_MARKERS)
+    return any(marker in lowered for marker in markers)
 
 
 def _build_response(raw: object, model: str, latency_ms: int) -> LLMResponse:

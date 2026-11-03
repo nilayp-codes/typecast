@@ -8,6 +8,7 @@ from litellm.exceptions import (
     AuthenticationError,
     BadRequestError,
     InternalServerError,
+    NotFoundError,
     RateLimitError,
     Timeout,
     UnsupportedParamsError,
@@ -102,6 +103,7 @@ def test_provider_rejecting_schema_mode_raises_non_retryable_unsupported(
     assert caught.value.retryable is False
     assert caught.value.status_code == 400
     assert caught.value.__cause__ is exc
+    assert caught.value.schema_unsupported is True
 
 
 def test_a_400_in_schema_mode_with_an_unrelated_message_stays_generic(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -112,6 +114,32 @@ def test_a_400_in_schema_mode_with_an_unrelated_message_stays_generic(monkeypatc
     assert "schema mode" not in str(caught.value)
     assert "maximum context length is 8192 tokens" in str(caught.value)  # the provider's text is kept
     assert caught.value.retryable is False and caught.value.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["No endpoints found that can handle the requested parameters", "No provider supports response_format here"],
+)
+def test_a_404_saying_no_endpoints_or_no_provider_is_unsupported_schema_mode(
+    monkeypatch: pytest.MonkeyPatch, message: str
+) -> None:
+    exc = NotFoundError(message, model="m", llm_provider="openrouter")
+    stub_completion(monkeypatch, exc)
+    with pytest.raises(LLMAPIError) as caught:
+        llm.call(MESSAGES, "openrouter/m", response_model=JobPosting)
+    assert str(caught.value).startswith("schema mode unsupported by openrouter/m")
+    assert (caught.value.schema_unsupported, caught.value.retryable, caught.value.status_code) == (True, False, 404)
+
+
+def test_other_404s_and_a_404_without_schema_mode_stay_generic(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, NotFoundError("The model does not exist", model="m", llm_provider="openrouter"))
+    with pytest.raises(LLMAPIError) as caught:
+        llm.call(MESSAGES, "openrouter/m", response_model=JobPosting)
+    assert caught.value.schema_unsupported is False and "schema mode" not in str(caught.value)
+    stub_completion(monkeypatch, NotFoundError("No endpoints found", model="m", llm_provider="openrouter"))
+    with pytest.raises(LLMAPIError) as plain:
+        llm.call(MESSAGES, "openrouter/m")  # no schema mode requested: not a schema-mode verdict
+    assert plain.value.schema_unsupported is False and plain.value.retryable is False
 
 
 def test_openrouter_schema_mode_requires_all_parameters_to_be_supported(monkeypatch: pytest.MonkeyPatch) -> None:

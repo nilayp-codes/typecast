@@ -50,7 +50,8 @@ class DocRun(StrictModel):
 
     doc_id: str
     run_id: str
-    status: Literal["valid", "invalid", "api_error"]  # invalid = ExtractionFailed; api_error = no model response
+    # invalid = ExtractionFailed; api_error = no model response; unsupported = the provider cannot do schema mode
+    status: Literal["valid", "invalid", "api_error", "unsupported"]
     raw_posting: JobPosting | None = None
     posting: JobPosting | None = None
     disagreements: int = Field(default=0, ge=0)
@@ -116,6 +117,8 @@ class EvalReport(StrictModel):
     n: int
     n_scored: int
     n_api_failed: int
+    n_unsupported: int  # docs whose schema-mode request was rejected as unsupported (a subset of n_api_failed)
+    not_supported: bool  # setup C/D and EVERY doc was rejected as unsupported: the report carries no numbers
     first_try_valid_pct: float | None
     final_valid_pct: float | None
     avg_calls: float | None
@@ -313,6 +316,15 @@ def _accuracy(docs: list[DocRun], labels: Labels) -> Accuracy:
     )
 
 
+def _no_accuracy(docs: list[DocRun], labels: Labels) -> Accuracy:
+    """A not-supported run gets no accuracy numbers, not even zeros (the labelled count is still shown)."""
+    n_labelled = sum(d.doc_id in labels.by_doc for d in docs)
+    return Accuracy(
+        n_labelled=n_labelled, n_with_output=0, raw=None, normalized=None, end_to_end_raw=None,
+        end_to_end_normalized=None,
+    )
+
+
 # --- the report -------------------------------------------------------------
 
 
@@ -322,18 +334,21 @@ def build_report(
 ) -> EvalReport:
     """Score a run. `logs` may hold other runs' lines too; only the docs' run_ids are read."""
     v = validity_stats(docs, logs)
-    acc = _accuracy(docs, labels)
+    n_unsupported = sum(d.status == "unsupported" for d in docs)
+    not_supported = setup_args(setup)[1] and n_unsupported == len(docs) > 0
+    acc = _no_accuracy(docs, labels) if not_supported else _accuracy(docs, labels)
     doc_ids = {d.doc_id for d in docs}
     return EvalReport(
         model=model, setup=setup, json_mode=setup_args(setup)[1], max_attempts=max_attempts, run_date=run_date,
         n=len(docs), n_scored=v.n_scored, n_api_failed=len(docs) - v.n_scored,
+        n_unsupported=n_unsupported, not_supported=not_supported,
         first_try_valid_pct=_pct(v.first_try, v.n_scored), final_valid_pct=_pct(v.final, v.n_scored),
         avg_calls=v.calls / v.n_scored if v.n_scored else None,
         total_cost_usd=v.cost_usd,
         avg_latency_ms=v.latency_ms / v.n_scored if v.n_scored else None,
         api_error_count=v.api_errors, disagreement_count=sum(d.disagreements for d in docs),
         n_labelled=acc.n_labelled, n_labelled_with_output=acc.n_with_output,
-        coverage_pct=_pct(acc.n_with_output, acc.n_labelled),
+        coverage_pct=None if not_supported else _pct(acc.n_with_output, acc.n_labelled),
         labels_skipped=[s for s in labels.skipped if s in doc_ids],
         accuracy_raw=acc.raw, accuracy_normalized=acc.normalized,
         end_to_end_raw=acc.end_to_end_raw, end_to_end_normalized=acc.end_to_end_normalized,
@@ -369,7 +384,7 @@ def run_one(
         return DocRun(doc_id=doc_id, run_id=run_id, status="invalid")
     except LLMAPIError as exc:
         logger.error("%s: no model response (%s)", doc_id, redact_keys(" ".join(str(exc).split())))
-        return DocRun(doc_id=doc_id, run_id=run_id, status="api_error")
+        return DocRun(doc_id=doc_id, run_id=run_id, status="unsupported" if exc.schema_unsupported else "api_error")
     return DocRun(
         doc_id=doc_id, run_id=run_id, status="valid", raw_posting=result.raw_posting, posting=result.posting,
         disagreements=len(result.disagreements),
@@ -425,11 +440,15 @@ def _fmt_pct(value: float | None) -> str:
 def summary_row(report: EvalReport) -> str:
     """One markdown table row for summary.md. `n` shows the scored count when some docs got no model response."""
     n = str(report.n) if report.n_scored == report.n else f"{report.n} ({report.n_scored} scored)"
+    model = report.model.replace("|", "\\|")
+    if report.not_supported:  # no numbers at all, not even zeros
+        cells = [model, report.setup, n, f"not supported by {model}", "-", "-", "-", "-", "-"]
+        return "| " + " | ".join(cells) + " |\n"
     accuracy = report.accuracy_normalized.overall if report.accuracy_normalized else None
     calls = "n/a" if report.avg_calls is None else f"{report.avg_calls:.2f}"
     cost = "n/a" if report.total_cost_usd is None else f"${report.total_cost_usd:.4f}"
     cells = [
-        report.model.replace("|", "\\|"), report.setup, n, _fmt_pct(report.first_try_valid_pct),
+        model, report.setup, n, _fmt_pct(report.first_try_valid_pct),
         _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), _fmt_pct(report.coverage_pct), cost,
     ]
     return "| " + " | ".join(cells) + " |\n"
@@ -545,6 +564,10 @@ def plan_eval(
 def report_notes(report: EvalReport) -> list[str]:
     """Short lines about things the summary row hides: API failures, skipped labels, tool disagreements."""
     notes: list[str] = []
+    if report.not_supported:
+        return [f"setup {report.setup}: schema mode is not supported by {report.model} (all {report.n} doc(s) rejected)"]
+    if report.n_unsupported:
+        notes.append(f"{report.n_unsupported} doc(s) were rejected because schema mode is unsupported")
     if report.api_error_count:
         notes.append(f"{report.api_error_count} API error line(s) in the log (not counted as validation attempts)")
     if report.n_api_failed:

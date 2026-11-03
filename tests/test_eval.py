@@ -20,6 +20,7 @@ from soa.eval import (
     report_notes,
     run_eval,
     score_fields,
+    summary_row,
     setup_args,
     validity_stats,
 )
@@ -459,6 +460,52 @@ def test_skipped_labels_show_up_in_the_report(tmp_path: Path, monkeypatch: pytes
     (labels / "jd_001.json").write_text(json.dumps({**VALID, "title": "TODO"}), encoding="utf-8")
     r = run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl")
     assert r.labels_skipped == ["jd_001"] and r.accuracy_raw is None
+
+
+UNSUPPORTED = LLMAPIError(
+    "schema mode unsupported by m: NotFoundError: No endpoints found", model="m", retryable=False, status_code=404,
+    schema_unsupported=True,
+)
+
+
+def test_a_schema_mode_run_rejected_everywhere_is_reported_as_not_supported_with_no_numbers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [UNSUPPORTED], "jd_002": [UNSUPPORTED]})
+    (labels / "jd_001.json").write_text(json.dumps(VALID), encoding="utf-8")
+    r = run_eval("m", "C", jds, labels, log_path=tmp_path / "a.jsonl")
+    assert [d.status for d in r.docs] == ["unsupported", "unsupported"]
+    assert (r.not_supported, r.n_unsupported, r.n_scored) == (True, 2, 0)
+    assert (r.coverage_pct, r.accuracy_raw, r.end_to_end_raw, r.end_to_end_normalized) == (None, None, None, None)
+    assert summary_row(r) == "| m | C | 2 (0 scored) | not supported by m | - | - | - | - | - |\n"
+    assert report_notes(r) == ["setup C: schema mode is not supported by m (all 2 doc(s) rejected)"]
+
+
+def test_a_partly_rejected_run_keeps_its_numbers_and_says_how_many_were_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [GOOD], "jd_002": [UNSUPPORTED]})
+    r = run_eval("m", "D", jds, labels, log_path=tmp_path / "a.jsonl")
+    assert (r.not_supported, r.n_unsupported, r.n_scored) == (False, 1, 1)
+    assert r.final_valid_pct == 100.0
+    assert "setup D: 1 doc(s) were rejected because schema mode is unsupported" in report_notes(r)
+
+
+def test_a_plain_api_error_in_schema_mode_is_api_error_not_unsupported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    down = LLMAPIError("AuthenticationError: bad key", model="m", retryable=False, status_code=401)
+    jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [down]})
+    r = run_eval("m", "C", jds, labels, log_path=tmp_path / "a.jsonl")
+    assert (r.docs[0].status, r.not_supported, r.n_unsupported) == ("api_error", False, 0)
+
+
+def test_the_not_supported_flag_is_only_for_schema_mode_setups(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    jds, labels, _ = make_world(tmp_path, monkeypatch, {"jd_001": [UNSUPPORTED]})
+    r = run_eval("m", "A", jds, labels, log_path=tmp_path / "a.jsonl")  # cannot happen for real; the flag stays off
+    assert r.not_supported is False
 
 
 # --- plan and notes -------------------------------------------------------------

@@ -134,14 +134,17 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   `LLMAPIError(retryable=False, "schema mode unsupported by <model>: <provider message>")` only when the
   provider's message (or the exception class name) mentions `response_format`, `json_schema` or `unsupported`.
   Any other 400 stays a generic non-retryable `LLMAPIError` with the provider's text. No backoff either way, and
-  it is logged as an `APIError` line. `eval.py` reports C and D for a model that raises the "unsupported" form as
-  "not supported".
+  it is logged as an `APIError` line. A 404 on a schema-mode request gets the same "unsupported" label when its
+  message mentions "no endpoints" or "provider" (OpenRouter's reply when `require_parameters` leaves no provider;
+  the exact wording is unverified, so any other 404 stays generic). Both unsupported forms set
+  `LLMAPIError.schema_unsupported`, which `eval.py` reads (see "Unsupported setups").
 - **No silent downgrade on OpenRouter:** OpenRouter drops request parameters the routed provider lacks. So for a
   `openrouter/...` model with `response_model` set, `llm.py` also sends
   `extra_body={"provider": {"require_parameters": True}}` (OpenRouter provider routing), which routes only to
   providers supporting every parameter. It is not sent without `response_model` or for other providers. If no
   provider qualifies OpenRouter returns an error instead of a degraded answer; its exact status for that case is
-  not in the docs and is unverified (a 404 would not be labelled "unsupported", only a 400 is).
+  not in the docs and is unverified (a 404 whose message mentions "no endpoints" or "provider" is read as
+  "unsupported", see above).
 - **Provider schema subsets:** provider strict-schema modes support only a subset of JSON Schema. If a constraint
   must be dropped for the provider, record which ones in `results/` and still validate the output with our full
   Pydantic model. Dropped constraints are reported as a finding in the README.
@@ -150,8 +153,13 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
 - **Model pair (2026-10-15):** both models are Qwen models served through OpenRouter. `SOA_MODEL_PRIMARY` is the weak
   one (`qwen-2.5-7b-instruct`), `SOA_MODEL_SECONDARY` the strong one (`qwen3-235b-a22b-2507`). One provider key
   (`OPENROUTER_API_KEY`) covers both. Which one is actually weaker is measured by the Phase 2 baseline, not assumed.
-- **Unsupported setups:** if a model does not support native schema mode, `eval.py` records C and D for that model
-  as "not supported" and never a number. How support is detected is decided in Phase 6.
+- **Unsupported setups:** a doc whose schema-mode call fails with `LLMAPIError.schema_unsupported` gets
+  `DocRun.status = "unsupported"` (it also has no model response, so it counts in `n_api_failed`). If EVERY doc of a
+  C or D run is unsupported, `EvalReport.not_supported` is true and the report carries no numbers: coverage and all
+  accuracy fields are `None`, and the `summary.md` row reads `not supported by <model>` with `-` in the other
+  columns. A partly rejected run keeps its numbers and `report_notes` says how many docs were rejected
+  (`n_unsupported`). Detection is therefore by the provider's explicit rejection only; a provider that silently
+  ignores `response_format` is not detected here (see the constraint-violation count).
 - **Which documents:** the 4-setup comparison (A-D) runs on the gold set (25-30 JDs) for both models. Setup B
   (retry on, native off) also runs on all 50 JDs for the headline validity numbers.
 

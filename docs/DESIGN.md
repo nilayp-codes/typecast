@@ -70,7 +70,7 @@ stdout:  { ...pretty JSON... }
 `soa eval --model <model>`
 ```
 model         n   first-try  final   avg calls  cost
-<model>       50  82.0%      100%    1.20       $0.04
+<model>       30  xx.x%      xx.x%   x.xx       $x.xx   (placeholder values, not results)
 ```
 `soa eval --model <m> [--setup A|B|C|D|all] [--limit N] [--data-dir PATH] [--labels-dir PATH] [--results-dir PATH] [--pause SECONDS] [--resume EVAL_ID] [--yes]`.
 `--pause` is the wait between documents (default 2; `SOA_EVAL_PAUSE` in the environment replaces the default, and the

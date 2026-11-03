@@ -22,7 +22,7 @@ structured-output-agent/
 │   └── cli.py          # `soa extract`, `soa eval`
 ├── data/
 │   ├── jds/            # raw .txt job descriptions
-│   └── labels/         # hand-labelled gold JSON (25-30 files)
+│   └── labels/         # hand-labelled gold JSON (20 files)
 ├── logs/               # attempts.jsonl (gitignored)
 ├── results/            # eval outputs (committed)
 ├── tests/
@@ -164,8 +164,8 @@ Both toggles are plain arguments, so the eval runs the same code path four ways:
   rejection between good docs does not stop it. A partly rejected run keeps its numbers and `report_notes` says how many docs were rejected
   (`n_unsupported`). Detection is therefore by the provider's explicit rejection only; a provider that silently
   ignores `response_format` is not detected here (see the constraint-violation count).
-- **Which documents:** the 4-setup comparison (A-D) runs on the gold set (25-30 JDs) for both models. Setup B
-  (retry on, native off) also runs on all 50 JDs for the headline validity numbers.
+- **Which documents:** the 4-setup comparison (A-D) runs on the gold set (20 labelled JDs) for both models. Setup B
+  (retry on, native off) also runs on all 30 JDs for the headline validity numbers (lean plan, 2026-11-03).
 
 ## Eval metrics (`eval.py`)
 `run_eval(model, setup, data_dir, labels_dir, limit)` calls `extract()` once per JD (name order, first `limit`) with a

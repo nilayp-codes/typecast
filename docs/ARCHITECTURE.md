@@ -17,6 +17,7 @@ structured-output-agent/
 │   ├── errors.py       # format_validation_errors (rule 11) and redact_keys, shared by agent.py, tools.py, cli.py
 │   ├── llm.py          # thin LiteLLM wrapper: call(), token/cost capture (cost_source: provider > estimate > none)
 │   ├── agent.py        # extract(): prompt → call → validate → retry
+│   ├── stats.py        # Wilson and seeded bootstrap 95% intervals for eval numbers
 │   ├── logger.py       # AttemptLog model + JSONL writer
 │   ├── eval.py         # run dataset, compute metrics, write table
 │   └── cli.py          # `soa extract`, `soa eval`
@@ -194,6 +195,16 @@ doc invalid and the run continues; a doc whose calls all fail at the API level i
   (recall and F1 fall; precision is unchanged because nothing was predicted). If nothing at all was predicted,
   skills precision is reported as 0.0. All are `None` when there are no usable labels. A not-supported run
   (below) reports no numbers at all.
+- **Confidence intervals (`stats.py`, `EvalReport.intervals`):** 95%, in percent. First-try and final validity:
+  Wilson score interval on the count out of `n_scored`. Normalized field accuracy (on valid outputs) and normalized
+  end-to-end accuracy: percentile bootstrap of `overall`, seeded (seed 0), 1000 resamples, resampling the labelled
+  DOCUMENTS with replacement and re-scoring each resample (skills stay micro-averaged). With n = 20 these are wide, and
+  a bootstrap over a handful of docs can be degenerate (all-equal docs give a zero-width interval). `summary.md` shows
+  each as `86.7% [70.3-94.5]`; a report written before intervals existed shows the figure alone. `None` for a
+  not-supported run, and for accuracy when there are no usable labels.
+- **Run settings:** `temperature` (the value sent, `None` = none sent, so the provider's default) and `providers`
+  (model responses per upstream provider OpenRouter routed to, from the response's `provider` field; `(not reported)`
+  where absent) come from the log lines of the run.
 - **Output:** `write_results(report)` saves `results/<date>_<model-slug>_<setup>.json` (the whole `EvalReport`,
   including every doc's raw and normalized posting, so a run can be re-scored without API calls; a name already taken
   gets `_2`, `_3`..., nothing is overwritten) and appends one row to `results/summary.md`:

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from helpers import without_ci
 from pydantic import BaseModel
 from typer.testing import CliRunner
 
@@ -346,7 +347,7 @@ def test_eval_runs_after_a_yes_and_saves_results(monkeypatch: pytest.MonkeyPatch
     assert len(models) == 3
     summary = (isolated / "results" / "summary.md").read_text(encoding="utf-8").splitlines()
     assert summary[0].startswith("| model | setup | n |") and len(summary) == 3
-    assert summary[2].startswith("| m | B | 3 | 100.0% | 100.0% | 1.00 | n/a | n/a | n/a | $0.0027 |")
+    assert without_ci(summary[2]).startswith("| m | B | 3 | 100.0% | 100.0% | 1.00 | n/a | n/a | n/a | $0.0027 |")
     assert summary[2] in out(result)  # the same row is printed
     assert len(list((isolated / "results").glob("*_m_B.json"))) == 1
 
@@ -400,7 +401,7 @@ def test_eval_scores_field_accuracy_when_labels_exist(monkeypatch: pytest.Monkey
     assert "field accuracy: 2 label files in" in out(result)
     assert "labels skipped (invalid or still TODO): jd_001" in out(result)
     row = next(x for x in out(result).splitlines() if x.startswith("| m | B"))
-    cells = [c.strip() for c in row.strip("| ").split("|")]
+    cells = [c.strip() for c in without_ci(row).strip("| ").split("|")]
     assert cells[6] != "n/a" and cells[6].endswith("%")  # the field acc (norm) cell has a number
     [report_file] = (isolated / "results").glob("*.json")
     data = json.loads(report_file.read_text(encoding="utf-8"))
@@ -414,7 +415,7 @@ def test_eval_reports_docs_without_a_model_response(monkeypatch: pytest.MonkeyPa
     result = runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), "--yes"])
     assert result.exit_code == 0, result.output
     text = out(result)
-    assert "| m | B | 2 (1 scored) | 100.0% | 100.0% |" in text
+    assert "| m | B | 2 (1 scored) | 100.0% | 100.0% |" in without_ci(text)
     assert "setup B: 1 API error line(s) in the log" in text
     assert "setup B: 1 doc(s) got no model response and are left out of the validity numbers" in text
 
@@ -507,7 +508,7 @@ def test_eval_resume_skips_finished_docs_and_completes_the_same_report(
     data = json.loads(report_file.read_text(encoding="utf-8"))
     assert (data["eval_id"], data["n"], data["n_scored"], data["final_valid_pct"]) == (eval_id, 2, 2, 100.0)
     rows = (isolated / "results" / "summary.md").read_text(encoding="utf-8").splitlines()[2:]
-    assert len(rows) == 1 and rows[0].startswith("| m | B | 2 | 100.0% |")
+    assert len(rows) == 1 and without_ci(rows[0]).startswith("| m | B | 2 | 100.0% |")
 
 
 def test_eval_resume_refuses_a_different_model(monkeypatch: pytest.MonkeyPatch, isolated: Path) -> None:

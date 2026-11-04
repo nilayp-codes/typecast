@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+from helpers import without_ci
 from test_eval import VALID, Labels, doc, line, posting, report
 
 from soa.eval import SUMMARY_HEADER, EvalReport, model_slug, summary_row, write_results
@@ -28,13 +29,13 @@ def test_model_slug(model: str, slug: str) -> None:
 
 def test_row_for_the_fixture_run_without_labels() -> None:
     # 5 docs, 4 scored; first-try 2/4, final 3/4, 7 responses / 4 docs, cost 7 x 0.001
-    assert summary_row(report()) == "| m | B | 5 (4 scored) | 50.0% | 75.0% | 1.75 | n/a | n/a | n/a | $0.0070 |\n"
+    assert without_ci(summary_row(report())) == "| m | B | 5 (4 scored) | 50.0% | 75.0% | 1.75 | n/a | n/a | n/a | $0.0070 |\n"
 
 
 def test_row_shows_normalized_field_accuracy_and_plain_n_when_every_doc_was_scored() -> None:
     docs = [doc("r1")]
     r = report(docs, [line("r1")], Labels(by_doc={"doc-r1": posting()}, skipped=[]))
-    assert summary_row(r) == "| m | B | 1 | 100.0% | 100.0% | 1.00 | 100.0% | 100.0% | 100.0% | $0.0010 |\n"
+    assert without_ci(summary_row(r)) == "| m | B | 1 | 100.0% | 100.0% | 1.00 | 100.0% | 100.0% | 100.0% | $0.0010 |\n"
 
 
 def test_row_uses_n_a_for_unknown_cost_and_for_unscored_runs() -> None:
@@ -72,7 +73,7 @@ def test_rates_are_formatted_to_one_decimal_without_rounding_up_the_stored_value
     logs = [line("r1"), line("r2"), line("r3", ok=False)]
     r = report([doc("r1"), doc("r2"), doc("r3", "invalid")], logs)
     assert r.final_valid_pct == pytest.approx(200 / 3)  # the report keeps full precision
-    assert "| 66.7% |" in summary_row(r)
+    assert "| 66.7% |" in without_ci(summary_row(r))
 
 
 # --- files ------------------------------------------------------------------------
@@ -118,7 +119,7 @@ def test_a_resumed_run_replaces_its_own_earlier_report_and_row(tmp_path: Path) -
     assert EvalReport.model_validate_json(path.read_text(encoding="utf-8")) == complete
     assert sorted(p.name for p in tmp_path.glob("*.json")) == ["2026-10-17_m_B.json", "2026-10-17_m_D.json"]
     rows = (tmp_path / "summary.md").read_text(encoding="utf-8").splitlines()[2:]
-    assert len(rows) == 2 and "| 90.0% |" in rows[1] and "| 10.0% |" not in "".join(rows)
+    assert len(rows) == 2 and "| 90.0% |" in without_ci(rows[1]) and "| 10.0% |" not in "".join(rows)
     assert rows[0] == summary_row(report().model_copy(update={"setup": "D"})).rstrip("\n")  # the other row is untouched
 
 

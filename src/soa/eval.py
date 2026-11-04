@@ -23,6 +23,7 @@ from soa.errors import redact_keys
 from soa.llm import LLMAPIError
 from soa.logger import API_ERROR_TYPE, AttemptLog, Setup, default_log_path, read_log
 from soa.schemas import JobPosting
+from soa.stats import bootstrap_interval, wilson_interval
 from soa.tools import postprocess
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,26 @@ class FailureBreakdown(StrictModel):
     by_first_loc: dict[str, int]  # location of the first error line, numeric path parts as `*` (skills.*.name)
 
 
+class Interval(StrictModel):
+    """A 95% interval in percent (0-100)."""
+
+    low: float
+    high: float
+
+
+class Intervals(StrictModel):
+    """95% intervals for a report's headline numbers; None where the number itself is undefined.
+
+    first_try / final: Wilson score interval on the count out of n_scored. field_accuracy / end_to_end: percentile
+    bootstrap (seeded, 1000 resamples of the labelled documents) of `overall` for the normalized figures.
+    """
+
+    first_try: Interval | None
+    final: Interval | None
+    field_accuracy: Interval | None
+    end_to_end: Interval | None
+
+
 class EvalReport(StrictModel):
     """One setup on one model over one set of documents. Rates are percentages (0-100), None when undefined.
 
@@ -146,6 +167,7 @@ class EvalReport(StrictModel):
     end_to_end_normalized: FieldAccuracy | None
     failures: FailureBreakdown
     constraint_violations: ConstraintViolations | None  # setups C and D only (schema mode requested)
+    intervals: Intervals | None = None  # 95% intervals; None for a not-supported run or a report from before they existed
     temperature: float | None = None  # sent with every request; None = not sent (provider default) or mixed
     providers: dict[str, int] = Field(default_factory=dict)  # upstream provider -> model responses; "(not reported)"
     docs: list[DocRun]
@@ -397,6 +419,31 @@ def _accuracy(docs: list[DocRun], labels: Labels) -> Accuracy:
     )
 
 
+def _wilson(count: int, n: int) -> Interval | None:
+    if n < 1:
+        return None
+    low, high = wilson_interval(count, n)
+    return Interval(low=low, high=high)
+
+
+def _bootstrap(pairs: Sequence[Pair]) -> Interval | None:
+    if not pairs:
+        return None
+    low, high = bootstrap_interval(pairs, lambda sample: score_fields(sample).overall)
+    return Interval(low=low, high=high)
+
+
+def build_intervals(v: Validity, docs: list[DocRun], labels: Labels) -> Intervals:
+    """The 95% intervals for a (supported) run: Wilson on validity counts, bootstrap over the labelled documents."""
+    labelled = [d for d in docs if d.doc_id in labels.by_doc]
+    valid = [(labels.by_doc[d.doc_id], d.posting) for d in labelled if d.posting is not None]
+    everything = [(labels.by_doc[d.doc_id], d.posting) for d in labelled]
+    return Intervals(
+        first_try=_wilson(v.first_try, v.n_scored), final=_wilson(v.final, v.n_scored),
+        field_accuracy=_bootstrap(valid), end_to_end=_bootstrap(everything),
+    )
+
+
 def _no_accuracy(docs: list[DocRun], labels: Labels) -> Accuracy:
     """A not-supported run gets no accuracy numbers, not even zeros (the labelled count is still shown)."""
     n_labelled = sum(d.doc_id in labels.by_doc for d in docs)
@@ -437,6 +484,7 @@ def build_report(
         end_to_end_raw=acc.end_to_end_raw, end_to_end_normalized=acc.end_to_end_normalized,
         failures=failure_breakdown(docs, logs),
         constraint_violations=constraint_violations(docs, logs) if json_mode and not not_supported else None,
+        intervals=None if not_supported else build_intervals(v, docs, labels),
         temperature=temperature, providers=providers,
         docs=docs,
     )
@@ -618,8 +666,13 @@ def model_slug(model: str) -> str:
     return re.sub(r"[^A-Za-z0-9.-]+", "_", model).strip("_")
 
 
-def _fmt_pct(value: float | None) -> str:
-    return "n/a" if value is None else f"{value:.1f}%"
+def _fmt_pct(value: float | None, interval: Interval | None = None) -> str:
+    """`86.7%`, or `86.7% [70.3-94.5]` with its 95% interval (reports from before intervals existed have none)."""
+    if value is None:
+        return "n/a"
+    if interval is None:
+        return f"{value:.1f}%"
+    return f"{value:.1f}% [{interval.low:.1f}-{interval.high:.1f}]"
 
 
 def summary_row(report: EvalReport) -> str:
@@ -635,10 +688,11 @@ def summary_row(report: EvalReport) -> str:
     cost = "n/a" if report.total_cost_usd is None else f"${report.total_cost_usd:.4f}"
     if report.cost_source == "estimate" and report.total_cost_usd is not None:
         cost = "~" + cost  # a list-price estimate, not the provider's figure
+    ci = report.intervals or Intervals(first_try=None, final=None, field_accuracy=None, end_to_end=None)
     cells = [
-        model, report.setup, n, _fmt_pct(report.first_try_valid_pct),
-        _fmt_pct(report.final_valid_pct), calls, _fmt_pct(accuracy), _fmt_pct(report.coverage_pct), _fmt_pct(e2e),
-        cost,
+        model, report.setup, n, _fmt_pct(report.first_try_valid_pct, ci.first_try),
+        _fmt_pct(report.final_valid_pct, ci.final), calls, _fmt_pct(accuracy, ci.field_accuracy),
+        _fmt_pct(report.coverage_pct), _fmt_pct(e2e, ci.end_to_end), cost,
     ]
     return "| " + " | ".join(cells) + " |\n"
 

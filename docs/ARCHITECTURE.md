@@ -28,7 +28,10 @@ structured-output-agent/
 ├── results/            # eval outputs (committed)
 ├── tests/
 ├── scripts/            # standalone scripts: baseline.py (Phase 2 real-API baseline run),
-│                       #   make_label_templates.py (TODO templates in data/labels/), check_labels.py (validate labels)
+│                       #   make_label_templates.py (TODO templates in data/labels/), check_labels.py (validate labels),
+│                       #   aggregate_runs.py (mean and min-max over repeated runs -> results/aggregate.md),
+│                       #   make_blind_templates.py (TODO templates in data/labels_blind/, never gold values) and
+│                       #   label_agreement.py (blind vs gold, eval metrics -> results/label_agreement.md)
 ├── .github/workflows/ci.yml   # pytest + mypy --strict src/ on push and PR (Phase 7)
 └── docs/  (these .md files)
 ```

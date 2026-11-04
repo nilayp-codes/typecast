@@ -37,10 +37,21 @@ class Skill(StrictModel):
     name: str = Field(
         min_length=1,
         max_length=40,
-        description="Canonical skill name, e.g. 'PostgreSQL', 'Kubernetes'. One skill per entry.",
+        description=(
+            "Canonical skill name if known (e.g. 'PostgreSQL', 'Kubernetes'), else the posting's own wording. "
+            "One skill per entry. Only named technologies, tools, languages, frameworks, platforms, protocols, "
+            "named technical methods (e.g. RAG, LoRA) and CS fundamentals (e.g. data structures and algorithms). "
+            "Exclude soft skills, degrees, certifications, spoken languages, industry domains, architecture "
+            "concepts and vague entries such as 'Coding' or 'AI'."
+        ),
     )
     required: bool = Field(
-        description="True if the posting says the skill is required; false if nice-to-have or preferred.",
+        description=(
+            "True if the skill is in the requirements, the described work or the posting's Skills list. "
+            "Alternatives ('A or B') take the status of their section. False if preferred, nice-to-have, "
+            "bonus, 'a plus' or optional, if only an example ('e.g.'), or if only in the company's "
+            "tech-stack section (include those, as false)."
+        ),
     )
 
 
@@ -48,13 +59,25 @@ class Location(StrictModel):
     """Where the job is based."""
 
     city: str | None = Field(
-        description="City name, or null if no city is stated.",
+        description=(
+            "One city -> that city, normalised (e.g. 'Mumbai Metropolitan Region' -> 'Mumbai'). "
+            "Several cities in one metro region -> the region name (e.g. 'Delhi NCR'). "
+            "Several distinct cities, or no city stated -> null."
+        ),
     )
     country: str | None = Field(
-        description="Country name, or null if no country is stated.",
+        description=(
+            "Country name, filled when all places are in one country. "
+            "Null if fully remote with no place, or no country is stated."
+        ),
     )
     mode: WorkMode = Field(
-        description="Work arrangement. Use 'unspecified' if the posting does not say.",
+        description=(
+            "Work arrangement from an explicit label, policy or statement (e.g. 'Remote Work Policy', "
+            "'work remotely', 'working out of our office'). Onsite plus an explicit remote option -> hybrid. "
+            "Directly contradicting labels -> unspecified. Office perks alone are not a mode statement "
+            "-> unspecified."
+        ),
     )
 
 
@@ -72,26 +95,33 @@ class JobPosting(StrictModel):
     seniority: Seniority = Field(
         description=(
             "Seniority level. Decide from the job title first: Intern -> intern; "
-            "Junior/Associate -> junior; Senior -> senior; Lead, Staff, Principal or Architect -> lead. "
-            "If the title gives no level, use the minimum years required: "
-            "0-1 -> junior, 2-4 -> mid, 5+ -> senior. If neither is stated -> mid."
+            "Junior/Associate -> junior; Senior/Sr -> senior; Lead/Staff/Principal/Architect -> lead. "
+            "If the title gives no level, use level words in the description ('entry level', 'fresher', "
+            "'junior/mid-level'; use the lowest level stated). Then use the minimum years required: "
+            "0-1 -> junior, 2-4 -> mid, 5+ -> senior. If none of these is stated -> mid."
         ),
     )
     min_years_experience: int | None = Field(
         ge=0,
         le=30,
-        description="Minimum years of experience required, or null if not stated.",
+        description=(
+            "Lower bound of the years of experience asked for. The requirements section beats the header. "
+            "'No experience required' -> 0. Null if not stated."
+        ),
     )
     skills: list[Skill] = Field(
         min_length=1,
         max_length=30,
-        description="Distinct skills mentioned. No duplicate names.",
+        description="Distinct skills mentioned. No duplicate names. At most 30: keep required skills first.",
     )
     location: Location = Field(
-        description="Primary location of the job. If several locations are listed, use the first listed.",
+        description="Primary location and work arrangement of the job. See the field descriptions.",
     )
     salary_mentioned: bool = Field(
-        description="True if the posting states any salary, pay range or compensation figure.",
+        description=(
+            "True only for a stated pay figure or range (monthly pay and stipends count). "
+            "'Competitive', budgets and company revenue do not count."
+        ),
     )
 
     @field_validator("skills")

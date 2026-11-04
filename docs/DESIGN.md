@@ -35,10 +35,33 @@ Validators:
 - skills: no duplicate names. Compare with whitespace stripped, then casefolded.
 - if seniority == intern → min_years_experience must be None or 0
 
-**Seniority mapping (also the labelling rule for `data/labels/`; gold labels must follow it):**
-1. Title first: Intern -> intern; Junior/Associate -> junior; Senior -> senior; Lead, Staff, Principal or Architect -> lead.
-2. If the title gives no level, use minimum years required: 0-1 -> junior, 2-4 -> mid, 5+ -> senior.
-3. If neither is stated -> mid.
+### Gold-label guide (`data/labels/`)
+The rules below are the labelling rules AND the text of the schema `Field(description=...)` strings, so the
+model's instructions and the gold labels match. Labels are model-drafted and human-verified (corrections in
+`docs/label_corrections.log`).
+- **skills scope:** named technologies, tools, languages, frameworks, platforms, protocols, named technical methods
+  (e.g. RAG, LoRA) and CS fundamentals (e.g. data structures and algorithms). Exclude soft skills, degrees,
+  certifications, spoken languages, industry domains, architecture concepts and vague entries ("Coding", "AI").
+- **skill.required:** true if in the requirements, the described work or the posting's Skills list. Alternatives
+  ("A or B") take the status of their section. False if preferred, nice-to-have, bonus, "a plus", optional, only
+  an example ("e.g."), or only in the company's tech-stack section (include those, as false).
+- **skill names:** canonical name if known, else the JD's own wording.
+- **more than 30 skills (labelling only, not in the schema text):** required first, then preferred, each in order
+  of appearance, cut at 30.
+- **seniority:** (1) title first: Intern -> intern; Junior/Associate -> junior; Senior/Sr -> senior;
+  Lead/Staff/Principal/Architect -> lead. (2) Then level words in the description ("entry level", "fresher",
+  "junior/mid-level"; use the lowest level stated). (3) Then minimum years: 0-1 junior, 2-4 mid, 5+ senior.
+  (4) Else mid.
+- **min_years_experience:** the lower bound; the requirements section beats the header; "no experience required"
+  -> 0; not stated -> null.
+- **location.city:** one city -> that city, normalised (e.g. "Mumbai Metropolitan Region" -> Mumbai); several cities
+  in one metro region -> the region name (e.g. Delhi NCR); several distinct cities -> null.
+- **location.country:** filled when all places are in one country; fully remote with no place -> null.
+- **location.mode:** an explicit label, policy or statement ("Remote Work Policy", "work remotely", "working out of
+  our office"). Onsite plus an explicit remote option -> hybrid. Directly contradicting labels -> unspecified.
+  Office perks alone are not a mode statement -> unspecified.
+- **salary_mentioned:** true only for a pay figure or range (monthly pay and stipends count); "competitive",
+  budgets and company revenue do not.
 
 **Principle:** constraints should be strict enough that a sloppy output *fails*, so the retry loop has real work to do.
 

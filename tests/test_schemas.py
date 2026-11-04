@@ -214,5 +214,23 @@ def test_strings_are_stripped() -> None:
 
 def test_seniority_description_maps_architect_to_lead() -> None:
     description = JobPosting.model_json_schema()["properties"]["seniority"]["description"]
-    assert "Lead, Staff, Principal or Architect -> lead" in description
+    assert "Lead/Staff/Principal/Architect -> lead" in description
+    assert "Senior/Sr -> senior" in description
     assert description.isascii()
+
+
+def test_all_field_descriptions_are_ascii_and_carry_gold_label_rules() -> None:
+    schema = JobPosting.model_json_schema()
+    defs = schema["$defs"]
+    texts = [p["description"] for p in schema["properties"].values() if "description" in p]
+    texts += [p["description"] for d in ("Skill", "Location") for p in defs[d]["properties"].values()]
+    assert all(t.isascii() for t in texts)
+    skill = defs["Skill"]["properties"]
+    assert "Exclude soft skills" in skill["name"]["description"]
+    assert "tech-stack section" in skill["required"]["description"]
+    loc = defs["Location"]["properties"]
+    assert "Delhi NCR" in loc["city"]["description"]
+    assert "Onsite plus an explicit remote option -> hybrid" in loc["mode"]["description"]
+    props = schema["properties"]
+    assert "'No experience required' -> 0" in props["min_years_experience"]["description"]
+    assert "stipends" in props["salary_mentioned"]["description"]

@@ -146,6 +146,8 @@ class EvalReport(StrictModel):
     end_to_end_normalized: FieldAccuracy | None
     failures: FailureBreakdown
     constraint_violations: ConstraintViolations | None  # setups C and D only (schema mode requested)
+    temperature: float | None = None  # sent with every request; None = not sent (provider default) or mixed
+    providers: dict[str, int] = Field(default_factory=dict)  # upstream provider -> model responses; "(not reported)"
     docs: list[DocRun]
 
 
@@ -200,6 +202,18 @@ def validity_stats(docs: list[DocRun], logs: list[AttemptLog]) -> Validity:
         n_scored=scored, first_try=first_try, final=final, calls=calls,
         cost_usd=cost if cost_known else None, cost_source=source, latency_ms=latency, api_errors=api_errors,
     )
+
+
+def routing_stats(docs: list[DocRun], logs: list[AttemptLog]) -> tuple[float | None, dict[str, int]]:
+    """(temperature sent, responses per upstream provider) over the model responses of these docs' runs.
+
+    The temperature is the single value every response carried, else None (not sent, or mixed). Responses whose
+    provider was not reported count under "(not reported)".
+    """
+    responses = [x for lines in _lines_by_run(docs, logs).values() for x in _responses(lines)]
+    temperatures = {x.temperature for x in responses}
+    providers = Counter(x.provider or "(not reported)" for x in responses)
+    return (temperatures.pop() if len(temperatures) == 1 else None), _most_frequent_first(providers)
 
 
 def first_error_loc(error: str) -> str:
@@ -406,6 +420,7 @@ def build_report(
     not_supported = json_mode and (stopped_unsupported or n_unsupported == len(docs) > 0)
     acc = _no_accuracy(docs, labels) if not_supported else _accuracy(docs, labels)
     doc_ids = {d.doc_id for d in docs}
+    temperature, providers = routing_stats(docs, logs)
     return EvalReport(
         model=model, setup=setup, json_mode=json_mode, max_attempts=max_attempts, run_date=run_date, eval_id=eval_id,
         n=len(docs), n_scored=v.n_scored, n_api_failed=len(docs) - v.n_scored,
@@ -422,6 +437,7 @@ def build_report(
         end_to_end_raw=acc.end_to_end_raw, end_to_end_normalized=acc.end_to_end_normalized,
         failures=failure_breakdown(docs, logs),
         constraint_violations=constraint_violations(docs, logs) if json_mode and not not_supported else None,
+        temperature=temperature, providers=providers,
         docs=docs,
     )
 

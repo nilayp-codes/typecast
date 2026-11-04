@@ -41,6 +41,8 @@ class AttemptLog(BaseModel):
     cost_usd: float
     cost_known: bool
     cost_source: CostSource | None = None  # None only on lines written before the source was recorded
+    temperature: float | None = None  # sent with the request; None = not sent (provider default) or an older line
+    provider: str | None = None  # upstream provider OpenRouter routed to; None = not reported or an older line
     ts: AwareDatetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @model_validator(mode="after")

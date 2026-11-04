@@ -44,8 +44,10 @@ def test_append_writes_one_json_line(tmp_path: Path) -> None:
     assert row["ok"] is True
     assert set(row) == {
         "run_id", "doc_id", "attempt", "model", "setup", "json_mode", "ok", "error_type", "error", "raw_output",
-        "latency_ms", "prompt_tokens", "completion_tokens", "cost_usd", "cost_known", "cost_source", "ts",
+        "latency_ms", "prompt_tokens", "completion_tokens", "cost_usd", "cost_known", "cost_source", "temperature",
+        "provider", "ts",
     }
+    assert row["temperature"] is None and row["provider"] is None  # not sent / not reported
     assert (row["setup"], row["json_mode"]) == (None, False)  # non-eval run, plain prompt
 
 

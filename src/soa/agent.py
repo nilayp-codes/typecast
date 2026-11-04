@@ -375,4 +375,6 @@ def _to_log(
         cost_usd=resp.cost_usd,
         cost_known=resp.cost_known,
         cost_source=resp.cost_source,
+        temperature=resp.temperature,
+        provider=resp.provider,
     )

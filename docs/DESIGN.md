@@ -137,6 +137,10 @@ list) times the token counts, `"none"` = no cost available (`cost_usd` is 0.0 an
 the line was written before the field existed. Eval reports carry `cost_source` too: `provider` only if every
 response had the provider's own figure, otherwise `estimate`, or n/a if any cost is unknown; `summary.md` marks an
 estimate with `~`.
+`temperature` is the temperature SENT with the request (`null` = none sent, so the provider's default applied; today
+`llm.call` sends none unless a caller passes one). `provider` is the upstream provider OpenRouter routed the request to,
+read from the response's `provider` field (`null` = not reported, or a line written before the field existed). Eval
+reports carry `temperature` (the single value sent, else `null`) and `providers` (responses per upstream provider).
 `setup` is `"A"`, `"B"`, `"C"` or `"D"` (see ARCHITECTURE.md "Eval setups"), or `null` for non-eval runs.
 `json_mode` is a bool (true = schema mode was requested). Both fields are on `AttemptLog` and written on every line,
 including `APIError` lines. They default to `null` / `false`, so lines written before Phase 6 still parse.

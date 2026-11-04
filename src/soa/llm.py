@@ -79,6 +79,8 @@ class LLMResponse(BaseModel):
     cost_source: CostSource
     latency_ms: int
     model: str
+    temperature: float | None = None  # the temperature SENT with the request; None = not sent (provider default)
+    provider: str | None = None  # the upstream provider OpenRouter routed to (response field `provider`); None = not reported
 
     @model_validator(mode="after")
     def cost_known_matches_source(self) -> Self:
@@ -104,16 +106,24 @@ class LLMAPIError(Exception):
         self.schema_unsupported = schema_unsupported
 
 
-def call(messages: list[Message], model: str, response_model: type[BaseModel] | None = None) -> LLMResponse:
+def call(
+    messages: list[Message],
+    model: str,
+    response_model: type[BaseModel] | None = None,
+    temperature: float | None = None,
+) -> LLMResponse:
     """Send messages to `model` and return text, token counts, cost and latency.
 
     With `response_model`, the provider's schema mode is requested, built from `response_model.model_json_schema()`
     (native mode, eval setups C and D). A provider that rejects it raises a non-retryable LLMAPIError.
+    `temperature` is sent only when given (None = the provider's default) and is recorded in the response.
     """
     started = time.perf_counter()
     extra: dict[str, object] = {}
     if response_model and model.startswith(OPENROUTER_PREFIX):
         extra["extra_body"] = OPENROUTER_REQUIRE_PARAMETERS
+    if temperature is not None:
+        extra["temperature"] = temperature
     try:
         raw = litellm.completion(
             model=model,
@@ -124,7 +134,7 @@ def call(messages: list[Message], model: str, response_model: type[BaseModel] | 
     except APIError as exc:
         raise _to_api_error(exc, model, schema_mode=response_model is not None) from exc
     latency_ms = round((time.perf_counter() - started) * 1000)
-    return _build_response(raw, model, latency_ms)
+    return _build_response(raw, model, latency_ms, temperature)
 
 
 def _schema_format(response_model: type[BaseModel]) -> dict[str, object]:
@@ -169,7 +179,13 @@ def _mentions(text: str, markers: tuple[str, ...]) -> bool:
     return any(marker in lowered for marker in markers)
 
 
-def _build_response(raw: object, model: str, latency_ms: int) -> LLMResponse:
+def _routed_provider(raw: litellm.ModelResponse) -> str | None:
+    """OpenRouter puts the upstream provider's name in a top-level `provider` field; LiteLLM keeps unknown fields."""
+    provider = getattr(raw, "provider", None)
+    return provider if isinstance(provider, str) and provider else None
+
+
+def _build_response(raw: object, model: str, latency_ms: int, temperature: float | None = None) -> LLMResponse:
     if not isinstance(raw, litellm.ModelResponse):
         raise TypeError(f"expected a non-streaming ModelResponse, got {type(raw).__name__}")
     choice = raw.choices[0]
@@ -188,6 +204,8 @@ def _build_response(raw: object, model: str, latency_ms: int) -> LLMResponse:
         cost_source=cost_source,
         latency_ms=latency_ms,
         model=model,
+        temperature=temperature,
+        provider=_routed_provider(raw),
     )
 
 

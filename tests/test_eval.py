@@ -759,3 +759,26 @@ def test_report_notes_only_mention_what_happened() -> None:
         "setup B: 4 API error line(s) in the log (not counted as validation attempts)",
         "setup B: 1 doc(s) got no model response and are left out of the validity numbers",
     ]
+
+
+# --- temperature and routed providers ---------------------------------------
+
+
+def _routed(run_id: str, provider: str | None, temperature: float | None) -> AttemptLog:
+    base = line(run_id)
+    return base.model_copy(update={"provider": provider, "temperature": temperature})
+
+
+def test_report_records_providers_and_the_temperature_sent() -> None:
+    docs = [doc("r1"), doc("r2"), doc("r3")]
+    logs = [_routed("r1", "Together", 0.0), _routed("r2", "Together", 0.0), _routed("r3", None, 0.0)]
+    r = report(docs, logs)
+    assert r.providers == {"Together": 2, "(not reported)": 1}
+    assert r.temperature == 0.0
+
+
+def test_report_temperature_is_none_when_not_sent_or_mixed() -> None:
+    docs = [doc("r1"), doc("r2")]
+    assert report(docs, [line("r1"), line("r2")]).temperature is None
+    mixed = [_routed("r1", "A", 0.0), _routed("r2", "A", 0.7)]
+    assert report(docs, mixed).temperature is None

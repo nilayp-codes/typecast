@@ -333,3 +333,26 @@ def test_llm_response_is_strict() -> None:
             {"text": "", "prompt_tokens": "10", "completion_tokens": 0, "cost_usd": 0.0,
              "cost_known": True, "latency_ms": 1, "model": "m"}
         )
+
+
+# --- temperature and routed provider ---------------------------------------
+
+
+def test_temperature_is_sent_only_when_given_and_is_recorded(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen = stub_completion(monkeypatch, fake_response())
+    default = llm.call(MESSAGES, "gpt-4o-mini")
+    assert "temperature" not in seen and default.temperature is None
+    explicit = llm.call(MESSAGES, "gpt-4o-mini", temperature=0.0)
+    assert seen["temperature"] == 0.0 and explicit.temperature == 0.0
+
+
+def test_routed_provider_is_read_from_the_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    raw = fake_response()
+    raw.provider = "Together"  # type: ignore[attr-defined]  # OpenRouter's extra top-level field
+    stub_completion(monkeypatch, raw)
+    assert llm.call(MESSAGES, "gpt-4o-mini").provider == "Together"
+
+
+def test_provider_is_none_when_the_response_has_none(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_completion(monkeypatch, fake_response())
+    assert llm.call(MESSAGES, "gpt-4o-mini").provider is None

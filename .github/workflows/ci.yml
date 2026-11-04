@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 is the floor the code and mypy target; 3.14 is the version developed on.
+        python-version: ["3.11", "3.14"]
+    env:
+      # .python-version pins 3.14, and uv would use it for both jobs; this makes the matrix value win.
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      - name: Install Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies (lockfile must be up to date)
+        run: uv sync --locked
+
+      - name: Tests (no network, no API key)
+        run: uv run pytest
+
+      - name: Type check
+        run: uv run mypy --strict src/

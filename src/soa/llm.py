@@ -23,6 +23,10 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 logger = logging.getLogger(__name__)
 
+# By default LiteLLM prints a coloured "Provider List" banner to STDOUT (three times in one real call) for models
+# it cannot map. `soa extract` promises that stdout is the JSON and nothing else, so the banner must stay off.
+litellm.suppress_debug_info = True
+
 RETRYABLE_ERRORS = (
     RateLimitError,
     Timeout,

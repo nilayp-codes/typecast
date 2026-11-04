@@ -356,3 +356,22 @@ def test_routed_provider_is_read_from_the_response(monkeypatch: pytest.MonkeyPat
 def test_provider_is_none_when_the_response_has_none(monkeypatch: pytest.MonkeyPatch) -> None:
     stub_completion(monkeypatch, fake_response())
     assert llm.call(MESSAGES, "gpt-4o-mini").provider is None
+
+
+# --- nothing from LiteLLM on stdout --------------------------------------------
+
+
+def test_litellm_debug_banner_is_suppressed_at_import() -> None:
+    assert litellm.suppress_debug_info is True  # set by soa.llm; the default prints a banner to stdout
+
+
+def test_a_completion_through_litellm_prints_nothing_to_stdout(capsys: pytest.CaptureFixture[str]) -> None:
+    """litellm's own mock_response answers locally (no network), through the same code path as a real reply."""
+    raw = litellm.completion(
+        model="openrouter/qwen/qwen-2.5-7b-instruct", messages=[{"role": "user", "content": "hi"}],
+        mock_response='{"ok": true}',
+    )
+    resp = llm._build_response(raw, "openrouter/qwen/qwen-2.5-7b-instruct", 5)
+    assert resp.text == '{"ok": true}'
+    captured = capsys.readouterr()
+    assert captured.out == "" and "Provider List" not in captured.err

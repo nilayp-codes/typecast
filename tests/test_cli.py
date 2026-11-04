@@ -558,3 +558,17 @@ def test_eval_no_longer_takes_the_old_setup_flags(isolated: Path) -> None:
     for flag in ("--json-mode", "--no-retry"):
         assert runner.invoke(app, ["eval", "--model", "m", "--data-dir", str(jds), flag]).exit_code == 2
 
+
+
+# --- stdout is the JSON and nothing else --------------------------------------
+
+
+def test_extract_stdout_is_exactly_one_json_document(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:
+    script(monkeypatch, [resp(GOOD)])
+    result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
+    assert result.exit_code == 0, status(result)
+    text = utf8(result)
+    assert text.startswith("{") and text.rstrip().endswith("}")  # nothing before or after the document
+    assert "Provider List" not in text  # LiteLLM's banner
+    assert json.loads(text)["title"] == "Développeur Backend"  # json.loads accepts one whole document only
+    assert "Valid after 1 attempt" in status(result)  # the status line is on stderr, not in the JSON

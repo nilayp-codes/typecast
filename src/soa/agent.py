@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from soa import llm
-from soa.errors import format_validation_errors, redact_keys
+from soa.errors import format_retry_feedback, format_validation_errors, redact_keys
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import API_ERROR_TYPE, AttemptLog, Setup, append_log, default_log_path
 from soa.schemas import JobPosting
@@ -70,6 +70,7 @@ class AttemptResult(BaseModel):
     error_type: str | None
     error: str | None
     response: LLMResponse
+    feedback: str | None = None  # what the retry prompt says; None = same as `error`
 
 
 class AttemptFailure(BaseModel):
@@ -250,7 +251,7 @@ def _log_api_error(
 def retry_messages(result: AttemptResult) -> list[Message]:
     """The rejected reply as an assistant turn, then a user turn with the validation errors (rule 11)."""
     reply = result.response.text or EMPTY_REPLY_PLACEHOLDER
-    feedback = RETRY_PROMPT_TEMPLATE.format(errors=result.error or "")
+    feedback = RETRY_PROMPT_TEMPLATE.format(errors=result.feedback or result.error or "")
     return [Message(role="assistant", content=reply), Message(role="user", content=feedback)]
 
 
@@ -346,7 +347,10 @@ def _validate(response: LLMResponse, doc_id: str) -> AttemptResult:
         logger.warning("%s: output failed validation:\n%s", doc_id, error)
         is_json = any(err["type"] == "json_invalid" for err in exc.errors())
         error_type = "JSONDecodeError" if is_json else "ValidationError"
-        return AttemptResult(ok=False, posting=None, error_type=error_type, error=error, response=response)
+        return AttemptResult(
+            ok=False, posting=None, error_type=error_type, error=error, response=response,
+            feedback=format_retry_feedback(exc),
+        )
     return AttemptResult(ok=True, posting=posting, error_type=None, error=None, response=response)
 
 

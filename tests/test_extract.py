@@ -370,3 +370,35 @@ def test_cost_known_is_false_if_any_call_cost_is_unknown(
     result = run(tmp_path / "a.jsonl")
     assert result.cost_known is False
     assert result.cost_usd == pytest.approx(0.002)
+
+
+# --- count-aware retry feedback --------------------------------------------
+
+
+def _too_many_skills(count: int) -> str:
+    skills = [{"name": f"Skill{i}", "required": i < 5} for i in range(count)]
+    return json.dumps({**VALID, "skills": skills})
+
+
+def test_skills_over_cap_retry_line_states_count_and_fix(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(_too_many_skills(39)), resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    run(log)
+    feedback = calls[1][3].content
+    assert "skills: has 39 items, maximum is 30 - remove 9, starting with required=false ones" in feedback
+    assert "(got:" not in feedback.split("skills: has 39 items")[1].splitlines()[0]
+    first = read_log(log)[0]  # the logged error keeps pydantic's wording (eval.py classifies it)
+    assert first.error is not None and first.error.startswith("skills: List should have at most 30 items")
+
+
+def test_other_errors_keep_the_plain_retry_line(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sleeps: list[float]
+) -> None:
+    calls = script(monkeypatch, [resp(BAD_ENUM), resp(GOOD)])
+    log = tmp_path / "a.jsonl"
+    run(log)
+    first = read_log(log)[0]
+    assert first.error is not None and first.error in calls[1][3].content
+    assert "remove" not in calls[1][3].content

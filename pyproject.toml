@@ -1,7 +1,7 @@
 [project]
 name = "soa"
 version = "0.1.0"
-description = "LLM agent that turns messy job descriptions into guaranteed-valid, typed JSON"
+description = "LLM agent that turns messy job descriptions into schema-validated, typed JSON — and measures how often that fails."
 readme = "README.md"
 authors = [
     { name = "Nilay Pandey", email = "nilaykishore3@gmail.com" }

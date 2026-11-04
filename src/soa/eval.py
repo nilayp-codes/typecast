@@ -106,6 +106,21 @@ class FailureBreakdown(StrictModel):
     by_first_loc: dict[str, int]  # location of the first error line, numeric path parts as `*` (skills.*.name)
 
 
+class ConstraintViolations(StrictModel):
+    """Replies that came back in schema mode and still broke a constraint the schema carries (setups C and D).
+
+    n_outputs = rejected model replies with at least one such violation (a retried doc can contribute several);
+    by_constraint = replies containing at least one violation of that kind (so it can sum to more than n_outputs).
+    A non-zero count means the provider dropped or does not enforce that constraint.
+
+    Defined before EvalReport on purpose: Python 3.11 evaluates annotations when the class is created, so a field type
+    that is defined further down the file raises NameError there (3.14 evaluates annotations lazily and hides it).
+    """
+
+    n_outputs: int
+    by_constraint: dict[str, int]
+
+
 class Interval(StrictModel):
     """A 95% interval in percent (0-100)."""
 
@@ -288,18 +303,6 @@ def schema_constraint(error_line: str) -> str | None:
         if rest.startswith(prefixes):
             return name
     return None
-
-
-class ConstraintViolations(StrictModel):
-    """Replies that came back in schema mode and still broke a constraint the schema carries (setups C and D).
-
-    n_outputs = rejected model replies with at least one such violation (a retried doc can contribute several);
-    by_constraint = replies containing at least one violation of that kind (so it can sum to more than n_outputs).
-    A non-zero count means the provider dropped or does not enforce that constraint.
-    """
-
-    n_outputs: int
-    by_constraint: dict[str, int]
 
 
 def constraint_violations(docs: list[DocRun], logs: list[AttemptLog]) -> ConstraintViolations:

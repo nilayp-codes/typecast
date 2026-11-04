@@ -1,0 +1,50 @@
+{
+  "title": "Lead Software Engineer - (Web Platform)",
+  "company": "Bitwarden",
+  "seniority": "lead",
+  "min_years_experience": 8,
+  "skills": [
+    {
+      "name": "nx",
+      "required": true
+    },
+    {
+      "name": "webpack",
+      "required": true
+    },
+    {
+      "name": "npm",
+      "required": true
+    },
+    {
+      "name": "Vite",
+      "required": true
+    },
+    {
+      "name": "pnpm",
+      "required": true
+    },
+    {
+      "name": "Electron",
+      "required": true
+    },
+    {
+      "name": "Browser Extensions",
+      "required": true
+    },
+    {
+      "name": "AI Tooling",
+      "required": true
+    },
+    {
+      "name": "Claude",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Delhi NCR",
+    "country": "India",
+    "mode": "remote"
+  },
+  "salary_mentioned": true
+}

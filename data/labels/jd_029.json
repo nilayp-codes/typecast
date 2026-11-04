@@ -1,0 +1,134 @@
+{
+  "title": "Firmware Engineer (Wearables) -",
+  "company": "LUNA",
+  "seniority": "mid",
+  "min_years_experience": 4,
+  "skills": [
+    {
+      "name": "C",
+      "required": true
+    },
+    {
+      "name": "Embedded Systems",
+      "required": true
+    },
+    {
+      "name": "Firmware",
+      "required": true
+    },
+    {
+      "name": "RTOS",
+      "required": true
+    },
+    {
+      "name": "FreeRTOS",
+      "required": true
+    },
+    {
+      "name": "RT-Thread",
+      "required": true
+    },
+    {
+      "name": "Zephyr",
+      "required": true
+    },
+    {
+      "name": "ThreadX",
+      "required": true
+    },
+    {
+      "name": "Bluetooth Low Energy",
+      "required": true
+    },
+    {
+      "name": "UART",
+      "required": true
+    },
+    {
+      "name": "SPI",
+      "required": true
+    },
+    {
+      "name": "I2C",
+      "required": true
+    },
+    {
+      "name": "GPIO",
+      "required": true
+    },
+    {
+      "name": "PWM",
+      "required": true
+    },
+    {
+      "name": "ADC",
+      "required": true
+    },
+    {
+      "name": "JTAG",
+      "required": true
+    },
+    {
+      "name": "SWD",
+      "required": true
+    },
+    {
+      "name": "Logic Analyzer",
+      "required": true
+    },
+    {
+      "name": "Oscilloscope",
+      "required": true
+    },
+    {
+      "name": "Git",
+      "required": true
+    },
+    {
+      "name": "Bluetooth",
+      "required": true
+    },
+    {
+      "name": "Wearable Technology",
+      "required": true
+    },
+    {
+      "name": "OTA",
+      "required": true
+    },
+    {
+      "name": "ARM Cortex-M",
+      "required": false
+    },
+    {
+      "name": "Nordic",
+      "required": false
+    },
+    {
+      "name": "Realtek",
+      "required": false
+    },
+    {
+      "name": "SiFli",
+      "required": false
+    },
+    {
+      "name": "Ambiq",
+      "required": false
+    },
+    {
+      "name": "Dialog",
+      "required": false
+    },
+    {
+      "name": "Telink",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Delhi NCR",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

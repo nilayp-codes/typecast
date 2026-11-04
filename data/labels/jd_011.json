@@ -1,0 +1,38 @@
+{
+  "title": "AI Technical Architect",
+  "company": "Capgemini",
+  "seniority": "lead",
+  "min_years_experience": 12,
+  "skills": [
+    {
+      "name": "Generative AI",
+      "required": true
+    },
+    {
+      "name": "Agentic AI",
+      "required": true
+    },
+    {
+      "name": "Orchestration Frameworks",
+      "required": true
+    },
+    {
+      "name": "Machine Learning",
+      "required": true
+    },
+    {
+      "name": "Large Language Models",
+      "required": true
+    },
+    {
+      "name": "APIs",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Hyderabad",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

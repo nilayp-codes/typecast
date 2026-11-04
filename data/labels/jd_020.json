@@ -1,0 +1,66 @@
+{
+  "title": "Front-End Software Engineer (React/Typescript)",
+  "company": "ReactWise",
+  "seniority": "junior",
+  "min_years_experience": null,
+  "skills": [
+    {
+      "name": "React",
+      "required": true
+    },
+    {
+      "name": "TypeScript",
+      "required": true
+    },
+    {
+      "name": "HTML",
+      "required": true
+    },
+    {
+      "name": "CSS",
+      "required": true
+    },
+    {
+      "name": "JavaScript",
+      "required": true
+    },
+    {
+      "name": "Git",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Figma",
+      "required": false
+    },
+    {
+      "name": "UI/UX Design",
+      "required": false
+    },
+    {
+      "name": "Relational Databases",
+      "required": false
+    },
+    {
+      "name": "Next.js",
+      "required": false
+    },
+    {
+      "name": "AWS",
+      "required": false
+    },
+    {
+      "name": "PostgreSQL",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Cambridge",
+    "country": "United Kingdom",
+    "mode": "hybrid"
+  },
+  "salary_mentioned": true
+}

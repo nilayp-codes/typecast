@@ -1,0 +1,38 @@
+{
+  "title": "Lead Backend Engineer",
+  "company": "Aurora AI",
+  "seniority": "lead",
+  "min_years_experience": 4,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Java",
+      "required": true
+    },
+    {
+      "name": "NoSQL",
+      "required": true
+    },
+    {
+      "name": "Flask",
+      "required": true
+    },
+    {
+      "name": "Spring Boot",
+      "required": true
+    },
+    {
+      "name": "Go",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": true
+}

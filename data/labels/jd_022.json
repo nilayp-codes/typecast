@@ -1,0 +1,94 @@
+{
+  "title": "Front End JavaScript / TypeScript Engineer",
+  "company": "GoGoGrandparent",
+  "seniority": "mid",
+  "min_years_experience": 6,
+  "skills": [
+    {
+      "name": "JavaScript",
+      "required": true
+    },
+    {
+      "name": "TypeScript",
+      "required": true
+    },
+    {
+      "name": "REST APIs",
+      "required": true
+    },
+    {
+      "name": "GraphQL",
+      "required": true
+    },
+    {
+      "name": "Webflow",
+      "required": true
+    },
+    {
+      "name": "Stripe",
+      "required": true
+    },
+    {
+      "name": "jQuery",
+      "required": true
+    },
+    {
+      "name": "Playwright",
+      "required": true
+    },
+    {
+      "name": "Node.js",
+      "required": true
+    },
+    {
+      "name": "esbuild",
+      "required": true
+    },
+    {
+      "name": "Vite",
+      "required": true
+    },
+    {
+      "name": "Rollup",
+      "required": true
+    },
+    {
+      "name": "Analytics Pixels",
+      "required": false
+    },
+    {
+      "name": "Vue.js",
+      "required": false
+    },
+    {
+      "name": "MySQL",
+      "required": false
+    },
+    {
+      "name": "Docker",
+      "required": false
+    },
+    {
+      "name": "Google Cloud Platform",
+      "required": false
+    },
+    {
+      "name": "AWS",
+      "required": false
+    },
+    {
+      "name": "Kubernetes",
+      "required": false
+    },
+    {
+      "name": "Jenkins",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": null,
+    "country": null,
+    "mode": "remote"
+  },
+  "salary_mentioned": true
+}

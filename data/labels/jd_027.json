@@ -1,0 +1,70 @@
+{
+  "title": "Technical Lead – Visual C++ & SQL Server",
+  "company": "Navtech",
+  "seniority": "lead",
+  "min_years_experience": 12,
+  "skills": [
+    {
+      "name": "C++",
+      "required": true
+    },
+    {
+      "name": "Visual C++",
+      "required": true
+    },
+    {
+      "name": "MSVC",
+      "required": true
+    },
+    {
+      "name": "SQL Server",
+      "required": true
+    },
+    {
+      "name": "Stored Procedures",
+      "required": true
+    },
+    {
+      "name": "Query Optimization",
+      "required": true
+    },
+    {
+      "name": "WinDbg",
+      "required": true
+    },
+    {
+      "name": "Visual Studio",
+      "required": true
+    },
+    {
+      "name": "Windows Server",
+      "required": true
+    },
+    {
+      "name": "Rules Engines",
+      "required": false
+    },
+    {
+      "name": "Apache Kafka",
+      "required": false
+    },
+    {
+      "name": "MS Access",
+      "required": false
+    },
+    {
+      "name": "VBA",
+      "required": false
+    },
+    {
+      "name": "Ruby on Rails",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Hyderabad",
+    "country": "India",
+    "mode": "unspecified"
+  },
+  "salary_mentioned": true
+}

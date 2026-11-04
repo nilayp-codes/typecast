@@ -1,0 +1,134 @@
+{
+  "title": "AI / LLM Engineer",
+  "company": "Kaleidofin Private Limited",
+  "seniority": "junior",
+  "min_years_experience": 1,
+  "skills": [
+    {
+      "name": "Prompt Engineering",
+      "required": true
+    },
+    {
+      "name": "Retrieval-Augmented Generation",
+      "required": true
+    },
+    {
+      "name": "Vector Databases",
+      "required": true
+    },
+    {
+      "name": "Machine Learning",
+      "required": true
+    },
+    {
+      "name": "Embeddings",
+      "required": true
+    },
+    {
+      "name": "Semantic Search",
+      "required": true
+    },
+    {
+      "name": "Generative AI",
+      "required": true
+    },
+    {
+      "name": "Agentic AI",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "scikit-learn",
+      "required": true
+    },
+    {
+      "name": "XGBoost",
+      "required": true
+    },
+    {
+      "name": "pandas",
+      "required": true
+    },
+    {
+      "name": "NumPy",
+      "required": true
+    },
+    {
+      "name": "SQL",
+      "required": true
+    },
+    {
+      "name": "Docker",
+      "required": true
+    },
+    {
+      "name": "Kubernetes",
+      "required": true
+    },
+    {
+      "name": "Ollama",
+      "required": true
+    },
+    {
+      "name": "vLLM",
+      "required": true
+    },
+    {
+      "name": "Hugging Face",
+      "required": true
+    },
+    {
+      "name": "OpenAI API",
+      "required": true
+    },
+    {
+      "name": "TensorFlow",
+      "required": true
+    },
+    {
+      "name": "PyTorch",
+      "required": true
+    },
+    {
+      "name": "AWS",
+      "required": true
+    },
+    {
+      "name": "Google Cloud Platform",
+      "required": true
+    },
+    {
+      "name": "Microsoft Azure",
+      "required": true
+    },
+    {
+      "name": "Apache Spark",
+      "required": false
+    },
+    {
+      "name": "Hadoop",
+      "required": false
+    },
+    {
+      "name": "MCP",
+      "required": false
+    },
+    {
+      "name": "MLflow",
+      "required": false
+    },
+    {
+      "name": "Weights & Biases",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

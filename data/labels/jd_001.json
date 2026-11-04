@@ -1,0 +1,46 @@
+{
+  "title": "GCP GENAI Engineer",
+  "company": "Impetus",
+  "seniority": "mid",
+  "min_years_experience": 4,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Google Cloud Platform",
+      "required": true
+    },
+    {
+      "name": "Generative AI",
+      "required": true
+    },
+    {
+      "name": "Vertex AI",
+      "required": true
+    },
+    {
+      "name": "Google Kubernetes Engine",
+      "required": false
+    },
+    {
+      "name": "Cloud Functions",
+      "required": false
+    },
+    {
+      "name": "BigQuery",
+      "required": false
+    },
+    {
+      "name": "Large Language Models",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": null,
+    "country": "India",
+    "mode": "hybrid"
+  },
+  "salary_mentioned": false
+}

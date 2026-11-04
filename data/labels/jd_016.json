@@ -1,0 +1,22 @@
+{
+  "title": "Senior Software Engineer",
+  "company": "FleetWorks",
+  "seniority": "senior",
+  "min_years_experience": 4,
+  "skills": [
+    {
+      "name": "TypeScript",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": null,
+    "country": "United States",
+    "mode": "onsite"
+  },
+  "salary_mentioned": true
+}

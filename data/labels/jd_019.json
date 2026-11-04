@@ -1,0 +1,82 @@
+{
+  "title": "Performance Marketing Specialist",
+  "company": "Codingal",
+  "seniority": "mid",
+  "min_years_experience": 2,
+  "skills": [
+    {
+      "name": "Google Ads",
+      "required": true
+    },
+    {
+      "name": "Facebook Ads Manager",
+      "required": true
+    },
+    {
+      "name": "YouTube Ads",
+      "required": true
+    },
+    {
+      "name": "LinkedIn Ads",
+      "required": true
+    },
+    {
+      "name": "Remarketing",
+      "required": true
+    },
+    {
+      "name": "Video Marketing",
+      "required": true
+    },
+    {
+      "name": "Landing Page Optimization",
+      "required": true
+    },
+    {
+      "name": "Excel",
+      "required": true
+    },
+    {
+      "name": "Google Sheets",
+      "required": true
+    },
+    {
+      "name": "Marketing Automation",
+      "required": false
+    },
+    {
+      "name": "LeadSquared",
+      "required": false
+    },
+    {
+      "name": "HubSpot",
+      "required": false
+    },
+    {
+      "name": "Salesforce",
+      "required": false
+    },
+    {
+      "name": "Python",
+      "required": false
+    },
+    {
+      "name": "Django",
+      "required": false
+    },
+    {
+      "name": "React",
+      "required": false
+    },
+    {
+      "name": "Next.js",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": true
+}

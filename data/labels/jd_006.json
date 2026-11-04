@@ -1,0 +1,54 @@
+{
+  "title": "Artificial Intelligence Engineer",
+  "company": "PeopleX Ventures",
+  "seniority": "mid",
+  "min_years_experience": null,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Machine Learning",
+      "required": true
+    },
+    {
+      "name": "Prompt Engineering",
+      "required": true
+    },
+    {
+      "name": "Retrieval-Augmented Generation",
+      "required": true
+    },
+    {
+      "name": "Agentic Workflows",
+      "required": true
+    },
+    {
+      "name": "Vector Databases",
+      "required": true
+    },
+    {
+      "name": "Docker",
+      "required": true
+    },
+    {
+      "name": "pandas",
+      "required": true
+    },
+    {
+      "name": "NumPy",
+      "required": true
+    },
+    {
+      "name": "scikit-learn",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "hybrid"
+  },
+  "salary_mentioned": true
+}

@@ -1,0 +1,134 @@
+{
+  "title": "AI Engineer",
+  "company": "BT Group",
+  "seniority": "mid",
+  "min_years_experience": null,
+  "skills": [
+    {
+      "name": "Apache Kafka",
+      "required": true
+    },
+    {
+      "name": "NATS",
+      "required": true
+    },
+    {
+      "name": "REST APIs",
+      "required": true
+    },
+    {
+      "name": "JWT",
+      "required": true
+    },
+    {
+      "name": "LangChain",
+      "required": true
+    },
+    {
+      "name": "LangGraph",
+      "required": true
+    },
+    {
+      "name": "Prompt Engineering",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "FastAPI",
+      "required": true
+    },
+    {
+      "name": "Pydantic",
+      "required": true
+    },
+    {
+      "name": "spaCy",
+      "required": true
+    },
+    {
+      "name": "Sentence Transformers",
+      "required": true
+    },
+    {
+      "name": "PyTorch",
+      "required": true
+    },
+    {
+      "name": "Hugging Face",
+      "required": true
+    },
+    {
+      "name": "ONNX",
+      "required": true
+    },
+    {
+      "name": "LoRA",
+      "required": true
+    },
+    {
+      "name": "QLoRA",
+      "required": true
+    },
+    {
+      "name": "vLLM",
+      "required": true
+    },
+    {
+      "name": "RAGAS",
+      "required": true
+    },
+    {
+      "name": "Retrieval-Augmented Generation",
+      "required": true
+    },
+    {
+      "name": "Embeddings",
+      "required": true
+    },
+    {
+      "name": "Vector Databases",
+      "required": true
+    },
+    {
+      "name": "Elasticsearch",
+      "required": true
+    },
+    {
+      "name": "DeepEval",
+      "required": true
+    },
+    {
+      "name": "PostgreSQL",
+      "required": true
+    },
+    {
+      "name": "pgvector",
+      "required": true
+    },
+    {
+      "name": "Redis",
+      "required": true
+    },
+    {
+      "name": "Neo4j",
+      "required": true
+    },
+    {
+      "name": "ClickHouse",
+      "required": false
+    },
+    {
+      "name": "Docker",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "hybrid"
+  },
+  "salary_mentioned": false
+}

@@ -1,0 +1,82 @@
+{
+  "title": "Data Engineer",
+  "company": "Saturn",
+  "seniority": "mid",
+  "min_years_experience": 3,
+  "skills": [
+    {
+      "name": "SQL",
+      "required": true
+    },
+    {
+      "name": "Data Modeling",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Apache Kafka",
+      "required": true
+    },
+    {
+      "name": "Airflow",
+      "required": true
+    },
+    {
+      "name": "Dagster",
+      "required": true
+    },
+    {
+      "name": "Prefect",
+      "required": true
+    },
+    {
+      "name": "dbt",
+      "required": true
+    },
+    {
+      "name": "Data Warehouse",
+      "required": true
+    },
+    {
+      "name": "Data Lake",
+      "required": true
+    },
+    {
+      "name": "Lakehouse",
+      "required": true
+    },
+    {
+      "name": "Data Contracts",
+      "required": true
+    },
+    {
+      "name": "AWS",
+      "required": false
+    },
+    {
+      "name": "Infrastructure as Code",
+      "required": false
+    },
+    {
+      "name": "Change Data Capture",
+      "required": false
+    },
+    {
+      "name": "Data Catalogs",
+      "required": false
+    },
+    {
+      "name": "Data Lineage",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "London",
+    "country": "United Kingdom",
+    "mode": "unspecified"
+  },
+  "salary_mentioned": true
+}

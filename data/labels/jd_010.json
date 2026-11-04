@@ -1,0 +1,42 @@
+{
+  "title": "AI Agent Engineer Intern",
+  "company": "Lexsi Labs",
+  "seniority": "intern",
+  "min_years_experience": null,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Large Language Models",
+      "required": true
+    },
+    {
+      "name": "Agentic AI",
+      "required": true
+    },
+    {
+      "name": "Evaluation",
+      "required": true
+    },
+    {
+      "name": "Alignment",
+      "required": true
+    },
+    {
+      "name": "Interpretability",
+      "required": true
+    },
+    {
+      "name": "Agent Frameworks",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Mumbai",
+    "country": "India",
+    "mode": "remote"
+  },
+  "salary_mentioned": false
+}

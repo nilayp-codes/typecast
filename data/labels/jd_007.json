@@ -1,0 +1,46 @@
+{
+  "title": "Artificial Intelligence Engineer",
+  "company": "SkyTrainings",
+  "seniority": "junior",
+  "min_years_experience": null,
+  "skills": [
+    {
+      "name": "Natural Language Processing",
+      "required": true
+    },
+    {
+      "name": "Computer Vision",
+      "required": true
+    },
+    {
+      "name": "Generative AI",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Machine Learning",
+      "required": true
+    },
+    {
+      "name": "AI Tools",
+      "required": true
+    },
+    {
+      "name": "TensorFlow",
+      "required": true
+    },
+    {
+      "name": "PyTorch",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "hybrid"
+  },
+  "salary_mentioned": false
+}

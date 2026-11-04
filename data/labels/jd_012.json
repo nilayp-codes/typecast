@@ -1,0 +1,30 @@
+{
+  "title": "Guitar Facilitator",
+  "company": "CANDIIDUS International School",
+  "seniority": "junior",
+  "min_years_experience": 1,
+  "skills": [
+    {
+      "name": "Acoustic Guitar",
+      "required": true
+    },
+    {
+      "name": "Electric Guitar",
+      "required": true
+    },
+    {
+      "name": "Music Theory",
+      "required": true
+    },
+    {
+      "name": "Music Notation",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Hyderabad",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

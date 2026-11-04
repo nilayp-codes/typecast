@@ -1,0 +1,122 @@
+{
+  "title": "Python Developer – GenAI/NLP Integration",
+  "company": "Gramener",
+  "seniority": "mid",
+  "min_years_experience": 4,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Generative AI",
+      "required": true
+    },
+    {
+      "name": "Natural Language Processing",
+      "required": true
+    },
+    {
+      "name": "pandas",
+      "required": true
+    },
+    {
+      "name": "Dask",
+      "required": true
+    },
+    {
+      "name": "REST APIs",
+      "required": true
+    },
+    {
+      "name": "FastAPI",
+      "required": true
+    },
+    {
+      "name": "PostgreSQL",
+      "required": true
+    },
+    {
+      "name": "MySQL",
+      "required": true
+    },
+    {
+      "name": "MongoDB",
+      "required": true
+    },
+    {
+      "name": "Pinecone",
+      "required": true
+    },
+    {
+      "name": "Amazon Bedrock Vector Store",
+      "required": true
+    },
+    {
+      "name": "Amazon OpenSearch Serverless",
+      "required": true
+    },
+    {
+      "name": "Docker",
+      "required": true
+    },
+    {
+      "name": "AWS Lambda",
+      "required": true
+    },
+    {
+      "name": "S3",
+      "required": true
+    },
+    {
+      "name": "ECS",
+      "required": true
+    },
+    {
+      "name": "EKS",
+      "required": true
+    },
+    {
+      "name": "CI/CD",
+      "required": true
+    },
+    {
+      "name": "Git",
+      "required": true
+    },
+    {
+      "name": "PySpark",
+      "required": false
+    },
+    {
+      "name": "Flask",
+      "required": false
+    },
+    {
+      "name": "Django",
+      "required": false
+    },
+    {
+      "name": "LangGraph",
+      "required": false
+    },
+    {
+      "name": "LangChain",
+      "required": false
+    },
+    {
+      "name": "Prompt Engineering",
+      "required": false
+    },
+    {
+      "name": "LLM Fine-tuning",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": null,
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

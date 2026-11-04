@@ -1,0 +1,134 @@
+{
+  "title": "Cybersecurity Engineer (Cloud & IT) - Remote",
+  "company": "erad",
+  "seniority": "mid",
+  "min_years_experience": 3,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Linux",
+      "required": true
+    },
+    {
+      "name": "Information Security",
+      "required": true
+    },
+    {
+      "name": "Software Security",
+      "required": true
+    },
+    {
+      "name": "Penetration Testing",
+      "required": true
+    },
+    {
+      "name": "Vulnerability Management",
+      "required": true
+    },
+    {
+      "name": "IAM",
+      "required": true
+    },
+    {
+      "name": "WAF",
+      "required": true
+    },
+    {
+      "name": "Zero Trust",
+      "required": true
+    },
+    {
+      "name": "SSH",
+      "required": true
+    },
+    {
+      "name": "TLS",
+      "required": true
+    },
+    {
+      "name": "DNS",
+      "required": true
+    },
+    {
+      "name": "Firewalls",
+      "required": true
+    },
+    {
+      "name": "VPN",
+      "required": true
+    },
+    {
+      "name": "Bash",
+      "required": true
+    },
+    {
+      "name": "OWASP Top 10",
+      "required": true
+    },
+    {
+      "name": "Incident Response",
+      "required": true
+    },
+    {
+      "name": "ISO 27001",
+      "required": true
+    },
+    {
+      "name": "SOC 2",
+      "required": true
+    },
+    {
+      "name": "MDM",
+      "required": true
+    },
+    {
+      "name": "SSO",
+      "required": true
+    },
+    {
+      "name": "MFA",
+      "required": true
+    },
+    {
+      "name": "Container Security",
+      "required": false
+    },
+    {
+      "name": "Infrastructure as Code",
+      "required": false
+    },
+    {
+      "name": "CI/CD",
+      "required": false
+    },
+    {
+      "name": "Red Teaming",
+      "required": false
+    },
+    {
+      "name": "React",
+      "required": false
+    },
+    {
+      "name": "React-Query",
+      "required": false
+    },
+    {
+      "name": "Next.js",
+      "required": false
+    },
+    {
+      "name": "Material-UI",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": null,
+    "country": null,
+    "mode": "remote"
+  },
+  "salary_mentioned": true
+}

@@ -1,0 +1,106 @@
+{
+  "title": "Software Engineer Intern",
+  "company": "SonicAI",
+  "seniority": "intern",
+  "min_years_experience": 0,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "MongoDB",
+      "required": true
+    },
+    {
+      "name": "AWS",
+      "required": true
+    },
+    {
+      "name": "EC2",
+      "required": true
+    },
+    {
+      "name": "ELB",
+      "required": true
+    },
+    {
+      "name": "S3",
+      "required": true
+    },
+    {
+      "name": "DynamoDB",
+      "required": true
+    },
+    {
+      "name": "ClickHouse",
+      "required": true
+    },
+    {
+      "name": "Large Language Models",
+      "required": true
+    },
+    {
+      "name": "LangChain",
+      "required": true
+    },
+    {
+      "name": "LlamaIndex",
+      "required": true
+    },
+    {
+      "name": "Hugging Face",
+      "required": true
+    },
+    {
+      "name": "Retrieval-Augmented Generation",
+      "required": true
+    },
+    {
+      "name": "ChatGPT",
+      "required": true
+    },
+    {
+      "name": "Transformers",
+      "required": true
+    },
+    {
+      "name": "Vector Databases",
+      "required": true
+    },
+    {
+      "name": "FastAPI",
+      "required": true
+    },
+    {
+      "name": "Flask",
+      "required": true
+    },
+    {
+      "name": "REST APIs",
+      "required": true
+    },
+    {
+      "name": "Data Structures and Algorithms",
+      "required": true
+    },
+    {
+      "name": "Git",
+      "required": true
+    },
+    {
+      "name": "Agentic AI",
+      "required": true
+    },
+    {
+      "name": "PostgreSQL",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": null,
+    "country": null,
+    "mode": "remote"
+  },
+  "salary_mentioned": true
+}

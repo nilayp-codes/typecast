@@ -1,0 +1,134 @@
+{
+  "title": "AI ENGINEERING SPECIALIST - Python",
+  "company": "Happiest Minds Technologies",
+  "seniority": "mid",
+  "min_years_experience": null,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "LangChain",
+      "required": true
+    },
+    {
+      "name": "LangGraph",
+      "required": true
+    },
+    {
+      "name": "CrewAI",
+      "required": true
+    },
+    {
+      "name": "AutoGen",
+      "required": true
+    },
+    {
+      "name": "FastAPI",
+      "required": true
+    },
+    {
+      "name": "Embeddings",
+      "required": true
+    },
+    {
+      "name": "Semantic Search",
+      "required": true
+    },
+    {
+      "name": "Vector Databases",
+      "required": true
+    },
+    {
+      "name": "Knowledge Retrieval Systems",
+      "required": true
+    },
+    {
+      "name": "Pinecone",
+      "required": true
+    },
+    {
+      "name": "ChromaDB",
+      "required": true
+    },
+    {
+      "name": "Weaviate",
+      "required": true
+    },
+    {
+      "name": "FAISS",
+      "required": true
+    },
+    {
+      "name": "Azure AI Search",
+      "required": true
+    },
+    {
+      "name": "Prompt Engineering",
+      "required": true
+    },
+    {
+      "name": "Function Calling",
+      "required": true
+    },
+    {
+      "name": "Tool Integration",
+      "required": true
+    },
+    {
+      "name": "PostgreSQL",
+      "required": true
+    },
+    {
+      "name": "MongoDB",
+      "required": true
+    },
+    {
+      "name": "SQL Server",
+      "required": true
+    },
+    {
+      "name": "Cosmos DB",
+      "required": true
+    },
+    {
+      "name": "Docker",
+      "required": true
+    },
+    {
+      "name": "Kubernetes",
+      "required": true
+    },
+    {
+      "name": "CI/CD",
+      "required": true
+    },
+    {
+      "name": "Git",
+      "required": true
+    },
+    {
+      "name": "Microsoft Azure",
+      "required": true
+    },
+    {
+      "name": "AWS",
+      "required": true
+    },
+    {
+      "name": "Google Cloud Platform",
+      "required": true
+    },
+    {
+      "name": "Agentic AI",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Bangalore",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

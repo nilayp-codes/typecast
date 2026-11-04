@@ -1,0 +1,66 @@
+{
+  "title": "AI/ML/Gen AI Engineer",
+  "company": "Ascendion",
+  "seniority": "mid",
+  "min_years_experience": 4,
+  "skills": [
+    {
+      "name": "Machine Learning",
+      "required": true
+    },
+    {
+      "name": "Deep Learning",
+      "required": true
+    },
+    {
+      "name": "Generative AI",
+      "required": true
+    },
+    {
+      "name": "LangChain",
+      "required": true
+    },
+    {
+      "name": "AutoGen",
+      "required": true
+    },
+    {
+      "name": "OpenAI APIs",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "Prompt Engineering",
+      "required": true
+    },
+    {
+      "name": "API Integration",
+      "required": true
+    },
+    {
+      "name": "AWS",
+      "required": true
+    },
+    {
+      "name": "Microsoft Azure",
+      "required": true
+    },
+    {
+      "name": "Natural Language Processing",
+      "required": false
+    },
+    {
+      "name": "Big Data",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

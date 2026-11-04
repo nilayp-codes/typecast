@@ -1,0 +1,50 @@
+{
+  "title": "Software Engineer - AI Platform",
+  "company": "InferEdge",
+  "seniority": "mid",
+  "min_years_experience": 2,
+  "skills": [
+    {
+      "name": "Kubernetes",
+      "required": true
+    },
+    {
+      "name": "PostgreSQL",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "SQL",
+      "required": true
+    },
+    {
+      "name": "Airflow",
+      "required": true
+    },
+    {
+      "name": "Agents",
+      "required": true
+    },
+    {
+      "name": "Plugins",
+      "required": true
+    },
+    {
+      "name": "Data Pipelines",
+      "required": true
+    },
+    {
+      "name": "Evaluation Framework",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Mumbai",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": true
+}

@@ -1,0 +1,134 @@
+{
+  "title": "AI ENGINEERING SPECIALIST - Python",
+  "company": "Happiest Minds Technologies",
+  "seniority": "mid",
+  "min_years_experience": null,
+  "skills": [
+    {
+      "name": "Generative AI",
+      "required": true
+    },
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "LangChain",
+      "required": true
+    },
+    {
+      "name": "Retrieval-Augmented Generation",
+      "required": true
+    },
+    {
+      "name": "Vector Databases",
+      "required": true
+    },
+    {
+      "name": "LangGraph",
+      "required": true
+    },
+    {
+      "name": "CrewAI",
+      "required": true
+    },
+    {
+      "name": "AutoGen",
+      "required": true
+    },
+    {
+      "name": "OpenAI",
+      "required": true
+    },
+    {
+      "name": "Azure OpenAI",
+      "required": true
+    },
+    {
+      "name": "Claude",
+      "required": true
+    },
+    {
+      "name": "Gemini",
+      "required": true
+    },
+    {
+      "name": "Llama",
+      "required": true
+    },
+    {
+      "name": "REST APIs",
+      "required": true
+    },
+    {
+      "name": "FastAPI",
+      "required": true
+    },
+    {
+      "name": "Flask",
+      "required": true
+    },
+    {
+      "name": "Prompt Engineering",
+      "required": true
+    },
+    {
+      "name": "Embeddings",
+      "required": true
+    },
+    {
+      "name": "Semantic Search",
+      "required": true
+    },
+    {
+      "name": "Mistral",
+      "required": true
+    },
+    {
+      "name": "Pinecone",
+      "required": true
+    },
+    {
+      "name": "ChromaDB",
+      "required": true
+    },
+    {
+      "name": "Weaviate",
+      "required": true
+    },
+    {
+      "name": "FAISS",
+      "required": true
+    },
+    {
+      "name": "Azure AI Search",
+      "required": true
+    },
+    {
+      "name": "Function Calling",
+      "required": true
+    },
+    {
+      "name": "Tool Integration",
+      "required": true
+    },
+    {
+      "name": "PostgreSQL",
+      "required": true
+    },
+    {
+      "name": "MongoDB",
+      "required": true
+    },
+    {
+      "name": "SQL Server",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Bengaluru",
+    "country": "India",
+    "mode": "onsite"
+  },
+  "salary_mentioned": false
+}

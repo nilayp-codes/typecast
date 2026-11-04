@@ -1,0 +1,82 @@
+{
+  "title": "AI Engineer",
+  "company": "TrnDigital",
+  "seniority": "mid",
+  "min_years_experience": 3,
+  "skills": [
+    {
+      "name": "Python",
+      "required": true
+    },
+    {
+      "name": "LangChain",
+      "required": true
+    },
+    {
+      "name": "LangGraph",
+      "required": true
+    },
+    {
+      "name": "Hugging Face Transformers",
+      "required": true
+    },
+    {
+      "name": "LangSmith",
+      "required": true
+    },
+    {
+      "name": "LlamaIndex",
+      "required": true
+    },
+    {
+      "name": "OpenAI SDK",
+      "required": true
+    },
+    {
+      "name": "Retrieval-Augmented Generation",
+      "required": true
+    },
+    {
+      "name": "Fine-tuning techniques",
+      "required": true
+    },
+    {
+      "name": "LoRA",
+      "required": true
+    },
+    {
+      "name": "Pinecone",
+      "required": false
+    },
+    {
+      "name": "Weaviate",
+      "required": false
+    },
+    {
+      "name": "ChromaDB",
+      "required": false
+    },
+    {
+      "name": "FAISS",
+      "required": false
+    },
+    {
+      "name": "MLOps",
+      "required": false
+    },
+    {
+      "name": "LLMOps",
+      "required": false
+    },
+    {
+      "name": "Multimodal AI",
+      "required": false
+    }
+  ],
+  "location": {
+    "city": null,
+    "country": "India",
+    "mode": "remote"
+  },
+  "salary_mentioned": false
+}

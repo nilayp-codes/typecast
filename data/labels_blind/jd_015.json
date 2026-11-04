@@ -1,0 +1,38 @@
+{
+  "title": "Sr Machine Learning Engineer",
+  "company": "Finku",
+  "seniority": "mid",
+  "min_years_experience": 3,
+  "skills": [
+    {
+      "name": "MySQL",
+      "required": true
+    },
+    {
+      "name": "Data Analytics",
+      "required": true
+    },
+    {
+      "name": "Machine Learning Engineering",
+      "required": true
+    },
+    {
+      "name": "Data Science",
+      "required": true
+    },
+    {
+      "name": "Finance",
+      "required": true
+    },
+    {
+      "name": "Generative AI",
+      "required": true
+    }
+  ],
+  "location": {
+    "city": "Jakarta",
+    "country": "Indonesia",
+    "mode": "remote"
+  },
+  "salary_mentioned": false
+}

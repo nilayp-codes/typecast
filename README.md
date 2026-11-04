@@ -17,7 +17,7 @@ LLM agent that turns messy job descriptions into schema-validated, typed JSON â€
 
 CLI and package name: `soa`
 
-<!-- CI badge: add after .github/workflows/ci.yml exists -->
+[![CI](https://github.com/nilayp-codes/typecast/actions/workflows/ci.yml/badge.svg)](https://github.com/nilayp-codes/typecast/actions/workflows/ci.yml)
 
 ## Results
 

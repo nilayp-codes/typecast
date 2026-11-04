@@ -10,3 +10,10 @@ logs/*
 __pycache__/
 .mypy_cache/
 .pytest_cache/
+
+# Private planning docs (local only)
+docs/PRD.md
+docs/PROMPTS.md
+docs/MEMORY.md
+docs/RULES.md
+docs/TASKS.md

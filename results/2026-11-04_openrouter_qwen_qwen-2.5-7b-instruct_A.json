@@ -1,0 +1,2931 @@
+{
+  "model": "openrouter/qwen/qwen-2.5-7b-instruct",
+  "setup": "A",
+  "json_mode": false,
+  "max_attempts": 1,
+  "run_date": "2026-11-04",
+  "eval_id": "32f272",
+  "n": 30,
+  "n_scored": 30,
+  "n_api_failed": 0,
+  "n_unsupported": 0,
+  "not_supported": false,
+  "first_try_valid_pct": 83.33333333333333,
+  "final_valid_pct": 83.33333333333333,
+  "avg_calls": 1.0,
+  "total_cost_usd": 0.0081106,
+  "cost_source": "provider",
+  "avg_latency_ms": 2686.0,
+  "api_error_count": 0,
+  "disagreement_count": 1,
+  "n_labelled": 20,
+  "n_labelled_with_output": 16,
+  "coverage_pct": 80.0,
+  "labels_skipped": [],
+  "accuracy_raw": {
+    "n": 16,
+    "title": 68.75,
+    "company": 100.0,
+    "seniority": 56.25,
+    "mode": 62.5,
+    "salary_mentioned": 75.0,
+    "min_years_experience": 50.0,
+    "city": 56.25,
+    "country": 43.75,
+    "skills_precision": 65.27777777777777,
+    "skills_recall": 41.964285714285715,
+    "skills_f1": 51.08695652173913,
+    "overall": 62.6207729468599
+  },
+  "accuracy_normalized": {
+    "n": 16,
+    "title": 68.75,
+    "company": 100.0,
+    "seniority": 56.25,
+    "mode": 62.5,
+    "salary_mentioned": 75.0,
+    "min_years_experience": 50.0,
+    "city": 56.25,
+    "country": 43.75,
+    "skills_precision": 68.75,
+    "skills_recall": 44.19642857142857,
+    "skills_f1": 53.80434782608695,
+    "overall": 62.92270531400967
+  },
+  "end_to_end_raw": {
+    "n": 20,
+    "title": 55.0,
+    "company": 80.0,
+    "seniority": 45.0,
+    "mode": 50.0,
+    "salary_mentioned": 60.0,
+    "min_years_experience": 40.0,
+    "city": 45.0,
+    "country": 35.0,
+    "skills_precision": 65.27777777777777,
+    "skills_recall": 30.225080385852092,
+    "skills_f1": 41.31868131868132,
+    "overall": 50.146520146520146
+  },
+  "end_to_end_normalized": {
+    "n": 20,
+    "title": 55.0,
+    "company": 80.0,
+    "seniority": 45.0,
+    "mode": 50.0,
+    "salary_mentioned": 60.0,
+    "min_years_experience": 40.0,
+    "city": 45.0,
+    "country": 35.0,
+    "skills_precision": 68.75,
+    "skills_recall": 31.832797427652732,
+    "skills_f1": 43.51648351648352,
+    "overall": 50.39072039072039
+  },
+  "failures": {
+    "by_error_type": {
+      "ValidationError": 5
+    },
+    "by_first_loc": {
+      "skills": 3,
+      "skills.*.name": 2
+    }
+  },
+  "constraint_violations": null,
+  "docs": [
+    {
+      "doc_id": "jd_001",
+      "run_id": "eval-A-32f272-jd_001",
+      "status": "valid",
+      "raw_posting": {
+        "title": "GCP GENAI Engineer",
+        "company": "Impetus",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Vertex AI",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Google Cloud Platform (GCP)",
+            "required": true
+          },
+          {
+            "name": "BigQuery",
+            "required": false
+          },
+          {
+            "name": "Cloud Functions",
+            "required": false
+          },
+          {
+            "name": "Kubernetes",
+            "required": false
+          },
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "Large Language Models (LLMs)",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "hybrid"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "GCP GENAI Engineer",
+        "company": "Impetus",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Vertex AI",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Google Cloud Platform (GCP)",
+            "required": true
+          },
+          {
+            "name": "BigQuery",
+            "required": false
+          },
+          {
+            "name": "Cloud Functions",
+            "required": false
+          },
+          {
+            "name": "Kubernetes",
+            "required": false
+          },
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "Large Language Models (LLMs)",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "hybrid"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_002",
+      "run_id": "eval-A-32f272-jd_002",
+      "status": "invalid",
+      "raw_posting": null,
+      "posting": null,
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_003",
+      "run_id": "eval-A-32f272-jd_003",
+      "status": "invalid",
+      "raw_posting": null,
+      "posting": null,
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_004",
+      "run_id": "eval-A-32f272-jd_004",
+      "status": "valid",
+      "raw_posting": {
+        "title": "AI Engineer – Generative AI",
+        "company": "TrnDigital",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "Large Language Models",
+            "required": true
+          },
+          {
+            "name": "Transformer Architectures",
+            "required": true
+          },
+          {
+            "name": "Prompt Engineering",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "LangChain",
+            "required": true
+          },
+          {
+            "name": "LangSmith",
+            "required": true
+          },
+          {
+            "name": "LangGraph",
+            "required": true
+          },
+          {
+            "name": "Hugging Face Transformers",
+            "required": true
+          },
+          {
+            "name": "OpenAI SDK",
+            "required": true
+          },
+          {
+            "name": "RAG (Retrieval-Augmented Generation)",
+            "required": true
+          },
+          {
+            "name": "Vector Databases",
+            "required": true
+          },
+          {
+            "name": "Semantic Search",
+            "required": true
+          },
+          {
+            "name": "Fine-Tuning Techniques",
+            "required": true
+          },
+          {
+            "name": "LoRA",
+            "required": true
+          },
+          {
+            "name": "MLOps/LLMOps",
+            "required": false
+          },
+          {
+            "name": "Azure OpenAI Service",
+            "required": false
+          },
+          {
+            "name": "Azure AI Services",
+            "required": false
+          },
+          {
+            "name": "Multimodal AI",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "India",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "AI Engineer – Generative AI",
+        "company": "TrnDigital",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "Large Language Models",
+            "required": true
+          },
+          {
+            "name": "Transformer Architectures",
+            "required": true
+          },
+          {
+            "name": "Prompt Engineering",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "LangChain",
+            "required": true
+          },
+          {
+            "name": "LangSmith",
+            "required": true
+          },
+          {
+            "name": "LangGraph",
+            "required": true
+          },
+          {
+            "name": "Hugging Face Transformers",
+            "required": true
+          },
+          {
+            "name": "OpenAI SDK",
+            "required": true
+          },
+          {
+            "name": "RAG (Retrieval-Augmented Generation)",
+            "required": true
+          },
+          {
+            "name": "Vector Databases",
+            "required": true
+          },
+          {
+            "name": "Semantic Search",
+            "required": true
+          },
+          {
+            "name": "Fine-Tuning Techniques",
+            "required": true
+          },
+          {
+            "name": "LoRA",
+            "required": true
+          },
+          {
+            "name": "MLOps/LLMOps",
+            "required": false
+          },
+          {
+            "name": "Azure OpenAI Service",
+            "required": false
+          },
+          {
+            "name": "Azure AI Services",
+            "required": false
+          },
+          {
+            "name": "Multimodal AI",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "India",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_005",
+      "run_id": "eval-A-32f272-jd_005",
+      "status": "valid",
+      "raw_posting": {
+        "title": "AI Engineering Specialist",
+        "company": "Happiest Minds Technologies",
+        "seniority": "senior",
+        "min_years_experience": null,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "LangChain",
+            "required": true
+          },
+          {
+            "name": "LangGraph",
+            "required": true
+          },
+          {
+            "name": "CrewAI",
+            "required": true
+          },
+          {
+            "name": "AutoGen",
+            "required": true
+          },
+          {
+            "name": "OpenAI GPT",
+            "required": true
+          },
+          {
+            "name": "Azure OpenAI",
+            "required": true
+          },
+          {
+            "name": "Claude",
+            "required": true
+          },
+          {
+            "name": "Gemini",
+            "required": true
+          },
+          {
+            "name": "Llama",
+            "required": true
+          },
+          {
+            "name": "Pinecone",
+            "required": true
+          },
+          {
+            "name": "ChromaDB",
+            "required": true
+          },
+          {
+            "name": "Weaviate",
+            "required": true
+          },
+          {
+            "name": "FAISS",
+            "required": true
+          },
+          {
+            "name": "Azure AI Search",
+            "required": true
+          },
+          {
+            "name": "FastAPI",
+            "required": true
+          },
+          {
+            "name": "Flask",
+            "required": true
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "MongoDB",
+            "required": true
+          },
+          {
+            "name": "SQL Server",
+            "required": true
+          },
+          {
+            "name": "Cosmos DB",
+            "required": true
+          },
+          {
+            "name": "Docker",
+            "required": true
+          },
+          {
+            "name": "Kubernetes",
+            "required": true
+          },
+          {
+            "name": "CI/CD pipelines",
+            "required": true
+          },
+          {
+            "name": "Git",
+            "required": true
+          },
+          {
+            "name": "Azure",
+            "required": false
+          },
+          {
+            "name": "AWS",
+            "required": false
+          },
+          {
+            "name": "GCP",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "AI Engineering Specialist",
+        "company": "Happiest Minds Technologies",
+        "seniority": "senior",
+        "min_years_experience": null,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "LangChain",
+            "required": true
+          },
+          {
+            "name": "LangGraph",
+            "required": true
+          },
+          {
+            "name": "CrewAI",
+            "required": true
+          },
+          {
+            "name": "AutoGen",
+            "required": true
+          },
+          {
+            "name": "OpenAI GPT",
+            "required": true
+          },
+          {
+            "name": "Azure OpenAI",
+            "required": true
+          },
+          {
+            "name": "Claude",
+            "required": true
+          },
+          {
+            "name": "Gemini",
+            "required": true
+          },
+          {
+            "name": "Llama",
+            "required": true
+          },
+          {
+            "name": "Pinecone",
+            "required": true
+          },
+          {
+            "name": "ChromaDB",
+            "required": true
+          },
+          {
+            "name": "Weaviate",
+            "required": true
+          },
+          {
+            "name": "FAISS",
+            "required": true
+          },
+          {
+            "name": "Azure AI Search",
+            "required": true
+          },
+          {
+            "name": "FastAPI",
+            "required": true
+          },
+          {
+            "name": "Flask",
+            "required": true
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "MongoDB",
+            "required": true
+          },
+          {
+            "name": "SQL Server",
+            "required": true
+          },
+          {
+            "name": "Cosmos DB",
+            "required": true
+          },
+          {
+            "name": "Docker",
+            "required": true
+          },
+          {
+            "name": "Kubernetes",
+            "required": true
+          },
+          {
+            "name": "CI/CD pipelines",
+            "required": true
+          },
+          {
+            "name": "Git",
+            "required": true
+          },
+          {
+            "name": "Microsoft Azure",
+            "required": false
+          },
+          {
+            "name": "AWS",
+            "required": false
+          },
+          {
+            "name": "Google Cloud Platform",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_006",
+      "run_id": "eval-A-32f272-jd_006",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Artificial Intelligence Engineer",
+        "company": "PeopleX Ventures",
+        "seniority": "mid",
+        "min_years_experience": 2,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Pandas",
+            "required": true
+          },
+          {
+            "name": "NumPy",
+            "required": true
+          },
+          {
+            "name": "scikit-learn",
+            "required": true
+          },
+          {
+            "name": "prompt engineering",
+            "required": true
+          },
+          {
+            "name": "retrieval-augmented generation (RAG)",
+            "required": true
+          },
+          {
+            "name": "agentic workflows",
+            "required": true
+          },
+          {
+            "name": "data pipelines",
+            "required": true
+          },
+          {
+            "name": "Docker",
+            "required": true
+          },
+          {
+            "name": "computer science fundamentals",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "hybrid"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Artificial Intelligence Engineer",
+        "company": "PeopleX Ventures",
+        "seniority": "mid",
+        "min_years_experience": 2,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Pandas",
+            "required": true
+          },
+          {
+            "name": "NumPy",
+            "required": true
+          },
+          {
+            "name": "scikit-learn",
+            "required": true
+          },
+          {
+            "name": "prompt engineering",
+            "required": true
+          },
+          {
+            "name": "retrieval-augmented generation (RAG)",
+            "required": true
+          },
+          {
+            "name": "agentic workflows",
+            "required": true
+          },
+          {
+            "name": "data pipelines",
+            "required": true
+          },
+          {
+            "name": "Docker",
+            "required": true
+          },
+          {
+            "name": "computer science fundamentals",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "hybrid"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_007",
+      "run_id": "eval-A-32f272-jd_007",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Artificial Intelligence Engineer",
+        "company": "SkyTrainings",
+        "seniority": "junior",
+        "min_years_experience": 0,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Machine Learning",
+            "required": true
+          },
+          {
+            "name": "NLP",
+            "required": true
+          },
+          {
+            "name": "TensorFlow",
+            "required": true
+          },
+          {
+            "name": "PyTorch",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Artificial Intelligence Engineer",
+        "company": "SkyTrainings",
+        "seniority": "junior",
+        "min_years_experience": 0,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Machine Learning",
+            "required": true
+          },
+          {
+            "name": "Natural Language Processing",
+            "required": true
+          },
+          {
+            "name": "TensorFlow",
+            "required": true
+          },
+          {
+            "name": "PyTorch",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_008",
+      "run_id": "eval-A-32f272-jd_008",
+      "status": "valid",
+      "raw_posting": {
+        "title": "GenAI Engineer",
+        "company": "Ascendion",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "Agentic AI",
+            "required": true
+          },
+          {
+            "name": "LLMs",
+            "required": true
+          },
+          {
+            "name": "Agent frameworks",
+            "required": true
+          },
+          {
+            "name": "RAG pipelines",
+            "required": true
+          },
+          {
+            "name": "Prompt engineering",
+            "required": true
+          },
+          {
+            "name": "Model fine-tuning",
+            "required": true
+          },
+          {
+            "name": "Cloud services",
+            "required": true
+          },
+          {
+            "name": "Vector databases",
+            "required": true
+          },
+          {
+            "name": "API integration",
+            "required": true
+          },
+          {
+            "name": "Data Science",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "LangChain",
+            "required": true
+          },
+          {
+            "name": "AutoGen",
+            "required": true
+          },
+          {
+            "name": "OpenAI APIs",
+            "required": true
+          },
+          {
+            "name": "AWS",
+            "required": true
+          },
+          {
+            "name": "Azure",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "GenAI Engineer",
+        "company": "Ascendion",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "Agentic AI",
+            "required": true
+          },
+          {
+            "name": "Large Language Models",
+            "required": true
+          },
+          {
+            "name": "Agent frameworks",
+            "required": true
+          },
+          {
+            "name": "RAG pipelines",
+            "required": true
+          },
+          {
+            "name": "Prompt engineering",
+            "required": true
+          },
+          {
+            "name": "Model fine-tuning",
+            "required": true
+          },
+          {
+            "name": "Cloud services",
+            "required": true
+          },
+          {
+            "name": "Vector databases",
+            "required": true
+          },
+          {
+            "name": "API integration",
+            "required": true
+          },
+          {
+            "name": "Data Science",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "LangChain",
+            "required": true
+          },
+          {
+            "name": "AutoGen",
+            "required": true
+          },
+          {
+            "name": "OpenAI APIs",
+            "required": true
+          },
+          {
+            "name": "AWS",
+            "required": true
+          },
+          {
+            "name": "Microsoft Azure",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_009",
+      "run_id": "eval-A-32f272-jd_009",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Python Developer – GenAI/NLP Integration",
+        "company": "Gramener",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "GenAI",
+            "required": true
+          },
+          {
+            "name": "NLP",
+            "required": true
+          },
+          {
+            "name": "Pandas",
+            "required": true
+          },
+          {
+            "name": "Dask",
+            "required": true
+          },
+          {
+            "name": "PySpark",
+            "required": false
+          },
+          {
+            "name": "FastAPI",
+            "required": true
+          },
+          {
+            "name": "Flask",
+            "required": false
+          },
+          {
+            "name": "Django",
+            "required": false
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "MySQL",
+            "required": true
+          },
+          {
+            "name": "MongoDB",
+            "required": false
+          },
+          {
+            "name": "Pinecone",
+            "required": false
+          },
+          {
+            "name": "Amazon Bedrock Vector Store",
+            "required": false
+          },
+          {
+            "name": "Amazon OpenSearch Serverless",
+            "required": false
+          },
+          {
+            "name": "Docker",
+            "required": true
+          },
+          {
+            "name": "AWS Lambda",
+            "required": true
+          },
+          {
+            "name": "S3",
+            "required": true
+          },
+          {
+            "name": "ECS/EKS",
+            "required": true
+          },
+          {
+            "name": "Git",
+            "required": true
+          },
+          {
+            "name": "Agentic frameworks",
+            "required": false
+          },
+          {
+            "name": "Prompt engineering",
+            "required": false
+          },
+          {
+            "name": "LLM fine-tuning",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "Python Developer – GenAI/NLP Integration",
+        "company": "Gramener",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "Natural Language Processing",
+            "required": true
+          },
+          {
+            "name": "Pandas",
+            "required": true
+          },
+          {
+            "name": "Dask",
+            "required": true
+          },
+          {
+            "name": "PySpark",
+            "required": false
+          },
+          {
+            "name": "FastAPI",
+            "required": true
+          },
+          {
+            "name": "Flask",
+            "required": false
+          },
+          {
+            "name": "Django",
+            "required": false
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "MySQL",
+            "required": true
+          },
+          {
+            "name": "MongoDB",
+            "required": false
+          },
+          {
+            "name": "Pinecone",
+            "required": false
+          },
+          {
+            "name": "Amazon Bedrock Vector Store",
+            "required": false
+          },
+          {
+            "name": "Amazon OpenSearch Serverless",
+            "required": false
+          },
+          {
+            "name": "Docker",
+            "required": true
+          },
+          {
+            "name": "AWS Lambda",
+            "required": true
+          },
+          {
+            "name": "S3",
+            "required": true
+          },
+          {
+            "name": "ECS/EKS",
+            "required": true
+          },
+          {
+            "name": "Git",
+            "required": true
+          },
+          {
+            "name": "Agentic frameworks",
+            "required": false
+          },
+          {
+            "name": "Prompt engineering",
+            "required": false
+          },
+          {
+            "name": "LLM fine-tuning",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_010",
+      "run_id": "eval-A-32f272-jd_010",
+      "status": "valid",
+      "raw_posting": {
+        "title": "AI Agent Engineer Intern",
+        "company": "Lexsi Labs",
+        "seniority": "intern",
+        "min_years_experience": 0,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "LLMs",
+            "required": true
+          },
+          {
+            "name": "AI systems",
+            "required": true
+          },
+          {
+            "name": "agents",
+            "required": true
+          },
+          {
+            "name": "evaluation",
+            "required": true
+          },
+          {
+            "name": "alignment",
+            "required": true
+          },
+          {
+            "name": "interpretability",
+            "required": true
+          },
+          {
+            "name": "enterprise AI",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Mumbai Metropolitan Region",
+          "country": "India",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "AI Agent Engineer Intern",
+        "company": "Lexsi Labs",
+        "seniority": "intern",
+        "min_years_experience": 0,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Large Language Models",
+            "required": true
+          },
+          {
+            "name": "AI systems",
+            "required": true
+          },
+          {
+            "name": "agents",
+            "required": true
+          },
+          {
+            "name": "evaluation",
+            "required": true
+          },
+          {
+            "name": "alignment",
+            "required": true
+          },
+          {
+            "name": "interpretability",
+            "required": true
+          },
+          {
+            "name": "enterprise AI",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Mumbai Metropolitan Region",
+          "country": "India",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 1
+    },
+    {
+      "doc_id": "jd_011",
+      "run_id": "eval-A-32f272-jd_011",
+      "status": "valid",
+      "raw_posting": {
+        "title": "AI Technical Architect",
+        "company": "Capgemini",
+        "seniority": "lead",
+        "min_years_experience": 12,
+        "skills": [
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "LLM platforms",
+            "required": true
+          },
+          {
+            "name": "Agentic workflows",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Hyderabad",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "AI Technical Architect",
+        "company": "Capgemini",
+        "seniority": "lead",
+        "min_years_experience": 12,
+        "skills": [
+          {
+            "name": "Generative AI",
+            "required": true
+          },
+          {
+            "name": "LLM platforms",
+            "required": true
+          },
+          {
+            "name": "Agentic workflows",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Hyderabad",
+          "country": "India",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_012",
+      "run_id": "eval-A-32f272-jd_012",
+      "status": "invalid",
+      "raw_posting": null,
+      "posting": null,
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_013",
+      "run_id": "eval-A-32f272-jd_013",
+      "status": "invalid",
+      "raw_posting": null,
+      "posting": null,
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_014",
+      "run_id": "eval-A-32f272-jd_014",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Software Engineer - AI Platform",
+        "company": "InferEdge",
+        "seniority": "senior",
+        "min_years_experience": 2,
+        "skills": [
+          {
+            "name": "Kubernetes",
+            "required": true
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "SQL",
+            "required": true
+          },
+          {
+            "name": "Airflow",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Mumbai",
+          "country": "IN",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Software Engineer - AI Platform",
+        "company": "InferEdge",
+        "seniority": "senior",
+        "min_years_experience": 2,
+        "skills": [
+          {
+            "name": "Kubernetes",
+            "required": true
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "SQL",
+            "required": true
+          },
+          {
+            "name": "Airflow",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Mumbai",
+          "country": "IN",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_015",
+      "run_id": "eval-A-32f272-jd_015",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Sr Machine Learning Engineer",
+        "company": "Finku",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "MySQL",
+            "required": false
+          },
+          {
+            "name": "Data Analytics",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Jakarta, Indonesia",
+          "country": "Indonesia",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "Sr Machine Learning Engineer",
+        "company": "Finku",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "MySQL",
+            "required": false
+          },
+          {
+            "name": "Data Analytics",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Jakarta, Indonesia",
+          "country": "Indonesia",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_016",
+      "run_id": "eval-A-32f272-jd_016",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Senior Software Engineer",
+        "company": "FleetWorks",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Python",
+            "required": false
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "San Francisco",
+          "country": "US",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Senior Software Engineer",
+        "company": "FleetWorks",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Python",
+            "required": false
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "San Francisco",
+          "country": "US",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_017",
+      "run_id": "eval-A-32f272-jd_017",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Growth & Content Marketing",
+        "company": "Finku",
+        "seniority": "mid",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Content creation",
+            "required": true
+          },
+          {
+            "name": "Content analysis",
+            "required": true
+          },
+          {
+            "name": "Social media strategy",
+            "required": true
+          },
+          {
+            "name": "Campaign management",
+            "required": true
+          },
+          {
+            "name": "Performance analysis",
+            "required": true
+          },
+          {
+            "name": "Digital marketing",
+            "required": true
+          },
+          {
+            "name": "React Native",
+            "required": false
+          },
+          {
+            "name": "NodeJS",
+            "required": false
+          },
+          {
+            "name": "AWS",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Jakarta",
+          "country": "ID",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "Growth & Content Marketing",
+        "company": "Finku",
+        "seniority": "mid",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Content creation",
+            "required": true
+          },
+          {
+            "name": "Content analysis",
+            "required": true
+          },
+          {
+            "name": "Social media strategy",
+            "required": true
+          },
+          {
+            "name": "Campaign management",
+            "required": true
+          },
+          {
+            "name": "Performance analysis",
+            "required": true
+          },
+          {
+            "name": "Digital marketing",
+            "required": true
+          },
+          {
+            "name": "React Native",
+            "required": false
+          },
+          {
+            "name": "Node.js",
+            "required": false
+          },
+          {
+            "name": "AWS",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Jakarta",
+          "country": "ID",
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_018",
+      "run_id": "eval-A-32f272-jd_018",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Business Development Associate (Renewals)",
+        "company": "Codingal",
+        "seniority": "junior",
+        "min_years_experience": 1,
+        "skills": [
+          {
+            "name": "English communication",
+            "required": true
+          },
+          {
+            "name": "Sales",
+            "required": true
+          },
+          {
+            "name": "Customer relationship management",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": false
+          },
+          {
+            "name": "Django",
+            "required": false
+          },
+          {
+            "name": "React",
+            "required": false
+          },
+          {
+            "name": "Next.js",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru, Karnataka, IN",
+          "country": "IN",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Business Development Associate (Renewals)",
+        "company": "Codingal",
+        "seniority": "junior",
+        "min_years_experience": 1,
+        "skills": [
+          {
+            "name": "English communication",
+            "required": true
+          },
+          {
+            "name": "Sales",
+            "required": true
+          },
+          {
+            "name": "Customer relationship management",
+            "required": true
+          },
+          {
+            "name": "Python",
+            "required": false
+          },
+          {
+            "name": "Django",
+            "required": false
+          },
+          {
+            "name": "React",
+            "required": false
+          },
+          {
+            "name": "Next.js",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru, Karnataka, IN",
+          "country": "IN",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_019",
+      "run_id": "eval-A-32f272-jd_019",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Performance Marketing Specialist",
+        "company": "Codingal",
+        "seniority": "mid",
+        "min_years_experience": 1,
+        "skills": [
+          {
+            "name": "Google Ads",
+            "required": true
+          },
+          {
+            "name": "Facebook Ads Manager",
+            "required": true
+          },
+          {
+            "name": "Analytics",
+            "required": true
+          },
+          {
+            "name": "Data Analysis",
+            "required": true
+          },
+          {
+            "name": "Marketing Automation",
+            "required": false
+          },
+          {
+            "name": "CRM Tools",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru, Karnataka, IN",
+          "country": "IN",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Performance Marketing Specialist",
+        "company": "Codingal",
+        "seniority": "mid",
+        "min_years_experience": 1,
+        "skills": [
+          {
+            "name": "Google Ads",
+            "required": true
+          },
+          {
+            "name": "Facebook Ads Manager",
+            "required": true
+          },
+          {
+            "name": "Analytics",
+            "required": true
+          },
+          {
+            "name": "Data Analysis",
+            "required": true
+          },
+          {
+            "name": "Marketing Automation",
+            "required": false
+          },
+          {
+            "name": "CRM Tools",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Bengaluru, Karnataka, IN",
+          "country": "IN",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_020",
+      "run_id": "eval-A-32f272-jd_020",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Front-End Software Engineer",
+        "company": "ReactWise",
+        "seniority": "mid",
+        "min_years_experience": 0,
+        "skills": [
+          {
+            "name": "React",
+            "required": true
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          },
+          {
+            "name": "HTML",
+            "required": true
+          },
+          {
+            "name": "CSS",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Cambridge",
+          "country": "GB",
+          "mode": "hybrid"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Front-End Software Engineer",
+        "company": "ReactWise",
+        "seniority": "mid",
+        "min_years_experience": 0,
+        "skills": [
+          {
+            "name": "React",
+            "required": true
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          },
+          {
+            "name": "HTML",
+            "required": true
+          },
+          {
+            "name": "CSS",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Cambridge",
+          "country": "GB",
+          "mode": "hybrid"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_021",
+      "run_id": "eval-A-32f272-jd_021",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Cybersecurity Engineer",
+        "company": "erad",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Linux",
+            "required": true
+          },
+          {
+            "name": "Information Security",
+            "required": true
+          },
+          {
+            "name": "Software Security",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "remote",
+          "mode": "remote"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Cybersecurity Engineer",
+        "company": "erad",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Linux",
+            "required": true
+          },
+          {
+            "name": "Information Security",
+            "required": true
+          },
+          {
+            "name": "Software Security",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "remote",
+          "mode": "remote"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_022",
+      "run_id": "eval-A-32f272-jd_022",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Front End JavaScript / TypeScript Engineer",
+        "company": "GoGoGrandparent",
+        "seniority": "senior",
+        "min_years_experience": 6,
+        "skills": [
+          {
+            "name": "JavaScript",
+            "required": true
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "US",
+          "mode": "remote"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Front End JavaScript / TypeScript Engineer",
+        "company": "GoGoGrandparent",
+        "seniority": "senior",
+        "min_years_experience": 6,
+        "skills": [
+          {
+            "name": "JavaScript",
+            "required": true
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "US",
+          "mode": "remote"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_023",
+      "run_id": "eval-A-32f272-jd_023",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Data Engineer",
+        "company": "Saturn",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "SQL",
+            "required": true
+          },
+          {
+            "name": "Kafka",
+            "required": true
+          },
+          {
+            "name": "Airflow",
+            "required": true
+          },
+          {
+            "name": "dbt",
+            "required": true
+          },
+          {
+            "name": "AWS data services",
+            "required": false
+          },
+          {
+            "name": "Cloud warehouse",
+            "required": true
+          },
+          {
+            "name": "Lakehouse",
+            "required": true
+          },
+          {
+            "name": "Event-driven processing",
+            "required": true
+          },
+          {
+            "name": "Batch processing",
+            "required": true
+          },
+          {
+            "name": "Data contracts",
+            "required": true
+          },
+          {
+            "name": "Schema evolution",
+            "required": true
+          },
+          {
+            "name": "Validation",
+            "required": true
+          },
+          {
+            "name": "Reconciliation",
+            "required": true
+          },
+          {
+            "name": "Quality monitoring",
+            "required": true
+          },
+          {
+            "name": "Lineage",
+            "required": true
+          },
+          {
+            "name": "Provenance",
+            "required": true
+          },
+          {
+            "name": "Auditability",
+            "required": true
+          },
+          {
+            "name": "Correctness under failure",
+            "required": true
+          },
+          {
+            "name": "Operational ownership",
+            "required": true
+          },
+          {
+            "name": "Clear communication",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "London",
+          "country": "GB",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Data Engineer",
+        "company": "Saturn",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "SQL",
+            "required": true
+          },
+          {
+            "name": "Apache Kafka",
+            "required": true
+          },
+          {
+            "name": "Airflow",
+            "required": true
+          },
+          {
+            "name": "dbt",
+            "required": true
+          },
+          {
+            "name": "AWS data services",
+            "required": false
+          },
+          {
+            "name": "Cloud warehouse",
+            "required": true
+          },
+          {
+            "name": "Lakehouse",
+            "required": true
+          },
+          {
+            "name": "Event-driven processing",
+            "required": true
+          },
+          {
+            "name": "Batch processing",
+            "required": true
+          },
+          {
+            "name": "Data contracts",
+            "required": true
+          },
+          {
+            "name": "Schema evolution",
+            "required": true
+          },
+          {
+            "name": "Validation",
+            "required": true
+          },
+          {
+            "name": "Reconciliation",
+            "required": true
+          },
+          {
+            "name": "Quality monitoring",
+            "required": true
+          },
+          {
+            "name": "Lineage",
+            "required": true
+          },
+          {
+            "name": "Provenance",
+            "required": true
+          },
+          {
+            "name": "Auditability",
+            "required": true
+          },
+          {
+            "name": "Correctness under failure",
+            "required": true
+          },
+          {
+            "name": "Operational ownership",
+            "required": true
+          },
+          {
+            "name": "Clear communication",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "London",
+          "country": "GB",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_024",
+      "run_id": "eval-A-32f272-jd_024",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Lead Product Manager",
+        "company": "Saturn",
+        "seniority": "lead",
+        "min_years_experience": 6,
+        "skills": [
+          {
+            "name": "Product Management",
+            "required": true
+          },
+          {
+            "name": "AI-native product experience",
+            "required": true
+          },
+          {
+            "name": "Technical fluency",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "London",
+          "country": "GB",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Lead Product Manager",
+        "company": "Saturn",
+        "seniority": "lead",
+        "min_years_experience": 6,
+        "skills": [
+          {
+            "name": "Product Management",
+            "required": true
+          },
+          {
+            "name": "AI-native product experience",
+            "required": true
+          },
+          {
+            "name": "Technical fluency",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "London",
+          "country": "GB",
+          "mode": "onsite"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_025",
+      "run_id": "eval-A-32f272-jd_025",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Lead Backend Engineer",
+        "company": "Aurora AI",
+        "seniority": "lead",
+        "min_years_experience": 6,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Java",
+            "required": true
+          },
+          {
+            "name": "noSQL",
+            "required": true
+          },
+          {
+            "name": "Python Flask",
+            "required": true
+          },
+          {
+            "name": "Spring Boot",
+            "required": true
+          },
+          {
+            "name": "Go",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": null,
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "Lead Backend Engineer",
+        "company": "Aurora AI",
+        "seniority": "lead",
+        "min_years_experience": 6,
+        "skills": [
+          {
+            "name": "Python",
+            "required": true
+          },
+          {
+            "name": "Java",
+            "required": true
+          },
+          {
+            "name": "NoSQL",
+            "required": true
+          },
+          {
+            "name": "Python Flask",
+            "required": true
+          },
+          {
+            "name": "Spring Boot",
+            "required": true
+          },
+          {
+            "name": "Go",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Bengaluru",
+          "country": null,
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_026",
+      "run_id": "eval-A-32f272-jd_026",
+      "status": "invalid",
+      "raw_posting": null,
+      "posting": null,
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_027",
+      "run_id": "eval-A-32f272-jd_027",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Technical Lead",
+        "company": "Navtech",
+        "seniority": "lead",
+        "min_years_experience": 10,
+        "skills": [
+          {
+            "name": "C++",
+            "required": true
+          },
+          {
+            "name": "Software Architecture",
+            "required": true
+          },
+          {
+            "name": "SQL Server",
+            "required": true
+          },
+          {
+            "name": "Leadership",
+            "required": true
+          },
+          {
+            "name": "Debugging",
+            "required": true
+          },
+          {
+            "name": "Performance Tuning",
+            "required": true
+          },
+          {
+            "name": "WinDbg",
+            "required": true
+          },
+          {
+            "name": "Microsoft Visual Studio",
+            "required": true
+          },
+          {
+            "name": "Stored procedures",
+            "required": true
+          },
+          {
+            "name": "QUERY OPTIMIZATION",
+            "required": true
+          },
+          {
+            "name": "Legacy Modernization",
+            "required": true
+          },
+          {
+            "name": "MSVC",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Hyderabad",
+          "country": "India",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "Technical Lead",
+        "company": "Navtech",
+        "seniority": "lead",
+        "min_years_experience": 10,
+        "skills": [
+          {
+            "name": "C++",
+            "required": true
+          },
+          {
+            "name": "Software Architecture",
+            "required": true
+          },
+          {
+            "name": "SQL Server",
+            "required": true
+          },
+          {
+            "name": "Leadership",
+            "required": true
+          },
+          {
+            "name": "Debugging",
+            "required": true
+          },
+          {
+            "name": "Performance Tuning",
+            "required": true
+          },
+          {
+            "name": "WinDbg",
+            "required": true
+          },
+          {
+            "name": "Microsoft Visual Studio",
+            "required": true
+          },
+          {
+            "name": "Stored procedures",
+            "required": true
+          },
+          {
+            "name": "QUERY OPTIMIZATION",
+            "required": true
+          },
+          {
+            "name": "Legacy Modernization",
+            "required": true
+          },
+          {
+            "name": "MSVC",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Hyderabad",
+          "country": "India",
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_028",
+      "run_id": "eval-A-32f272-jd_028",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Tech Lead for Web Platform",
+        "company": "Bitwarden",
+        "seniority": "lead",
+        "min_years_experience": 8,
+        "skills": [
+          {
+            "name": "nx",
+            "required": true
+          },
+          {
+            "name": "webpack",
+            "required": true
+          },
+          {
+            "name": "Vite",
+            "required": true
+          },
+          {
+            "name": "npm",
+            "required": true
+          },
+          {
+            "name": "pnpm",
+            "required": true
+          },
+          {
+            "name": "Electron",
+            "required": true
+          },
+          {
+            "name": "browser extension",
+            "required": true
+          },
+          {
+            "name": "CLI",
+            "required": true
+          },
+          {
+            "name": "AI tooling",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Delhi • Noida",
+          "country": null,
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "Tech Lead for Web Platform",
+        "company": "Bitwarden",
+        "seniority": "lead",
+        "min_years_experience": 8,
+        "skills": [
+          {
+            "name": "nx",
+            "required": true
+          },
+          {
+            "name": "webpack",
+            "required": true
+          },
+          {
+            "name": "Vite",
+            "required": true
+          },
+          {
+            "name": "npm",
+            "required": true
+          },
+          {
+            "name": "pnpm",
+            "required": true
+          },
+          {
+            "name": "Electron",
+            "required": true
+          },
+          {
+            "name": "browser extension",
+            "required": true
+          },
+          {
+            "name": "CLI",
+            "required": true
+          },
+          {
+            "name": "AI tooling",
+            "required": false
+          }
+        ],
+        "location": {
+          "city": "Delhi • Noida",
+          "country": null,
+          "mode": "onsite"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_029",
+      "run_id": "eval-A-32f272-jd_029",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Firmware Engineer (Wearables)",
+        "company": "LUNA",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Embedded Systems",
+            "required": true
+          },
+          {
+            "name": "Bluetooth",
+            "required": true
+          },
+          {
+            "name": "Firmware",
+            "required": true
+          },
+          {
+            "name": "RTOS",
+            "required": true
+          },
+          {
+            "name": "Embedded Firmware Development",
+            "required": true
+          },
+          {
+            "name": "Bluetooth Low Energy",
+            "required": true
+          },
+          {
+            "name": "Wearable Technology",
+            "required": true
+          },
+          {
+            "name": "C programming",
+            "required": true
+          },
+          {
+            "name": "FreeRTOS",
+            "required": true
+          },
+          {
+            "name": "ARM Cortex-M",
+            "required": true
+          },
+          {
+            "name": "BLE",
+            "required": true
+          },
+          {
+            "name": "UART",
+            "required": true
+          },
+          {
+            "name": "SPI",
+            "required": true
+          },
+          {
+            "name": "I2C",
+            "required": true
+          },
+          {
+            "name": "GPIO",
+            "required": true
+          },
+          {
+            "name": "PWM",
+            "required": true
+          },
+          {
+            "name": "ADC",
+            "required": true
+          },
+          {
+            "name": "PPG",
+            "required": true
+          },
+          {
+            "name": "IMU",
+            "required": true
+          },
+          {
+            "name": "ECG",
+            "required": true
+          },
+          {
+            "name": "Git",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Delhi • Gurgaon • Noida • Gurugram",
+          "country": null,
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "posting": {
+        "title": "Firmware Engineer (Wearables)",
+        "company": "LUNA",
+        "seniority": "senior",
+        "min_years_experience": 4,
+        "skills": [
+          {
+            "name": "Embedded Systems",
+            "required": true
+          },
+          {
+            "name": "Bluetooth",
+            "required": true
+          },
+          {
+            "name": "Firmware",
+            "required": true
+          },
+          {
+            "name": "RTOS",
+            "required": true
+          },
+          {
+            "name": "Embedded Firmware Development",
+            "required": true
+          },
+          {
+            "name": "Bluetooth Low Energy",
+            "required": true
+          },
+          {
+            "name": "Wearable Technology",
+            "required": true
+          },
+          {
+            "name": "C programming",
+            "required": true
+          },
+          {
+            "name": "FreeRTOS",
+            "required": true
+          },
+          {
+            "name": "ARM Cortex-M",
+            "required": true
+          },
+          {
+            "name": "BLE",
+            "required": true
+          },
+          {
+            "name": "UART",
+            "required": true
+          },
+          {
+            "name": "SPI",
+            "required": true
+          },
+          {
+            "name": "I2C",
+            "required": true
+          },
+          {
+            "name": "GPIO",
+            "required": true
+          },
+          {
+            "name": "PWM",
+            "required": true
+          },
+          {
+            "name": "ADC",
+            "required": true
+          },
+          {
+            "name": "PPG",
+            "required": true
+          },
+          {
+            "name": "IMU",
+            "required": true
+          },
+          {
+            "name": "ECG",
+            "required": true
+          },
+          {
+            "name": "Git",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": "Delhi • Gurgaon • Noida • Gurugram",
+          "country": null,
+          "mode": "remote"
+        },
+        "salary_mentioned": false
+      },
+      "disagreements": 0
+    },
+    {
+      "doc_id": "jd_030",
+      "run_id": "eval-A-32f272-jd_030",
+      "status": "valid",
+      "raw_posting": {
+        "title": "Senior Full-Stack Engineer, Server-Side Tracking (Founding Engineer)",
+        "company": "Scoreify",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Node.js",
+            "required": true
+          },
+          {
+            "name": "Facebook API",
+            "required": true
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "Data Privacy",
+            "required": true
+          },
+          {
+            "name": "REST",
+            "required": true
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          },
+          {
+            "name": "Webhooks",
+            "required": true
+          },
+          {
+            "name": "Next.Js",
+            "required": true
+          },
+          {
+            "name": "Supabase",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "Remote",
+          "mode": "remote"
+        },
+        "salary_mentioned": true
+      },
+      "posting": {
+        "title": "Senior Full-Stack Engineer, Server-Side Tracking (Founding Engineer)",
+        "company": "Scoreify",
+        "seniority": "senior",
+        "min_years_experience": 3,
+        "skills": [
+          {
+            "name": "Node.js",
+            "required": true
+          },
+          {
+            "name": "Facebook API",
+            "required": true
+          },
+          {
+            "name": "PostgreSQL",
+            "required": true
+          },
+          {
+            "name": "Data Privacy",
+            "required": true
+          },
+          {
+            "name": "REST APIs",
+            "required": true
+          },
+          {
+            "name": "TypeScript",
+            "required": true
+          },
+          {
+            "name": "Webhooks",
+            "required": true
+          },
+          {
+            "name": "Next.Js",
+            "required": true
+          },
+          {
+            "name": "Supabase",
+            "required": true
+          }
+        ],
+        "location": {
+          "city": null,
+          "country": "Remote",
+          "mode": "remote"
+        },
+        "salary_mentioned": true
+      },
+      "disagreements": 0
+    }
+  ]
+}

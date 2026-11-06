@@ -34,8 +34,8 @@ jobs:
       - name: Install Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Install dependencies (lockfile must be up to date)
-        run: uv sync --locked
+      - name: Install dependencies and extras (lockfile must be up to date)
+        run: uv sync --locked --all-extras
 
       - name: Tests (no network, no API key)
         run: uv run pytest

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "LLM agent that turns messy job descriptions into schema-validated, typed JSON — and measures how often that fails."
 readme = "README.md"
 authors = [
-    { name = "Nilay Pandey", email = "nilaykishore3@gmail.com" }
+    { name = "Nilay Pandey", email = "268824746+nilayp-codes@users.noreply.github.com" }
 ]
 requires-python = ">=3.11"
 dependencies = [

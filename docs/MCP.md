@@ -279,4 +279,4 @@ until the server exists.
 ## 9. Open questions
 
 None. The decisions above are settled and the build-time checks are recorded under "Verified during the build" in
-section 6. The README does not link to this document yet; the link is added when the server ships.
+section 6. The README links to this document from its MCP section.

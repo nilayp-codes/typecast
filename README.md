@@ -300,11 +300,57 @@ uv run pytest
 uv run mypy --strict src/
 ```
 
+## Use it from an AI agent (MCP server)
+
+`soa-mcp` is a small [MCP](https://modelcontextprotocol.io) server that checks a job-posting JSON against the
+`JobPosting` schema and returns one-line errors an agent can act on. It has no LLM, needs no API key and makes no
+network calls.
+
+Two tools:
+
+- `get_job_posting_schema`: the JSON Schema of a job posting. It does not carry every rule (duplicate skill names and
+  the intern/experience rule are only checked by the validator).
+- `validate_job_posting`: takes one argument, `posting`, the whole job-posting JSON as ONE string. Returns `valid`, a
+  list of error lines (`field: problem (got: value)`), and the parsed posting when valid.
+
+Install: `uv sync --extra mcp`
+
+**Claude Code.** The repo ships a `.mcp.json`. Open the folder in Claude Code, approve `soa-validator` when asked,
+and check it with `/mcp`.
+
+**Other clients (Claude Desktop, Cursor).** Add a server with this config, with the path to your clone:
+
+```json
+{
+  "mcpServers": {
+    "soa-validator": {
+      "command": "uv",
+      "args": ["--directory", "<path to repo>", "run", "--extra", "mcp", "soa-mcp"]
+    }
+  }
+}
+```
+
+On Windows, if the client cannot find `uv`, put the full path to `uv.exe` in `command`.
+
+**A real example.** Qwen3-235B's reply on jd_002 had 70 skills. An agent checked it with `validate_job_posting` and got
+one line back:
+
+```
+skills: has 70 items, maximum is 30 - remove 40, starting with required=false ones
+```
+
+The agent fixed the posting in one round. This was one run with Claude Sonnet 5.5, not a benchmark.
+
+**What it does not check:** whether the values are correct. A posting can be valid and still have the wrong seniority
+or the wrong skills; see [Why not just use native structured outputs?](#why-not-just-use-native-structured-outputs).
+
+Details, limits and design decisions: [docs/MCP.md](docs/MCP.md).
+
 ## What I'd do next
 
-1. **A validator-only MCP server**: expose the schema and the validator so any MCP client can check a JSON object
-   and get the one-line-per-error feedback back. It needs no LLM and no API key, so it is the smallest useful piece.
-2. **Publish the package on PyPI** (the CLI is already `soa`), after that.
+1. ~~A validator-only MCP server~~: done, see [Use it from an AI agent](#use-it-from-an-ai-agent-mcp-server).
+2. **Publish the package on PyPI** (the CLI is already `soa`).
 3. Fix the remaining failure the data points at: the model that cannot make the last cut on jd_002, for example by
    telling it which items to drop. Re-measure with temperature fixed and the provider pinned, so repeats differ less.
 4. A second labeler for the gold set, a bigger document set, and repeats of setup D, so the field-accuracy

@@ -15,6 +15,13 @@ LLM agent that turns messy job descriptions into schema-validated, typed JSON â€
   vary.** The same setup moved by about 8 points end to end between runs,
   so a gap between two single runs is not conclusive.
 
+**60-second walkthrough:**
+
+
+
+https://github.com/user-attachments/assets/c4a2572c-88a2-49a3-8e20-176010877154
+
+
 CLI and package name: `soa`
 
 [![CI](https://github.com/nilayp-codes/typecast/actions/workflows/ci.yml/badge.svg)](https://github.com/nilayp-codes/typecast/actions/workflows/ci.yml)

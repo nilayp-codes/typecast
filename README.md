@@ -316,7 +316,8 @@ Two tools:
 Install: `uv sync --extra mcp`
 
 **Claude Code.** The repo ships a `.mcp.json`. Open the folder in Claude Code, approve `soa-validator` when asked,
-and check it with `/mcp`.
+and check it with `/mcp`. Approving runs `uv run` in this folder, which installs the locked dependencies and starts the
+server. Only approve it in a clone you trust.
 
 **Other clients (Claude Desktop, Cursor).** Add a server with this config, with the path to your clone:
 

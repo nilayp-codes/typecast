@@ -22,6 +22,8 @@ SCHEMA_DESCRIPTION = (
     "intern/experience rule are checked only by validate_job_posting."
 )
 VALIDATE_DESCRIPTION = (
+    'Pass the ENTIRE job posting as ONE argument, `posting`: a JSON string, e.g. {"posting": "{\\"title\\": '
+    '\\"...\\", ...}"}. Do not pass fields as separate arguments. '
     "Validate a job-posting JSON text against the JobPosting schema. Returns valid, a list of error lines "
     "('field: problem (got: value)'), and the parsed posting when valid. Fix every line and call again: the "
     "duplicate-skills and intern/experience rules are reported only once every field is valid, so a fix can "

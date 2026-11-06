@@ -32,7 +32,14 @@ from soa.tools import Disagreement, ToolResponseError
 EXIT_FAILED = 1
 EXIT_BAD_INPUT = 2
 
-app = typer.Typer(add_completion=False, no_args_is_help=True, help="Structured Output Agent.")
+# Tracebacks must never print local variables (litellm frames hold `api_key`). Typer's default is already False;
+# it is set explicitly so a changed default cannot leak a key.
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Structured Output Agent.",
+    pretty_exceptions_show_locals=False,
+)
 
 
 @app.callback()

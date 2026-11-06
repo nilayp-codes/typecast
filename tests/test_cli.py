@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -235,6 +236,30 @@ def test_non_retryable_api_error_exits_2_and_never_prints_the_key(
     assert result.exit_code == 2
     assert "supersecretvalue" not in result.output and "supersecretvalue" not in result.stderr
     assert "API error from m" in result.stderr and "***" in result.stderr
+
+
+def test_unexpected_exception_traceback_hides_locals(
+    monkeypatch: pytest.MonkeyPatch, jd_file: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    key = "sk-or-v1-TEST-NOT-A-REAL-KEY"
+
+    def boom(*args: object, **kwargs: object) -> None:
+        # Built at run time: a traceback also prints source lines, so a literal here would match even without locals.
+        api_key = "sk-or-v1-" + "TEST-NOT-" + "A-REAL-KEY"  # noqa: F841 (a local the traceback would show)
+        raise RuntimeError("unexpected")
+
+    monkeypatch.setattr(cli, "extract", boom)
+    result = runner.invoke(app, ["extract", str(jd_file), "--model", "m"])
+    assert isinstance(result.exception, RuntimeError)
+    assert key not in result.output
+    # CliRunner never renders the traceback. A real run does: the app re-raises and typer's sys.excepthook prints it.
+    monkeypatch.setattr(sys, "excepthook", sys.excepthook)  # app() installs typer's hook; undo that after the test
+    with pytest.raises(RuntimeError) as raised:
+        app(["extract", str(jd_file), "--model", "m"])
+    sys.excepthook(RuntimeError, raised.value, raised.value.__traceback__)
+    captured = capsys.readouterr()
+    assert "RuntimeError" in captured.err  # the traceback was printed...
+    assert key not in captured.out + captured.err  # ...without the locals
 
 
 def test_no_model_configured_exits_2(monkeypatch: pytest.MonkeyPatch, jd_file: Path) -> None:

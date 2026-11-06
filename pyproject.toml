@@ -17,6 +17,7 @@ dependencies = [
 
 [project.scripts]
 soa = "soa.cli:app"
+soa-mcp = "soa.mcp_server:main"
 
 [project.optional-dependencies]
 mcp = [

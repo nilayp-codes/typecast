@@ -1,6 +1,7 @@
 # MCP server (v2): spec addendum
 
-**Status: draft spec, nothing is built yet.** Written 2026-11-06. This document describes a small, validator-only
+**Status: implemented** in `src/soa/mcp_tools.py` and `src/soa/mcp_server.py`; install with the `soa[mcp]` extra.
+Written 2026-11-06. This document describes a small, validator-only
 [Model Context Protocol](https://modelcontextprotocol.io) server for the `soa` package. It is an addendum to the
 architecture in [ARCHITECTURE.md](ARCHITECTURE.md) and the schema rules in [DESIGN.md](DESIGN.md).
 
@@ -78,7 +79,8 @@ If dict support is added later, the dict must be re-serialised with `json.dumps`
 
 **Failure is a result, not an exception.** Invalid input, oversize input and unparseable text all return
 `valid=false` with an explanatory `errors` line. The tool does not raise for bad data. (An argument of the wrong type
-altogether, such as a number, is rejected by the SDK before the function runs; see section 6.)
+altogether, such as a number or an object, is rejected by the SDK before the function runs and comes back as a tool
+error in the SDK's own wording; see "Verified during the build" in section 6.)
 
 #### Decision: raw validation only, no post-processing
 
@@ -195,20 +197,32 @@ No test uses the network, an API key or a real LLM, and CI stays key-free.
 2. **In-memory client and server** (`tests/test_mcp_server.py`, starts with `pytest.importorskip("mcp")`):
    `async with Client(server) as c:` then `await c.call_tool("validate_job_posting", {...})`. Checks that `tools/list`
    shows exactly the two tools, that the structured content of a valid and an invalid call matches `ValidationResult`,
-   and what a wrong-typed argument (a number instead of a string) returns. Uses the project's existing `anyio` pytest
-   plugin (`@pytest.mark.anyio`, backend `asyncio`).
+   and what a wrong-typed argument returns (see "Verified during the build" below). Uses the project's existing `anyio`
+   pytest plugin (`@pytest.mark.anyio`, backend `asyncio`).
 3. **stdout cleanliness**, two checks:
-   - Start `python -m soa.mcp_server` as a subprocess, send `initialize` and `tools/list` as newline-delimited JSON-RPC
-     messages, and assert that **every** line on stdout parses as JSON with `"jsonrpc"`.
+   - Start `python -m soa.mcp_server` as a subprocess, send `initialize`, `tools/list` and a `tools/call` as
+     newline-delimited JSON-RPC messages, and assert that **every** line on stdout parses as JSON with `"jsonrpc"` and
+     that exactly the three replies arrived.
    - Import `soa.mcp_server` in a subprocess and assert stdout is empty and `litellm` is not in `sys.modules`.
 
-### Not yet verified (settle in the first build task)
+### Verified during the build (mcp 2.3.0)
 
-- What the client receives when an argument has the wrong type. The SDK documentation says such arguments are rejected
-  "before your function ever runs" but not how the rejection is reported; the in-memory test pins it down.
-- The SDK documentation does not describe a maximum request size, so the 20,000-character guard is ours alone.
-- The exact stdio run call. The migration guide says `run()` takes the transport and that `transport="stdio"` has no
-  extra keywords; the call is confirmed when the first server file is written.
+- **A wrong-typed argument is a tool error, not a result.** `validate_job_posting` called with `{"posting": 123}`,
+  `{"posting": null}`, `{"posting": {"title": "x"}}` (a parsed object) or `{}` is rejected by the SDK before the function
+  runs. The client gets `is_error=true`, no structured content, and one text block starting
+  `Error executing tool validate_job_posting: 1 validation error for validate_job_postingArguments`, followed by
+  pydantic's own multi-line message (`posting` / `Input should be a valid string [type=string_type, ...]`, or
+  `Field required [type=missing, ...]`, plus a docs URL). It is **not** in the one-line `loc: msg (got: ...)` format,
+  because it comes from the SDK's argument model, not from `soa`. The tool's input schema (`posting`: string, required)
+  tells a client what to send. Only text that is not valid JSON, or not a valid posting, gets the one-line feedback.
+  A parsed object is therefore refused, as decided in 2.2.
+- **Run call:** `MCPServer.run("stdio")`; `stdio` is also the default transport.
+- **Request size:** the SDK documents no maximum request size, so the 20,000-character guard is ours alone.
+- **stdin must stay open until the replies have been read.** A client that closes stdin right after writing its last
+  request makes the server shut down with that reply still in flight (seen: replies 1 and 2 arrived, 3 did not). Real
+  clients keep the pipe open, but a script that pipes a file into `soa-mcp` must wait for its replies first.
+- **The SDK logs to stderr, not stdout.** A rejected call logs an INFO line (`Tool 'validate_job_posting' rejected
+  arguments`) with the SDK's own handler; `main()` additionally points `logging` at stderr.
 
 ## 7. Manual check
 
@@ -264,6 +278,5 @@ until the server exists.
 
 ## 9. Open questions
 
-None. The decisions above are settled. What remains unknown are build-time checks, listed under "Not yet verified" in
-section 6 and the dependency resolution check in section 4. The README does not link to this document yet; the link is
-added when the server ships.
+None. The decisions above are settled and the build-time checks are recorded under "Verified during the build" in
+section 6. The README does not link to this document yet; the link is added when the server ships.

@@ -15,7 +15,7 @@ import argparse
 from pathlib import Path
 
 from soa.eval import FIELD_MATCHERS, FieldAccuracy, Labels, load_labels, score_fields
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 
 GOLD_DIR = Path("data/labels")
 BLIND_DIR = Path("data/labels_blind")

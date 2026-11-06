@@ -1,0 +1,56 @@
+name: Publish typecast-mcp
+
+# Tag `typecast-mcp-v<version>` -> PyPI. Run by hand (Actions tab) -> TestPyPI.
+# Both use PyPI trusted publishing (OIDC): no API token is stored in the repo. See docs/RELEASING.md.
+
+on:
+  push:
+    tags: ["typecast-mcp-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'push' && 'pypi' || 'testpypi' }}
+    permissions:
+      contents: read
+      id-token: write # trusted publishing
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Tests and type check first
+        run: |
+          uv sync --locked --all-extras
+          uv run pytest
+          uv run mypy --strict src/ packages/typecast-mcp/src/
+
+      - name: Tag, package and server.json versions agree
+        if: github.event_name == 'push'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          pkg=$(uv version --package typecast-mcp --short)
+          srv=$(python3 -c "import json; d=json.load(open('server.json')); print(d['version'], d['packages'][0]['version'])")
+          echo "tag=$TAG package=$pkg server.json=$srv"
+          test "$TAG" = "typecast-mcp-v$pkg"
+          test "$srv" = "$pkg $pkg"
+
+      - name: Build
+        run: uv build --package typecast-mcp --out-dir dist
+
+      - name: Publish to TestPyPI
+        if: github.event_name == 'workflow_dispatch'
+        run: uv publish --trusted-publishing always --publish-url https://test.pypi.org/legacy/ dist/*
+
+      - name: Publish to PyPI
+        if: github.event_name == 'push'
+        run: uv publish --trusted-publishing always dist/*

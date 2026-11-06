@@ -12,8 +12,8 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from soa.errors import format_validation_errors
-from soa.schemas import JobPosting, Location, Skill, StrictModel, WorkMode
+from typecast_mcp.errors import format_validation_errors
+from typecast_mcp.schemas import JobPosting, Location, Skill, StrictModel, WorkMode
 
 logger = logging.getLogger(__name__)
 

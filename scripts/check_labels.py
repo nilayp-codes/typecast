@@ -14,8 +14,8 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from soa.errors import format_validation_errors
-from soa.schemas import JobPosting
+from typecast_mcp.errors import format_validation_errors
+from typecast_mcp.schemas import JobPosting
 
 LABELS_DIR = Path("data/labels")
 TODO = "TODO"

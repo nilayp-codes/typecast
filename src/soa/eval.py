@@ -22,7 +22,7 @@ from soa.agent import DEFAULT_MAX_ATTEMPTS, ExtractionFailed, extract
 from soa.errors import redact_keys
 from soa.llm import LLMAPIError
 from soa.logger import API_ERROR_TYPE, AttemptLog, Setup, default_log_path, read_log
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 from soa.stats import bootstrap_interval, wilson_interval
 from soa.tools import postprocess
 

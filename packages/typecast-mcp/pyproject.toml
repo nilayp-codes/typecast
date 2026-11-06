@@ -1,0 +1,41 @@
+[project]
+name = "typecast-mcp"
+version = "0.1.0"
+description = "Validator-only MCP server: checks job-posting JSON against a strict schema and returns fixable error lines."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Nilay Pandey", email = "268824746+nilayp-codes@users.noreply.github.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2.3,<3",
+    "pydantic>=2.13.5",
+]
+keywords = ["mcp", "model-context-protocol", "pydantic", "json-schema", "validation", "llm", "structured-output"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/nilayp-codes/typecast"
+Source = "https://github.com/nilayp-codes/typecast"
+Documentation = "https://github.com/nilayp-codes/typecast/blob/main/docs/MCP.md"
+Issues = "https://github.com/nilayp-codes/typecast/issues"
+
+[project.scripts]
+typecast-mcp = "typecast_mcp.server:main"
+
+[build-system]
+requires = ["uv_build>=0.12.22,<0.13.0"]
+build-backend = "uv_build"

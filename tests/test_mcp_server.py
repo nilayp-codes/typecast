@@ -1,5 +1,6 @@
-"""The MCP server (docs/MCP.md sections 3 and 6): in-memory client, stdout cleanliness. Skipped without the mcp extra."""
+"""The MCP server (docs/MCP.md sections 3 and 6): in-memory client, stdout cleanliness."""
 
+import importlib.metadata
 import json
 import queue
 import subprocess
@@ -9,15 +10,12 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
+from mcp import Client
+from mcp.types import TextContent
 
-pytest.importorskip("mcp")
-
-from mcp import Client  # noqa: E402
-from mcp.types import TextContent  # noqa: E402
-
-from soa.mcp_server import build_server  # noqa: E402
-from soa.mcp_tools import ValidationResult  # noqa: E402
-from soa.schemas import JobPosting  # noqa: E402
+from typecast_mcp.schemas import JobPosting
+from typecast_mcp.server import build_server
+from typecast_mcp.validator import ValidationResult
 
 VALID: dict[str, Any] = {
     "title": "Backend Engineer",
@@ -44,6 +42,12 @@ async def client() -> AsyncIterator[Client]:
 def as_result(structured: dict[str, Any]) -> ValidationResult:
     """Strict models take enum strings only from JSON text, so go through JSON (the rule docs/MCP.md 2.2 explains)."""
     return ValidationResult.model_validate_json(json.dumps(structured))
+
+
+@pytest.mark.anyio
+async def test_server_reports_its_name_and_package_version(client: Client) -> None:
+    info = client.server_info
+    assert (info.name, info.version) == ("typecast", importlib.metadata.version("typecast-mcp"))
 
 
 @pytest.mark.anyio
@@ -99,7 +103,7 @@ def run_stdio_session(messages: list[dict[str, Any]], replies_expected: int) -> 
     still in flight), then it is closed and any further stdout is collected too: stray output would show up there.
     """
     proc = subprocess.Popen(
-        [sys.executable, "-m", "soa.mcp_server"],
+        [sys.executable, "-m", "typecast_mcp.server"],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
     )
     assert proc.stdin is not None and proc.stdout is not None
@@ -147,7 +151,7 @@ def test_stdout_carries_only_json_rpc_messages() -> None:
 
 def test_importing_and_building_the_server_prints_nothing_and_does_not_load_litellm() -> None:
     code = (
-        "import sys; from soa.mcp_server import build_server; build_server(); "
+        "import sys; from typecast_mcp.server import build_server; build_server(); "
         "print('LOADED' if 'litellm' in sys.modules else 'clean', file=sys.stderr)"
     )
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)

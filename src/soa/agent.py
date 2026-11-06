@@ -9,10 +9,11 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from soa import llm
-from soa.errors import format_retry_feedback, format_validation_errors, redact_keys
+from typecast_mcp.errors import format_retry_feedback, format_validation_errors
+from soa.errors import redact_keys
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import API_ERROR_TYPE, AttemptLog, Setup, append_log, default_log_path
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 from soa.tools import Disagreement, PostprocessResult, postprocess
 
 logger = logging.getLogger(__name__)

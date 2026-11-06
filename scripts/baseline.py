@@ -30,7 +30,7 @@ from pydantic import BaseModel, Field, ValidationError
 from soa.agent import extract_once, read_jd
 from soa.llm import LLMAPIError, LLMResponse
 from soa.logger import AttemptLog, default_log_path
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 
 JD_DIR = Path("data/jds")
 RESULTS_DIR = Path("results")

@@ -12,17 +12,20 @@
 ```
 structured-output-agent/
 ├── src/soa/
-│   ├── schemas.py      # JobPosting, Skill, Location, enums
 │   ├── tools.py        # normalize_skill, classify_location (deterministic post-processing) + arg/response models
-│   ├── errors.py       # format_validation_errors (rule 11) and redact_keys, shared by agent.py, tools.py, cli.py
+│   ├── errors.py       # redact_keys (secrets out of logs and output)
 │   ├── llm.py          # thin LiteLLM wrapper: call(), token/cost capture (cost_source: provider > estimate > none)
 │   ├── agent.py        # extract(): prompt → call → validate → retry
 │   ├── stats.py        # Wilson and seeded bootstrap 95% intervals for eval numbers
 │   ├── logger.py       # AttemptLog model + JSONL writer
 │   ├── eval.py         # run dataset, compute metrics, write table
-│   ├── mcp_tools.py    # MCP validator logic: get_job_posting_schema, validate_job_posting (no mcp/litellm import)
-│   ├── mcp_server.py   # `soa-mcp`: MCPServer wiring, stdio (needs the soa[mcp] extra; imports mcp lazily)
 │   └── cli.py          # `soa extract`, `soa eval`
+├── packages/typecast-mcp/      # published to PyPI; depends only on pydantic + mcp, never on soa
+│   └── src/typecast_mcp/
+│       ├── schemas.py    # JobPosting, Skill, Location, enums (soa imports them from here)
+│       ├── errors.py     # format_validation_errors, format_retry_feedback (rule 11), shared with soa
+│       ├── validator.py  # get_job_posting_schema, validate_job_posting (no mcp/litellm import)
+│       └── server.py     # `typecast-mcp`: MCPServer wiring, stdio
 ├── data/
 │   ├── jds/            # raw .txt job descriptions
 │   └── labels/         # hand-labelled gold JSON (20 files)
@@ -34,16 +37,18 @@ structured-output-agent/
 │                       #   aggregate_runs.py (mean and min-max over repeated runs -> results/aggregate.md),
 │                       #   make_blind_templates.py (TODO templates in data/labels_blind/, never gold values) and
 │                       #   label_agreement.py (blind vs gold, eval metrics -> results/label_agreement.md)
-├── .github/workflows/ci.yml   # pytest + mypy --strict src/ on push and PR (Phase 7)
+├── .github/workflows/ci.yml       # pytest + mypy --strict (both packages) on push and PR
+├── .github/workflows/publish.yml  # typecast-mcp to TestPyPI (manual) or PyPI (tag), trusted publishing
+├── server.json                    # MCP Registry entry for typecast-mcp
 └── docs/  (these .md files)
 ```
 
 ## MCP server (v2, validator only)
-`soa-mcp` serves two tools over stdio so any MCP client can validate a job-posting JSON text against `JobPosting` and
-get the retry loop's one-line-per-error feedback. It reuses `schemas.JobPosting` and `errors.format_retry_feedback`,
+`typecast-mcp` serves two tools over stdio so any MCP client can validate a job-posting JSON text against `JobPosting` and
+get the retry loop's one-line-per-error feedback. It owns `JobPosting` and `format_retry_feedback`, which `soa` imports,
 runs no LLM, needs no key and makes no network call, and never imports `llm.py`/LiteLLM (so nothing prints a banner on
-stdout, which on a stdio transport carries only protocol messages). The SDK is the optional extra `soa[mcp]`
-(`mcp>=2.3,<3`, high-level `MCPServer`). Full spec: [MCP.md](MCP.md).
+stdout, which on a stdio transport carries only protocol messages). It is a separate uv workspace member published to
+PyPI (`mcp>=2.3,<3`, high-level `MCPServer`). Full spec and packaging decisions: [MCP.md](MCP.md).
 
 ## Core flow
 ```

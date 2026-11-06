@@ -27,10 +27,10 @@ from soa.eval import (
     setup_args,
     validity_stats,
 )
-from soa.errors import format_validation_errors
+from typecast_mcp.errors import format_validation_errors
 from soa.llm import CostSource, LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog, Setup, append_log, read_log
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 
 VALID: dict[str, Any] = {
     "title": "Backend Engineer",

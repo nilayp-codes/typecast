@@ -22,7 +22,7 @@ LLM agent that turns messy job descriptions into schema-validated, typed JSON â€
 https://github.com/user-attachments/assets/c4a2572c-88a2-49a3-8e20-176010877154
 
 
-CLI and package name: `soa`
+CLI and package name: `soa` Â· MCP server on PyPI: [`typecast-mcp`](https://pypi.org/project/typecast-mcp/)
 
 [![CI](https://github.com/nilayp-codes/typecast/actions/workflows/ci.yml/badge.svg)](https://github.com/nilayp-codes/typecast/actions/workflows/ci.yml)
 
@@ -304,14 +304,15 @@ Tests and type checks (no real model is ever called in tests):
 
 ```
 uv run pytest
-uv run mypy --strict src/
+uv run mypy --strict src/ packages/typecast-mcp/src/
 ```
 
 ## Use it from an AI agent (MCP server)
 
-`soa-mcp` is a small [MCP](https://modelcontextprotocol.io) server that checks a job-posting JSON against the
+`typecast-mcp` is a small [MCP](https://modelcontextprotocol.io) server that checks a job-posting JSON against the
 `JobPosting` schema and returns one-line errors an agent can act on. It has no LLM, needs no API key and makes no
-network calls.
+network calls. It is its own package ([`packages/typecast-mcp/`](packages/typecast-mcp/)) with two dependencies,
+`pydantic` and `mcp`, so installing it does not pull in LiteLLM or the rest of the eval harness.
 
 Two tools:
 
@@ -320,26 +321,25 @@ Two tools:
 - `validate_job_posting`: takes one argument, `posting`, the whole job-posting JSON as ONE string. Returns `valid`, a
   list of error lines (`field: problem (got: value)`), and the parsed posting when valid.
 
-Install: `uv sync --extra mcp`
-
-**Claude Code.** The repo ships a `.mcp.json`. Open the folder in Claude Code, approve `soa-validator` when asked,
-and check it with `/mcp`. Approving runs `uv run` in this folder, which installs the locked dependencies and starts the
-server. Only approve it in a clone you trust.
-
-**Other clients (Claude Desktop, Cursor).** Add a server with this config, with the path to your clone:
+**Install** (needs [uv](https://docs.astral.sh/uv/)). Claude Desktop, Cursor and other clients:
 
 ```json
 {
   "mcpServers": {
-    "soa-validator": {
-      "command": "uv",
-      "args": ["--directory", "<path to repo>", "run", "--extra", "mcp", "soa-mcp"]
+    "typecast": {
+      "command": "uvx",
+      "args": ["typecast-mcp"]
     }
   }
 }
 ```
 
-On Windows, if the client cannot find `uv`, put the full path to `uv.exe` in `command`.
+Claude Code: `claude mcp add typecast -- uvx typecast-mcp`. On Windows, if the client cannot find `uvx`, put the full
+path to `uvx.exe` in `command`. Without uv: `pip install typecast-mcp` and use `typecast-mcp` as the command.
+
+**From a clone.** The repo ships a `.mcp.json` that runs the server from the working tree (`uv run typecast-mcp`).
+Open the folder in Claude Code, approve `typecast` when asked, and check it with `/mcp`. Approving runs `uv run` in
+this folder, which installs the locked dependencies and starts the server. Only approve it in a clone you trust.
 
 **A real example.** Qwen3-235B's reply on jd_002 had 70 skills. An agent checked it with `validate_job_posting` and got
 one line back:
@@ -358,8 +358,12 @@ Details, limits and design decisions: [docs/MCP.md](docs/MCP.md).
 ## What I'd do next
 
 1. ~~A validator-only MCP server~~: done, see [Use it from an AI agent](#use-it-from-an-ai-agent-mcp-server).
-2. **Publish the package on PyPI** (the CLI is already `soa`).
+2. ~~Publish on PyPI~~: done for the MCP server, [`typecast-mcp`](https://pypi.org/project/typecast-mcp/).
 3. Fix the remaining failure the data points at: the model that cannot make the last cut on jd_002, for example by
    telling it which items to drop. Re-measure with temperature fixed and the provider pinned, so repeats differ less.
 4. A second labeler for the gold set, a bigger document set, and repeats of setup D, so the field-accuracy
    numbers stop being limited by n=20.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

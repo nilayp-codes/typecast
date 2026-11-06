@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "soa-validator": {
+      "command": "uv",
+      "args": ["run", "--extra", "mcp", "soa-mcp"]
+    }
+  }
+}

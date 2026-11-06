@@ -1,5 +1,6 @@
 """The MCP server (docs/MCP.md sections 3 and 6): in-memory client, stdout cleanliness."""
 
+import importlib.metadata
 import json
 import queue
 import subprocess
@@ -12,7 +13,6 @@ import pytest
 from mcp import Client
 from mcp.types import TextContent
 
-from typecast_mcp import __version__
 from typecast_mcp.schemas import JobPosting
 from typecast_mcp.server import build_server
 from typecast_mcp.validator import ValidationResult
@@ -47,7 +47,7 @@ def as_result(structured: dict[str, Any]) -> ValidationResult:
 @pytest.mark.anyio
 async def test_server_reports_its_name_and_package_version(client: Client) -> None:
     info = client.server_info
-    assert (info.name, info.version) == ("typecast", __version__)
+    assert (info.name, info.version) == ("typecast", importlib.metadata.version("typecast-mcp"))
 
 
 @pytest.mark.anyio

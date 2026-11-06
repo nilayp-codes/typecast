@@ -21,9 +21,9 @@
 
 ## Each release
 
-1. Bump the version in **three places**, all equal: `packages/typecast-mcp/pyproject.toml`,
-   `packages/typecast-mcp/src/typecast_mcp/__init__.py` (`__version__`), and both `version` fields in `server.json`.
-   Run `uv lock`. The workflow refuses to publish if the tag, the package and `server.json` disagree.
+1. Bump the version in **two places**, both equal: `packages/typecast-mcp/pyproject.toml` and both `version` fields in
+   `server.json`. (`typecast_mcp.__version__` and the server's reported version are read from the installed package
+   metadata, so there is nothing to change in `__init__.py`.) Run `uv lock`. The workflow refuses to publish if the tag, the package and `server.json` disagree.
 2. Tests and types: `uv run pytest` and `uv run mypy --strict src/ packages/typecast-mcp/src/`.
 3. **TestPyPI**: GitHub *Actions → Publish typecast-mcp → Run workflow*. Then check the uploaded file, not just the
    build. Download only the wheel from TestPyPI, and let its dependencies come from real PyPI (TestPyPI copies of

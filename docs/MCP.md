@@ -291,7 +291,7 @@ Published to PyPI as **`typecast-mcp`**, a separate package in a uv workspace, n
 | Layout | uv workspace member `packages/typecast-mcp/`; `soa` depends on it via `[tool.uv.sources]` | One source of truth for `JobPosting`; the eval harness and the server cannot drift |
 | `mcp` dependency | Hard dependency of `typecast-mcp` | `uvx typecast-mcp` must work with no extra. This reverses the `soa[mcp]` decision in section 4: `soa` now always installs the MCP SDK. Accepted because `soa` itself is not published and already pulls a large stack through LiteLLM |
 | `redact_keys` | Stays in `soa.errors` | Only the CLI and eval use it; the server has no secrets |
-| Server name | `typecast` (was `soa-validator`), version = package version | Matches the package and the client config key |
+| Server name | `typecast` (was `soa-validator`), version read from the package metadata (`importlib.metadata.version("typecast-mcp")`) | Matches the package and the client config key |
 | License | MIT, `LICENSE` at the root and copied into the package (PEP 639 forbids `..` paths) | Without a license the public code was not usable |
 | Registry | `server.json` at the root, name `io.github.nilayp-codes/typecast`; the PyPI README carries the `mcp-name:` marker | The MCP Registry checks the marker in the published README to prove ownership |
 | Release | `.github/workflows/publish.yml`: manual run goes to TestPyPI, tag `typecast-mcp-v<version>` goes to PyPI; trusted publishing, no stored token; tests, mypy and a tag/package/server.json version check run first | Steps in [RELEASING.md](RELEASING.md) |

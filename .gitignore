@@ -1,6 +1,10 @@
 # Secrets
 .env
 
+# Local exports
+*.bundle
+out.json
+
 # Attempt logs (keep the folder)
 logs/*
 !logs/.gitkeep

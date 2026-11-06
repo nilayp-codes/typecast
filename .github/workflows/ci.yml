@@ -41,4 +41,4 @@ jobs:
         run: uv run pytest
 
       - name: Type check
-        run: uv run mypy --strict src/
+        run: uv run mypy --strict src/ packages/typecast-mcp/src/

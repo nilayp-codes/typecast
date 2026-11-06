@@ -11,7 +11,7 @@ from soa import agent, llm
 from soa.agent import RETRY_PROMPT_TEMPLATE, ExtractionFailed, extract
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 
 VALID: dict[str, Any] = {
     "title": "Backend Engineer",

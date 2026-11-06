@@ -11,7 +11,7 @@ Fill the labels by hand (seniority rule: docs/DESIGN.md section 1), then run scr
 import argparse
 from pathlib import Path
 
-from soa.schemas import JobPosting, Location, Skill
+from typecast_mcp.schemas import JobPosting, Location, Skill
 
 TODO = "TODO"
 JD_DIR = Path("data/jds")

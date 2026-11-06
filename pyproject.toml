@@ -7,7 +7,10 @@ authors = [
     { name = "Nilay Pandey", email = "268824746+nilayp-codes@users.noreply.github.com" }
 ]
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
+    "typecast-mcp",
     "litellm>=1.103.2",
     "openai>=2.54.0",
     "pydantic>=2.13.5",
@@ -17,16 +20,16 @@ dependencies = [
 
 [project.scripts]
 soa = "soa.cli:app"
-soa-mcp = "soa.mcp_server:main"
-
-[project.optional-dependencies]
-mcp = [
-    "mcp>=2.3,<3",
-]
 
 [build-system]
 requires = ["uv_build>=0.12.22,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv.workspace]
+members = ["packages/typecast-mcp"]
+
+[tool.uv.sources]
+typecast-mcp = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -37,7 +40,7 @@ dev = [
 [tool.mypy]
 strict = true
 python_version = "3.11"
-files = ["src"]
+files = ["src", "packages/typecast-mcp/src"]
 
 [[tool.mypy.overrides]]
 module = ["litellm", "litellm.*"]

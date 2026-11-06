@@ -19,7 +19,7 @@ from pydantic import ValidationError
 from soa import llm
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.llm import fetch_openrouter_prices as real_fetch  # the autouse fixture replaces llm.fetch_openrouter_prices
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 
 MESSAGES = [Message(role="system", content="be brief"), Message(role="user", content="hi")]
 

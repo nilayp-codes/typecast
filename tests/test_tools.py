@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from soa import tools
-from soa.schemas import JobPosting, Location, Skill, WorkMode
+from typecast_mcp.schemas import JobPosting, Location, Skill, WorkMode
 from soa.tools import (
     CLASSIFY_LOCATION,
     NORMALIZE_SKILL,

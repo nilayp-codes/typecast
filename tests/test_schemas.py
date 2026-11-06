@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from soa.schemas import JobPosting, Seniority
+from typecast_mcp.schemas import JobPosting, Seniority
 
 
 def posting(**overrides: Any) -> dict[str, Any]:

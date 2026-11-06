@@ -9,10 +9,10 @@ from pydantic import BaseModel, ValidationError
 
 from soa import agent, llm
 from soa.agent import SYSTEM_PROMPT, build_messages, extract_once, read_jd
-from soa.errors import format_validation_errors
+from typecast_mcp.errors import format_validation_errors
 from soa.llm import LLMAPIError, LLMResponse, Message
 from soa.logger import AttemptLog
-from soa.schemas import JobPosting, Seniority
+from typecast_mcp.schemas import JobPosting, Seniority
 
 VALID: dict[str, Any] = {
     "title": "Backend Engineer",

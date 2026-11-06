@@ -8,9 +8,9 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from soa.errors import format_retry_feedback
-from soa.mcp_tools import MAX_POSTING_CHARS, ValidationResult, get_job_posting_schema, validate_job_posting
-from soa.schemas import JobPosting
+from typecast_mcp.errors import format_retry_feedback
+from typecast_mcp.validator import MAX_POSTING_CHARS, ValidationResult, get_job_posting_schema, validate_job_posting
+from typecast_mcp.schemas import JobPosting
 
 VALID: dict[str, Any] = {
     "title": "Backend Engineer",
@@ -135,6 +135,6 @@ def test_result_fields_must_agree() -> None:
 
 
 def test_importing_the_module_loads_neither_litellm_nor_mcp() -> None:
-    code = "import sys, soa.mcp_tools; print(sorted(m for m in sys.modules if m.split('.')[0] in ('litellm', 'mcp')))"
+    code = "import sys, typecast_mcp.validator; print(sorted(m for m in sys.modules if m.split('.')[0] in ('litellm', 'mcp')))"
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
     assert done.stdout.strip() == "[]"

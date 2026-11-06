@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from soa.schemas import JobPosting, Location, Skill
+from typecast_mcp.schemas import JobPosting, Location, Skill
 
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 

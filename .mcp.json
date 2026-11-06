@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "soa-validator": {
+    "typecast": {
       "command": "uv",
-      "args": ["run", "--extra", "mcp", "soa-mcp"]
+      "args": ["run", "typecast-mcp"]
     }
   }
 }

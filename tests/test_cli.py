@@ -15,7 +15,7 @@ from typer.testing import CliRunner
 from soa import agent, cli, llm
 from soa.cli import app
 from soa.llm import LLMAPIError, LLMResponse, Message
-from soa.schemas import JobPosting
+from typecast_mcp.schemas import JobPosting
 
 runner = CliRunner()
 

@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This repo is the **Structured Output Agent** (package `soa` in `src/soa/`, CLI `soa`). Full specs live in `docs/`:
+This repo is the **Structured Output Agent** (package `soa` in `src/soa/`, CLI `soa`), a uv workspace with one
+published member: `typecast-mcp` in `packages/typecast-mcp/` (import `typecast_mcp`: schemas, validation error lines,
+the MCP validator and server; depends only on `pydantic` and `mcp`, never on `soa` or litellm). Full specs live in `docs/`:
 PRD, ARCHITECTURE, RULES, DESIGN, TASKS, MEMORY (each `docs/<NAME>.md`).
 
 ## Session start
@@ -22,7 +24,7 @@ Don't assume anything. If it isn't in the docs or the code, ask.
 ## Workflow
 1. Pick one `docs/TASKS.md` item. Only one at a time.
 2. Implement it.
-3. Run `uv run pytest` and `uv run mypy --strict src/`. Both must pass.
+3. Run `uv run pytest` and `uv run mypy --strict src/ packages/typecast-mcp/src/`. Both must pass.
    Never pipe test, lint or check commands through tail/head/grep; run them directly so a failing exit code stops the chain.
 4. Tick its box in `docs/TASKS.md`.
 5. Commit as `type: summary` (e.g. `feat: add schema validator`).
@@ -35,6 +37,6 @@ Don't assume anything. If it isn't in the docs or the code, ask.
 ## Commands
 ```
 uv run pytest               # tests
-uv run mypy --strict src/   # type check
+uv run mypy --strict src/ packages/typecast-mcp/src/   # type check
 uv run soa ...              # run the CLI
 ```

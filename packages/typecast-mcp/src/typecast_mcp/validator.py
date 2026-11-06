@@ -1,15 +1,15 @@
 """Logic of the validator-only MCP server (docs/MCP.md): the job-posting schema and a JSON validator.
 
 No LLM, no key, no network. This module does not import `mcp` or `litellm`, so it is usable (and testable) without the
-SDK; `soa.mcp_server` wires these functions into an MCP server.
+SDK; `typecast_mcp.server` wires these functions into an MCP server.
 """
 
 from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
-from soa.errors import format_retry_feedback
-from soa.schemas import JobPosting
+from typecast_mcp.errors import format_retry_feedback
+from typecast_mcp.schemas import JobPosting
 
 MAX_POSTING_CHARS = 20_000  # a valid posting is under 3,000 characters; this only stops absurd payloads
 MAX_ERROR_LINES = 20  # a 20 KB payload of unknown keys otherwise returns about 2,000 lines

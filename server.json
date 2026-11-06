@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.nilayp-codes/typecast",
+  "title": "Typecast",
+  "description": "Validates job-posting JSON against a strict schema; returns one fixable error line per problem.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/nilayp-codes/typecast",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "typecast-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

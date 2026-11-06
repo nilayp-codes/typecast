@@ -101,6 +101,28 @@ def test_an_oversized_payload_is_refused_before_parsing() -> None:
     assert result.errors == ["(root): payload is 50000 characters, maximum is 20000"]
 
 
+def test_25_errors_are_capped_at_20_lines_plus_an_omitted_line() -> None:
+    extras = {f"extra_{i}": 1 for i in range(25)}
+    result = validate_job_posting(json.dumps({**VALID, **extras}))
+    assert not result.valid and result.posting is None
+    assert len(result.errors) == 21
+    assert result.errors[:20] == format_retry_feedback(_validation_error({**VALID, **extras})).splitlines()[:20]
+    assert result.errors[20] == "... 5 more errors omitted"
+
+
+def test_3_errors_are_returned_unchanged() -> None:
+    extras = {f"extra_{i}": 1 for i in range(3)}
+    result = validate_job_posting(json.dumps({**VALID, **extras}))
+    expected = format_retry_feedback(_validation_error({**VALID, **extras})).splitlines()
+    assert len(expected) == 3 and result.errors == expected
+
+
+def _validation_error(data: dict[str, Any]) -> ValidationError:
+    with pytest.raises(ValidationError) as caught:
+        JobPosting.model_validate_json(json.dumps(data))
+    return caught.value
+
+
 def test_the_schema_is_the_models_schema() -> None:
     assert get_job_posting_schema() == JobPosting.model_json_schema()
 

@@ -12,6 +12,7 @@ from soa.errors import format_retry_feedback
 from soa.schemas import JobPosting
 
 MAX_POSTING_CHARS = 20_000  # a valid posting is under 3,000 characters; this only stops absurd payloads
+MAX_ERROR_LINES = 20  # a 20 KB payload of unknown keys otherwise returns about 2,000 lines
 
 
 class ValidationResult(BaseModel):
@@ -44,5 +45,13 @@ def validate_job_posting(posting: str) -> ValidationResult:
         # JSON mode on purpose: the models are strict, and only JSON-mode validation accepts enum strings.
         parsed = JobPosting.model_validate_json(posting)
     except ValidationError as exc:
-        return ValidationResult(valid=False, errors=format_retry_feedback(exc).splitlines(), posting=None)
+        errors = cap_errors(format_retry_feedback(exc).splitlines())
+        return ValidationResult(valid=False, errors=errors, posting=None)
     return ValidationResult(valid=True, errors=[], posting=parsed)
+
+
+def cap_errors(lines: list[str]) -> list[str]:
+    """At most MAX_ERROR_LINES lines, plus one line stating how many were left out. Only the MCP path caps."""
+    if len(lines) <= MAX_ERROR_LINES:
+        return lines
+    return [*lines[:MAX_ERROR_LINES], f"... {len(lines) - MAX_ERROR_LINES} more errors omitted"]

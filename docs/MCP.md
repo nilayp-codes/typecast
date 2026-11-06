@@ -170,6 +170,7 @@ which is JSON by nature and comes straight from `model_json_schema()`.
 | Limit | Value | Behaviour when exceeded |
 |---|---|---|
 | `validate_job_posting` payload | 20,000 characters of `posting` | Returns `valid=false`, `errors=["(root): payload is 23000 characters, maximum is 20000"]`; nothing is parsed |
+| `validate_job_posting` error lines | 20 lines | The first 20 are returned, then one line `... N more errors omitted`. Without a cap, a 20 KB payload of unknown keys returned about 2,000 lines (92 KB). The cap is in `mcp_tools.py` only; `soa.errors` and the retry loop are unchanged |
 
 A minimal valid posting is about 240 characters and one at every maximum is about 2,700, so 20,000 leaves a wide margin.
 `company` has no length limit in the schema, which is a further reason for the guard. Deeply nested input is bounded by

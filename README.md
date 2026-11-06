@@ -335,7 +335,9 @@ Two tools:
 ```
 
 Claude Code: `claude mcp add typecast -- uvx typecast-mcp`. On Windows, if the client cannot find `uvx`, put the full
-path to `uvx.exe` in `command`. Without uv: `pip install typecast-mcp` and use `typecast-mcp` as the command.
+path to `uvx.exe` in `command` (find it with `where.exe uvx`). The Microsoft Store build of Claude Desktop does not
+read `%APPDATA%\Claude\claude_desktop_config.json`; open **Settings → Developer → Edit Config** to open the file it
+does read. Without uv: `pip install typecast-mcp` and use `typecast-mcp` as the command.
 
 **From a clone.** The repo ships a `.mcp.json` that runs the server from the working tree (`uv run typecast-mcp`).
 Open the folder in Claude Code, approve `typecast` when asked, and check it with `/mcp`. Approving runs `uv run` in
@@ -349,6 +351,11 @@ skills: has 70 items, maximum is 30 - remove 40, starting with required=false on
 ```
 
 The agent fixed the posting in one round. This was one run with Claude Sonnet 5.5, not a benchmark.
+
+**Demo in Claude Desktop** (errors planted for the demo). Claude calls `validate_job_posting`, gets two error lines,
+fixes them and re-validates. Note that it had to guess the years to make the posting pass:
+
+https://github.com/user-attachments/assets/4190ef12-fc7c-46f8-ad48-dd128d80aa54
 
 **What it does not check:** whether the values are correct. A posting can be valid and still have the wrong seniority
 or the wrong skills; see [Why not just use native structured outputs?](#why-not-just-use-native-structured-outputs).

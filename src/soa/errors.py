@@ -42,9 +42,13 @@ def _retry_line(err: ErrorDetails) -> str:
     return f"{loc}: has {count} items, maximum is {maximum} - remove {count - maximum}{hint}"
 
 
+SECRET_ENV_SUFFIXES = ("_KEY", "_TOKEN")  # *_API_KEY is covered by _KEY
+MIN_SECRET_LENGTH = 8  # shorter values would also mask ordinary words
+
+
 def redact_keys(text: str) -> str:
-    """Keep API key values out of logs and terminal output: mask any *_API_KEY env value found in `text`."""
+    """Keep secrets out of logs and terminal output: mask any *_KEY or *_TOKEN env value (8+ chars) found in `text`."""
     for name, value in os.environ.items():
-        if name.endswith("_API_KEY") and len(value) >= 8:
+        if name.endswith(SECRET_ENV_SUFFIXES) and len(value) >= MIN_SECRET_LENGTH:
             text = text.replace(value, "***")
     return text
